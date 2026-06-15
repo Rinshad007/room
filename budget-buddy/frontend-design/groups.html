@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Budget Buddy - Groups</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed": "#69ff87",
+                    "on-primary-fixed": "#1a1c1f",
+                    "on-primary-container": "#838487",
+                    "error": "#ba1a1a",
+                    "tertiary-fixed-dim": "#ffb4aa",
+                    "on-error-container": "#93000a",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "tertiary": "#000000",
+                    "primary-fixed": "#e2e2e6",
+                    "inverse-surface": "#2e3132",
+                    "on-tertiary-fixed-variant": "#930005",
+                    "outline": "#76777b",
+                    "outline-variant": "#c6c6ca",
+                    "on-secondary-fixed": "#002108",
+                    "on-surface": "#191c1d",
+                    "surface-container-high": "#e7e8e9",
+                    "on-tertiary": "#ffffff",
+                    "on-background": "#191c1d",
+                    "secondary-fixed-dim": "#3ce36a",
+                    "on-secondary": "#ffffff",
+                    "background": "#f8f9fa",
+                    "inverse-on-surface": "#f0f1f2",
+                    "surface-dim": "#d9dadb",
+                    "primary-fixed-dim": "#c6c6ca",
+                    "on-secondary-container": "#00732c",
+                    "secondary-container": "#5cfd80",
+                    "primary": "#000000",
+                    "surface-container": "#edeeef",
+                    "tertiary-fixed": "#ffdad5",
+                    "on-surface-variant": "#45474a",
+                    "on-error": "#ffffff",
+                    "surface": "#f8f9fa",
+                    "secondary": "#006e2a",
+                    "surface-tint": "#5d5e62",
+                    "surface-variant": "#e1e3e4",
+                    "inverse-primary": "#c6c6ca",
+                    "surface-container-highest": "#e1e3e4",
+                    "tertiary-container": "#410001",
+                    "on-tertiary-container": "#f9362c",
+                    "on-secondary-fixed-variant": "#00531e",
+                    "on-tertiary-fixed": "#410001",
+                    "surface-container-low": "#f3f4f5",
+                    "surface-bright": "#f8f9fa",
+                    "on-primary-fixed-variant": "#45474a",
+                    "error-container": "#ffdad6",
+                    "primary-container": "#1a1c1f"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-md": "24px",
+                    "base": "8px",
+                    "container-padding": "20px",
+                    "gutter": "16px",
+                    "stack-sm": "12px"
+            },
+            "fontFamily": {
+                    "display-currency": [
+                            "Inter"
+                    ],
+                    "monetary-md": [
+                            "Inter"
+                    ],
+                    "headline-lg": [
+                            "Inter"
+                    ],
+                    "headline-lg-mobile": [
+                            "Inter"
+                    ],
+                    "body-md": [
+                            "Inter"
+                    ],
+                    "label-caps": [
+                            "Inter"
+                    ]
+            },
+            "fontSize": {
+                    "display-currency": [
+                            "40px",
+                            {
+                                    "lineHeight": "48px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "monetary-md": [
+                            "18px",
+                            {
+                                    "lineHeight": "22px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "headline-lg": [
+                            "28px",
+                            {
+                                    "lineHeight": "34px",
+                                    "letterSpacing": "-0.01em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "headline-lg-mobile": [
+                            "24px",
+                            {
+                                    "lineHeight": "30px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "label-caps": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.05em",
+                                    "fontWeight": "600"
+                            }
+                    ]
+            }
+        },
+        },
+      }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen font-body-md antialiased md:max-w-md md:mx-auto md:border-x md:border-outline-variant/20 relative">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 dark:bg-surface/80 backdrop-blur-md shadow-sm border-b border-outline-variant/30 md:max-w-md" data-name="TopAppBar" data-type="small">
+<div class="flex items-center justify-between px-container-padding h-14 w-full">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-primary-container overflow-hidden">
+<img alt="User profile photo" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCOw2TkDSXP73DXdhxkfkBvUvFkrSK88Q534P0GUBbqAqu9m_RC-vi_9PDlEvoyLOkL1FFywT_Rtt1c5Pv-fuz1bWhOAUybc9UHJ_K8g9JkoGaKdJ15GS8XvoFoY0qnfVoKdVgbCwp9igYbGS1wj6Y6vRa9j8LNUi2ZZ2SVzlb2xowQrXxj8g1EAG76hx2p4b-l49F_FLST3NkwtvC37y94CwCudu7eMcmUk_p5nWSdmzW9I5Ls_ktUBPpFozqptOejRQW9wSGHWTxf"/>
+</div>
+</div>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary dark:text-primary-fixed">Groups</h1>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high/50 transition-colors active:scale-95 text-on-surface-variant dark:text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</div>
+</header>
+<!-- Main Content -->
+<main class="pt-20 pb-24 px-container-padding">
+<!-- Summary/Action Section -->
+<div class="flex justify-between items-end mb-6">
+<div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-1">Total Owed</p>
+<p class="font-monetary-md text-monetary-md text-error">₹ 1,200.00</p>
+</div>
+<button class="bg-primary text-on-primary px-4 py-2 rounded-lg font-monetary-md text-monetary-md flex items-center gap-2 hover:bg-primary/90 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+                New Group
+            </button>
+</div>
+<!-- Groups Grid -->
+<div class="grid grid-cols-1 gap-4">
+<!-- Card 1: Goa Trip -->
+<div class="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/20 shadow-[0_4px_20px_rgba(0,0,0,0.04)] relative overflow-hidden group hover:shadow-md transition-shadow cursor-pointer">
+<div class="flex items-start justify-between mb-4">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-primary border border-outline-variant/20">
+<span class="material-symbols-outlined" data-icon="flight_takeoff">flight_takeoff</span>
+</div>
+<div>
+<h3 class="font-monetary-md text-monetary-md text-on-surface">Goa Trip</h3>
+<p class="font-label-caps text-label-caps text-on-surface-variant mt-1">3 members</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-1">Total Exp.</p>
+<p class="font-monetary-md text-monetary-md text-on-surface">₹ 12,400</p>
+</div>
+</div>
+<div class="border-t border-outline-variant/20 pt-3 flex justify-between items-center">
+<p class="font-body-md text-body-md text-on-surface-variant">Your Balance</p>
+<div class="flex items-center gap-2">
+<span class="px-2 py-1 bg-error/10 text-error rounded-full font-label-caps text-label-caps">You owe</span>
+<p class="font-monetary-md text-monetary-md text-error">₹ 1,200</p>
+</div>
+</div>
+</div>
+<!-- Card 2: Flat Expenses -->
+<div class="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/20 shadow-[0_4px_20px_rgba(0,0,0,0.04)] relative overflow-hidden group hover:shadow-md transition-shadow cursor-pointer">
+<div class="flex items-start justify-between mb-4">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-primary border border-outline-variant/20">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+</div>
+<div>
+<h3 class="font-monetary-md text-monetary-md text-on-surface">Flat Expenses</h3>
+<p class="font-label-caps text-label-caps text-on-surface-variant mt-1">4 members</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-1">Total Exp.</p>
+<p class="font-monetary-md text-monetary-md text-on-surface">₹ 8,500</p>
+</div>
+</div>
+<div class="border-t border-outline-variant/20 pt-3 flex justify-between items-center">
+<p class="font-body-md text-body-md text-on-surface-variant">Your Balance</p>
+<div class="flex items-center gap-2">
+<span class="px-2 py-1 bg-secondary/10 text-secondary rounded-full font-label-caps text-label-caps">You are owed</span>
+<p class="font-monetary-md text-monetary-md text-secondary">₹ 450</p>
+</div>
+</div>
+</div>
+<!-- Card 3: Office Lunch -->
+<div class="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/20 shadow-[0_4px_20px_rgba(0,0,0,0.04)] relative overflow-hidden group hover:shadow-md transition-shadow cursor-pointer">
+<div class="flex items-start justify-between mb-4">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-primary border border-outline-variant/20">
+<span class="material-symbols-outlined" data-icon="restaurant">restaurant</span>
+</div>
+<div>
+<h3 class="font-monetary-md text-monetary-md text-on-surface">Office Lunch</h3>
+<p class="font-label-caps text-label-caps text-on-surface-variant mt-1">6 members</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-1">Total Exp.</p>
+<p class="font-monetary-md text-monetary-md text-on-surface">₹ 3,200</p>
+</div>
+</div>
+<div class="border-t border-outline-variant/20 pt-3 flex justify-between items-center">
+<p class="font-body-md text-body-md text-on-surface-variant">Your Balance</p>
+<div class="flex items-center gap-2">
+<span class="px-2 py-1 bg-surface-container text-on-surface-variant rounded-full font-label-caps text-label-caps">Settled</span>
+<p class="font-monetary-md text-monetary-md text-on-surface-variant">₹ 0</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-xl bg-surface/90 dark:bg-surface-container-lowest/90 backdrop-blur-xl border-t border-outline-variant/20 shadow-[0_-4px_20px_rgba(0,0,0,0.04)] md:max-w-md md:left-1/2 md:-translate-x-1/2" data-name="BottomNavBar" data-type="label_icon">
+<div class="flex justify-around items-center h-16 px-base">
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 dark:text-on-surface-variant hover:text-primary dark:hover:text-secondary-fixed active:scale-90 transition-all duration-200 flex-1" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="dashboard">dashboard</span>
+<span class="font-label-caps text-label-caps">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 dark:text-on-surface-variant hover:text-primary dark:hover:text-secondary-fixed active:scale-90 transition-all duration-200 flex-1" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="group">group</span>
+<span class="font-label-caps text-label-caps">Friends</span>
+</a>
+<!-- Active Tab -->
+<a class="flex flex-col items-center justify-center text-primary dark:text-secondary-fixed-dim font-bold active:scale-90 transition-all duration-200 flex-1" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="grid_view" data-weight="fill" style="font-variation-settings: 'FILL' 1;">grid_view</span>
+<span class="font-label-caps text-label-caps">Groups</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 dark:text-on-surface-variant hover:text-primary dark:hover:text-secondary-fixed active:scale-90 transition-all duration-200 flex-1" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="receipt_long">receipt_long</span>
+<span class="font-label-caps text-label-caps">History</span>
+</a>
+</div>
+</nav>
+</body></html>

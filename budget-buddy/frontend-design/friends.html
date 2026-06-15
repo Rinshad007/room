@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Budget Buddy - Friends</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed": "#69ff87",
+                        "on-primary-fixed": "#1a1c1f",
+                        "on-primary-container": "#838487",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed-dim": "#ffb4aa",
+                        "on-error-container": "#93000a",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "tertiary": "#000000",
+                        "primary-fixed": "#e2e2e6",
+                        "inverse-surface": "#2e3132",
+                        "on-tertiary-fixed-variant": "#930005",
+                        "outline": "#76777b",
+                        "outline-variant": "#c6c6ca",
+                        "on-secondary-fixed": "#002108",
+                        "on-surface": "#191c1d",
+                        "surface-container-high": "#e7e8e9",
+                        "on-tertiary": "#ffffff",
+                        "on-background": "#191c1d",
+                        "secondary-fixed-dim": "#3ce36a",
+                        "on-secondary": "#ffffff",
+                        "background": "#f8f9fa",
+                        "inverse-on-surface": "#f0f1f2",
+                        "surface-dim": "#d9dadb",
+                        "primary-fixed-dim": "#c6c6ca",
+                        "on-secondary-container": "#00732c",
+                        "secondary-container": "#5cfd80",
+                        "primary": "#000000",
+                        "surface-container": "#edeeef",
+                        "tertiary-fixed": "#ffdad5",
+                        "on-surface-variant": "#45474a",
+                        "on-error": "#ffffff",
+                        "surface": "#f8f9fa",
+                        "secondary": "#006e2a",
+                        "surface-tint": "#5d5e62",
+                        "surface-variant": "#e1e3e4",
+                        "inverse-primary": "#c6c6ca",
+                        "surface-container-highest": "#e1e3e4",
+                        "tertiary-container": "#410001",
+                        "on-tertiary-container": "#f9362c",
+                        "on-secondary-fixed-variant": "#00531e",
+                        "on-tertiary-fixed": "#410001",
+                        "surface-container-low": "#f3f4f5",
+                        "surface-bright": "#f8f9fa",
+                        "on-primary-fixed-variant": "#45474a",
+                        "error-container": "#ffdad6",
+                        "primary-container": "#1a1c1f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-md": "24px",
+                        "base": "8px",
+                        "container-padding": "20px",
+                        "gutter": "16px",
+                        "stack-sm": "12px"
+                    },
+                    "fontFamily": {
+                        "display-currency": ["Inter"],
+                        "monetary-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-caps": ["Inter"]
+                    },
+                    "fontSize": {
+                        "display-currency": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "monetary-md": ["18px", {"lineHeight": "22px", "fontWeight": "600"}],
+                        "headline-lg": ["28px", {"lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "30px", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(233, 236, 239, 0.5);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md min-h-screen pb-24 md:pb-0 pt-14 md:pt-16">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 dark:bg-surface/80 backdrop-blur-md shadow-sm border-b border-outline-variant/30 flex items-center justify-between px-container-padding h-14 w-full md:h-16">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-variant flex items-center justify-center">
+<img alt="User profile photo" class="w-full h-full object-cover" data-alt="A close-up portrait of a professional individual looking warmly into the camera, set against a soft, bright background. The lighting is bright and modern, creating a clean light-mode aesthetic. The colors are natural and vibrant. The mood is friendly and approachable." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB9END7p4lWBYki2i20k_UxjGg4mF8DVwP_tOo9RG9V1Z5XIVUaYquRGJvqxecJLvTADu5TwxzAGexrU0OrqEBLIhVNz_HRsWt7M53XAlb-whpCa5uTAak4ofRns1iGkBr9bNGaiFX8RDQ0SezxktVa_T0d1QZJUbcl6dSzqRULrfdmB4kpUtkeUln86GAuccueOXgZTrxR9zJRTy3UXYoXC6Y0ttP6ibyNk8TvnPknhF0DbGFPVpZ4GYunGwNutyp9oo4368WehS47"/>
+</div>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary dark:text-primary-fixed md:font-headline-lg md:text-headline-lg">Friends</h1>
+</div>
+<button class="text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high/50 transition-colors active:scale-95 transition-transform p-2 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+</button>
+</header>
+<!-- Main Content -->
+<main class="px-container-padding py-stack-md max-w-4xl mx-auto space-y-stack-md">
+<!-- Friend Requests Section -->
+<section class="space-y-stack-sm">
+<h2 class="font-monetary-md text-monetary-md text-on-surface-variant">Friend Requests</h2>
+<div class="glass-panel rounded-xl p-4 flex items-center justify-between gap-4">
+<div class="flex items-center gap-3 flex-1 min-w-0">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-surface-variant flex-shrink-0">
+<img alt="Rahul" class="w-full h-full object-cover" data-alt="A portrait of a smiling young man in a casual setting, illuminated by soft natural light. The background is a minimalist, slightly blurred urban environment. The color palette features neutral tones with a crisp white focus, fitting a modern light-mode design. The atmosphere is casual and positive." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgXA6c2DY9prZ-fIz-vbkyY2RcBq7FYzGAdBjkPw-iIyBwzN0MH0i6cFcDagbl-yNpcRlxIZqHFKb7XFrADV3XkkI2OX2K1ZPkMFs-rOK8-CWSZcsKhcawSpnTEZWQqfNUdnhaaRzbRZ2nY6HX2eafkdf74Qph1DDuDV9hclsjvKG_Swefi8Ap7kQPy8xim8kdLPyJd84GnT4elOtb9wxVQPlqrHtfRFcQvDzBDcLIk8fgj37RsWeL-zDKtpxNLmGK7AVGzZ_qwBsL"/>
+</div>
+<div class="truncate">
+<p class="font-monetary-md text-monetary-md text-on-surface truncate">Rahul</p>
+<p class="font-label-caps text-label-caps text-on-surface-variant/70 mt-1">wants to connect</p>
+</div>
+</div>
+<div class="flex items-center gap-2 flex-shrink-0">
+<button class="w-10 h-10 rounded-full bg-surface-variant text-on-surface hover:bg-surface-dim transition-colors flex items-center justify-center active:scale-95">
+<span class="material-symbols-outlined text-[20px]" data-icon="close">close</span>
+</button>
+<button class="w-10 h-10 rounded-full bg-primary text-on-primary hover:bg-primary/90 transition-colors flex items-center justify-center active:scale-95 shadow-md">
+<span class="material-symbols-outlined text-[20px]" data-icon="check">check</span>
+</button>
+</div>
+</div>
+</section>
+<!-- All Friends Section -->
+<section class="space-y-stack-sm">
+<h2 class="font-monetary-md text-monetary-md text-on-surface-variant">All Friends</h2>
+<div class="space-y-3">
+<!-- Friend 1: Owes you -->
+<div class="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/30 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex items-center justify-between gap-4">
+<div class="flex items-center gap-3 flex-1 min-w-0">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-surface-variant flex-shrink-0">
+<img alt="Safvan" class="w-full h-full object-cover" data-alt="A headshot of a confident person with a neutral expression, set against a clean white backdrop. The lighting is studio-quality and even, ensuring high clarity and contrast. The overall feel is modern, crisp, and suitable for a professional light-mode application." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBepli5MrPflqqH4owX4KtGvqAZ46j_J2DDnkIIcNmPtCBDMIDO7cnHt_y0MHR3lesmFFftD694Em2KCfyf8djm3zeMqTZBkSRESr8ijqVHJNdM63INo2E5Uu4_0vY9diAnDD-zSPMhGb3Dw6IaVkt8fokVfnC9onpIhFNn7jjVKGugkzC2WFfPpg_kNbRk-0mgiUzzBxA8xP4bjwkflROHrimvZBveUdLpklRF6BldHdEbYrlsMkPX7X58xfGoKAayLXcvb2v14Db0"/>
+</div>
+<div class="truncate">
+<p class="font-monetary-md text-monetary-md text-on-surface truncate">Safvan</p>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm truncate">owes you <span class="text-secondary font-semibold">₹250</span></p>
+</div>
+</div>
+</div>
+<!-- Friend 2: You owe -->
+<div class="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/30 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex items-center justify-between gap-4">
+<div class="flex items-center gap-3 flex-1 min-w-0">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-surface-variant flex-shrink-0">
+<img alt="Arjun" class="w-full h-full object-cover" data-alt="A bright portrait of an individual looking thoughtfully off-camera, with a soft, bright, and airy background. The lighting emphasizes a clean, modern aesthetic typical of a light-mode interface. The colors are muted but warm, conveying a sense of reliability and calm." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCaFPYAid-Cm_mRuPCGPdHBZCdI8QziOMKyggpqV0aSO4dWELVuiN1zyj0V1gl68mmrQhw9lXZrxTPk4HlksMiVj8mSozx0mZHBEj2zFVWH3oGxueatNbt1dxjmN3qA2Aq-P8PIqW6VkQjChcNXfLs6ct3rsF8taaAG6Bv8LU7mrna1hdUh-RBdi7xlAcrT53_tKT9SyDj8Y3wYqbXzzw9rS0S89JKdITuodfw-XWoua9kfpUWxECnCo1xol4uOZdBSw_q1YlAGAbub"/>
+</div>
+<div class="truncate">
+<p class="font-monetary-md text-monetary-md text-on-surface truncate">Arjun</p>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm truncate">you owe <span class="text-error font-semibold">₹500</span></p>
+</div>
+</div>
+</div>
+<!-- Friend 3: Settled -->
+<div class="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/30 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex items-center justify-between gap-4 opacity-70">
+<div class="flex items-center gap-3 flex-1 min-w-0">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-surface-variant flex-shrink-0 flex items-center justify-center text-on-surface-variant font-bold">
+                            M
+                        </div>
+<div class="truncate">
+<p class="font-monetary-md text-monetary-md text-on-surface truncate">Meera</p>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm truncate">Settled up</p>
+</div>
+</div>
+</div>
+<!-- Friend 4: Settled -->
+<div class="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/30 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex items-center justify-between gap-4 opacity-70">
+<div class="flex items-center gap-3 flex-1 min-w-0">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-surface-variant flex-shrink-0">
+<img alt="Priya" class="w-full h-full object-cover" data-alt="A portrait of a smiling woman in a brightly lit environment with a very subtle, soft-focus background. The composition is clean and minimalist, perfectly suited for a light-mode design system. The colors are natural and the overall mood is welcoming and clear." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBuP2aCCKf9boOzLjG6lSszZCtFqFXAfd5oUTCy7T-ceaz2SorcdfyVkUuWpp_gb6BO0pY88Hc4dpMmsm1yyrMfq-3TsQBflH5iTpkVSvjkLvyOR9XUvJmRfTHiZXAAsr2lNaqXKkP0zpV_dwNm-1ZUQS4Y3xByW0NGs3jFK-KvSNJDjDz42R5HneGed53xK7mRoCvSARWJR6BLnQ9E0kFAZ_7pFAS4tMKQyXr7b09FBkqJJhjA2f_l8qUf1IONs0bG1K9GrhHoM4-T"/>
+</div>
+<div class="truncate">
+<p class="font-monetary-md text-monetary-md text-on-surface truncate">Priya</p>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm truncate">Settled up</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Floating Action Button -->
+<button class="fixed bottom-20 md:bottom-8 right-container-padding w-14 h-14 bg-primary text-on-primary rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.15)] flex items-center justify-center hover:bg-primary/90 active:scale-90 transition-all duration-200 z-40">
+<span class="material-symbols-outlined text-[28px]" data-icon="add">add</span>
+</button>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-xl bg-surface/90 dark:bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_-4px_20px_rgba(0,0,0,0.04)] border-t border-outline-variant/20 flex justify-around items-center h-16 px-base md:hidden">
+<!-- Dashboard (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 dark:text-on-surface-variant hover:text-primary dark:hover:text-secondary-fixed active:scale-90 transition-all duration-200 w-16" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="dashboard">dashboard</span>
+<span class="font-label-caps text-label-caps">Dashboard</span>
+</a>
+<!-- Friends (Active) -->
+<a class="flex flex-col items-center justify-center text-primary dark:text-secondary-fixed-dim font-bold active:scale-90 transition-all duration-200 w-16" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="group" data-weight="fill" style="font-variation-settings: 'FILL' 1;">group</span>
+<span class="font-label-caps text-label-caps">Friends</span>
+</a>
+<!-- Groups (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 dark:text-on-surface-variant hover:text-primary dark:hover:text-secondary-fixed active:scale-90 transition-all duration-200 w-16" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="grid_view">grid_view</span>
+<span class="font-label-caps text-label-caps">Groups</span>
+</a>
+<!-- History (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 dark:text-on-surface-variant hover:text-primary dark:hover:text-secondary-fixed active:scale-90 transition-all duration-200 w-16" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="receipt_long">receipt_long</span>
+<span class="font-label-caps text-label-caps">History</span>
+</a>
+</nav>
+<!-- Desktop Sidebar placeholder (hidden on mobile, required for semantic structure if BottomNav is hidden on md) -->
+<aside class="hidden md:flex flex-col fixed left-0 top-16 bottom-0 w-64 bg-surface border-r border-outline-variant/20 p-4 z-40">
+<nav class="space-y-2 mt-8">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-variant/50 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-monetary-md text-monetary-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary-container text-on-primary-container font-semibold" href="#">
+<span class="material-symbols-outlined" data-icon="group" data-weight="fill" style="font-variation-settings: 'FILL' 1;">group</span>
+<span class="font-monetary-md text-monetary-md">Friends</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-variant/50 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+<span class="font-monetary-md text-monetary-md">Groups</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-variant/50 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
+<span class="font-monetary-md text-monetary-md">History</span>
+</a>
+</nav>
+</aside>
+</body></html>
