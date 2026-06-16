@@ -1,7 +1,7 @@
 import api from './client';
 import type {
   User, TokenResponse, Group, Expense, ExpenseCreate, ExpenseListResponse,
-  Settlement, BalanceDetail, Budget, Notification, DashboardData, NotificationListResponse, GroupListResponse, FriendListResponse
+  Settlement, BalanceDetail, Budget, DashboardData, NotificationListResponse, GroupListResponse, FriendListResponse
 } from '../types';
 
 // ─── Auth ──────────────────────────────────────────────────────────────
