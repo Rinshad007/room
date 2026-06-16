@@ -27,6 +27,7 @@ ENV/
 .coverage
 htmlcov/
 *.xml
+test_log.txt
 
 # Scratch / temp
 scratch/

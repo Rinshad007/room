@@ -13,11 +13,25 @@ def get_database_reference():
         loop = asyncio.get_event_loop_policy().get_event_loop()
         
     if loop not in _clients:
+        client_kwargs = {
+            "serverSelectionTimeoutMS": 5000,
+        }
+        
+        # Only enable TLS options if it's a TLS-enabled connection URI
+        is_tls = (
+            settings.DATABASE_URL.startswith("mongodb+srv://") or
+            "ssl=true" in settings.DATABASE_URL.lower() or
+            "tls=true" in settings.DATABASE_URL.lower()
+        )
+        if is_tls:
+            client_kwargs.update({
+                "tlsCAFile": certifi.where(),
+                "tlsAllowInvalidCertificates": True,  # Needed for OpenSSL 3.x on Render/Debian bookworm
+            })
+            
         _clients[loop] = AsyncIOMotorClient(
             settings.DATABASE_URL,
-            serverSelectionTimeoutMS=5000,
-            tlsCAFile=certifi.where(),
-            tlsAllowInvalidCertificates=True,  # Needed for OpenSSL 3.x on Render/Debian bookworm
+            **client_kwargs
         )
         
     db_name = "test_budget_buddy" if settings.APP_ENV == "testing" else "budget_buddy"
