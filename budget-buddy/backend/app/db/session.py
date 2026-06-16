@@ -16,7 +16,8 @@ def get_database_reference():
         _clients[loop] = AsyncIOMotorClient(
             settings.DATABASE_URL,
             serverSelectionTimeoutMS=5000,
-            tlsCAFile=certifi.where(),  # Fix SSL handshake on Debian/OpenSSL 3.x (Render)
+            tlsCAFile=certifi.where(),
+            tlsAllowInvalidCertificates=True,  # Needed for OpenSSL 3.x on Render/Debian bookworm
         )
         
     db_name = "test_budget_buddy" if settings.APP_ENV == "testing" else "budget_buddy"

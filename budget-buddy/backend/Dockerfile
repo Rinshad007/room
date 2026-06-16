@@ -1,12 +1,15 @@
-FROM python:3.11-slim
+FROM python:3.11-slim-bookworm
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies + fix OpenSSL 3.x TLS compatibility with MongoDB Atlas
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
-    libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && update-ca-certificates \
+    # Enable legacy TLS renegotiation required by some MongoDB Atlas configurations
+    && sed -i 's/^\[openssl_init\]/[openssl_init]\nssl_conf = ssl_sect\n\n[ssl_sect]\nsystem_default = system_default_sect\n\n[system_default_sect]\nOptions = UnsafeLegacyRenegotiation\n/' /etc/ssl/openssl.cnf || true
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
