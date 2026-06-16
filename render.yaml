@@ -5,7 +5,7 @@ services:
     rootDir: budget-buddy/backend
     dockerfilePath: ./Dockerfile
     plan: free
-    region: singapore   # closest to India — change if needed (oregon, frankfurt, ohio)
+    region: singapore
     healthCheckPath: /health
 
     envVars:
@@ -23,11 +23,9 @@ services:
         value: "7"
       - key: DEFAULT_CURRENCY
         value: INR
-
-      # ⚠️  Set these as SECRET values in the Render dashboard — do NOT hardcode here
       - key: SECRET_KEY
-        sync: false          # Render will prompt you to enter this securely
+        generateValue: true
       - key: DATABASE_URL
-        sync: false          # Your MongoDB Atlas connection string
+        value: ""
       - key: ALLOWED_ORIGINS
-        sync: false          # e.g. https://your-frontend.vercel.app
+        value: ""
