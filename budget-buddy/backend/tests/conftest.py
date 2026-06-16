@@ -10,6 +10,7 @@ async def _reset_db():
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
+    await async_engine.dispose()
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_database():
