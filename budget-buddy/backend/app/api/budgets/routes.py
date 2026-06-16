@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy.ext.asyncio import AsyncSession
+from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.api.auth.dependencies import CurrentUser
 from app.api.budgets.schemas import BudgetCreate, BudgetPublic, BudgetUpdate
@@ -15,7 +15,7 @@ router = APIRouter(prefix="/budgets", tags=["Budgets"])
 async def create_budget(
     data: BudgetCreate,
     current_user: CurrentUser,
-    db: Annotated[AsyncSession, Depends(get_db)],
+    db: Annotated[AsyncIOMotorDatabase, Depends(get_db)],
 ):
     service = BudgetService(db)
     return await service.create_budget(current_user, data)
@@ -24,7 +24,7 @@ async def create_budget(
 @router.get("/", response_model=list[BudgetPublic])
 async def list_budgets(
     current_user: CurrentUser,
-    db: Annotated[AsyncSession, Depends(get_db)],
+    db: Annotated[AsyncIOMotorDatabase, Depends(get_db)],
 ):
     service = BudgetService(db)
     return await service.list_budgets(current_user)
@@ -35,7 +35,7 @@ async def get_budget(
     month: int,
     year: int,
     current_user: CurrentUser,
-    db: Annotated[AsyncSession, Depends(get_db)],
+    db: Annotated[AsyncIOMotorDatabase, Depends(get_db)],
 ):
     service = BudgetService(db)
     return await service.get_budget(current_user, month, year)
@@ -47,7 +47,7 @@ async def update_budget(
     year: int,
     data: BudgetUpdate,
     current_user: CurrentUser,
-    db: Annotated[AsyncSession, Depends(get_db)],
+    db: Annotated[AsyncIOMotorDatabase, Depends(get_db)],
 ):
     service = BudgetService(db)
     return await service.update_budget(current_user, month, year, data)

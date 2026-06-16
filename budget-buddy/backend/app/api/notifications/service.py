@@ -1,4 +1,4 @@
-from sqlalchemy.ext.asyncio import AsyncSession
+from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.api.notifications.repository import NotificationRepository
 from app.api.notifications.schemas import NotificationListResponse, NotificationPublic
@@ -6,7 +6,7 @@ from app.models.user import User
 
 
 class NotificationService:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncIOMotorDatabase):
         self.repo = NotificationRepository(db)
 
     async def create(

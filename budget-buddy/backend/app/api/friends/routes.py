@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
+from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.api.auth.dependencies import CurrentUser
 from app.api.friends.schemas import (
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/friends", tags=["Friends"])
 async def send_friend_request(
     data: FriendRequestCreate,
     current_user: CurrentUser,
-    db: Annotated[AsyncSession, Depends(get_db)],
+    db: Annotated[AsyncIOMotorDatabase, Depends(get_db)],
 ):
     """Send a friend request to another user."""
     service = FriendService(db)
@@ -31,7 +31,7 @@ async def send_friend_request(
 async def accept_friend_request(
     friendship_id: str,
     current_user: CurrentUser,
-    db: Annotated[AsyncSession, Depends(get_db)],
+    db: Annotated[AsyncIOMotorDatabase, Depends(get_db)],
 ):
     """Accept a pending friend request."""
     service = FriendService(db)
@@ -42,7 +42,7 @@ async def accept_friend_request(
 async def reject_friend_request(
     friendship_id: str,
     current_user: CurrentUser,
-    db: Annotated[AsyncSession, Depends(get_db)],
+    db: Annotated[AsyncIOMotorDatabase, Depends(get_db)],
 ):
     """Reject a pending friend request."""
     service = FriendService(db)
@@ -53,7 +53,7 @@ async def reject_friend_request(
 async def remove_friend(
     friendship_id: str,
     current_user: CurrentUser,
-    db: Annotated[AsyncSession, Depends(get_db)],
+    db: Annotated[AsyncIOMotorDatabase, Depends(get_db)],
 ):
     """Remove a friend."""
     service = FriendService(db)
@@ -63,7 +63,7 @@ async def remove_friend(
 @router.get("/", response_model=FriendListResponse)
 async def list_friends(
     current_user: CurrentUser,
-    db: Annotated[AsyncSession, Depends(get_db)],
+    db: Annotated[AsyncIOMotorDatabase, Depends(get_db)],
 ):
     """List all accepted friends."""
     service = FriendService(db)
@@ -73,7 +73,7 @@ async def list_friends(
 @router.get("/pending", response_model=PendingRequestsResponse)
 async def pending_requests(
     current_user: CurrentUser,
-    db: Annotated[AsyncSession, Depends(get_db)],
+    db: Annotated[AsyncIOMotorDatabase, Depends(get_db)],
 ):
     """Get sent and received pending friend requests."""
     service = FriendService(db)
