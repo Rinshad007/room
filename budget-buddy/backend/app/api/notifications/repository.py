@@ -1,9 +1,11 @@
 from typing import Optional
+from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.notification import Notification
 
 class NotificationRepository:
-    def __init__(self, db):
-        self.collection = db["notifications"]
+    def __init__(self, db: AsyncSession):
+        self.db = db
 
     async def create(
         self, user_id: str, title: str, message: str, notification_type: str
@@ -14,24 +16,20 @@ class NotificationRepository:
             message=message,
             notification_type=notification_type,
         )
-        await self.collection.insert_one({
-            "_id": n.id,
-            "user_id": n.user_id,
-            "title": n.title,
-            "message": n.message,
-            "notification_type": n.notification_type,
-            "is_read": n.is_read,
-            "created_at": n.created_at
-        })
+        self.db.add(n)
+        await self.db.commit()
         return n
 
     async def get_user_notifications(self, user_id: str) -> list[Notification]:
-        cursor = self.collection.find({"user_id": user_id}).sort("created_at", -1).limit(50)
-        docs = await cursor.to_list(length=50)
-        return [Notification(**doc) for doc in docs]
+        stmt = select(Notification).where(Notification.user_id == user_id).order_by(Notification.created_at.desc()).limit(50)
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())
 
     async def mark_all_read(self, user_id: str) -> None:
-        await self.collection.update_many(
-            {"user_id": user_id, "is_read": False},
-            {"$set": {"is_read": True}}
+        stmt = (
+            update(Notification)
+            .where(Notification.user_id == user_id, Notification.is_read == False)
+            .values(is_read=True)
         )
+        await self.db.execute(stmt)
+        await self.db.commit()

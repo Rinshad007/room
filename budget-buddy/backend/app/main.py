@@ -20,27 +20,18 @@ from app.api.analytics.routes import router as analytics_router
 from app.api.notifications.routes import router as notifications_router
 
 
-from pymongo import ASCENDING
-from app.db.session import db
+from app.db.session import async_engine, Base
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(f"[START] {settings.APP_NAME} starting up...")
-    # Create indexes in MongoDB in background to avoid blocking server startup
-    async def create_indexes_bg():
-        try:
-            logger.info("Verifying and creating MongoDB indexes in background...")
-            await db["users"].create_index([("email", ASCENDING)], unique=True)
-            await db["friendships"].create_index([("sender_id", ASCENDING), ("receiver_id", ASCENDING)], unique=True)
-            await db["groups"].create_index([("members.user_id", ASCENDING)])
-            await db["expenses"].create_index([("paid_by", ASCENDING)])
-            await db["expenses"].create_index([("splits.user_id", ASCENDING)])
-            logger.info("MongoDB indexes verified and created.")
-        except Exception as e:
-            logger.error(f"Error creating MongoDB indexes (database may be unreachable): {e}")
-
-    import asyncio
-    asyncio.create_task(create_indexes_bg())
+    try:
+        logger.info("Verifying and creating PostgreSQL tables...")
+        async with async_engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("PostgreSQL tables verified and created.")
+    except Exception as e:
+        logger.error(f"Error creating database tables: {e}")
     yield
     logger.info(f"[STOP] {settings.APP_NAME} shutting down...")
 

@@ -16,7 +16,6 @@ def setup_logging() -> logging.Logger:
 
     # Suppress noisy loggers
     logging.getLogger("asyncio").setLevel(logging.WARNING)
-    logging.getLogger("pymongo").setLevel(logging.WARNING)
     logging.getLogger("sqlalchemy.engine").setLevel(
         logging.INFO if settings.DEBUG else logging.WARNING
     )

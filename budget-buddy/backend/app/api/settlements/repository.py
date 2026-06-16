@@ -1,10 +1,12 @@
 from datetime import datetime, timezone
 from typing import Optional
+from sqlalchemy import select, or_
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.settlement import Settlement
 
 class SettlementRepository:
-    def __init__(self, db):
-        self.collection = db["settlements"]
+    def __init__(self, db: AsyncSession):
+        self.db = db
 
     async def create(
         self,
@@ -20,38 +22,27 @@ class SettlementRepository:
             payment_method=payment_method,
             status="pending",
         )
-        await self.collection.insert_one({
-            "_id": s.id,
-            "payer_id": s.payer_id,
-            "receiver_id": s.receiver_id,
-            "amount": s.amount,
-            "payment_method": s.payment_method,
-            "status": s.status,
-            "settled_at": s.settled_at,
-            "created_at": s.created_at
-        })
+        self.db.add(s)
+        await self.db.commit()
         return s
 
     async def get_by_id(self, settlement_id: str) -> Optional[Settlement]:
-        doc = await self.collection.find_one({"_id": settlement_id})
-        return Settlement(**doc) if doc else None
+        return await self.db.get(Settlement, settlement_id)
 
     async def complete(self, settlement: Settlement) -> Settlement:
         settled_at = datetime.now(timezone.utc)
         settlement.status = "completed"
         settlement.settled_at = settled_at
-        await self.collection.update_one(
-            {"_id": settlement.id},
-            {"$set": {"status": "completed", "settled_at": settled_at}}
-        )
+        self.db.add(settlement)
+        await self.db.commit()
         return settlement
 
     async def get_user_settlements(self, user_id: str) -> list[Settlement]:
-        cursor = self.collection.find({
-            "$or": [
-                {"payer_id": user_id},
-                {"receiver_id": user_id}
-            ]
-        })
-        docs = await cursor.to_list(length=1000)
-        return [Settlement(**doc) for doc in docs]
+        stmt = select(Settlement).where(
+            or_(
+                Settlement.payer_id == user_id,
+                Settlement.receiver_id == user_id
+            )
+        )
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())

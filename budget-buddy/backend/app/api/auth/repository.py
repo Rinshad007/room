@@ -1,27 +1,22 @@
 from typing import Optional
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.user import User
 
 class AuthRepository:
-    def __init__(self, db):
-        self.collection = db["users"]
+    def __init__(self, db: AsyncSession):
+        self.db = db
 
     async def get_by_email(self, email: str) -> Optional[User]:
-        doc = await self.collection.find_one({"email": email})
-        return User(**doc) if doc else None
+        stmt = select(User).where(User.email == email)
+        result = await self.db.execute(stmt)
+        return result.scalars().first()
 
     async def get_by_id(self, user_id: str) -> Optional[User]:
-        doc = await self.collection.find_one({"_id": user_id})
-        return User(**doc) if doc else None
+        return await self.db.get(User, user_id)
 
     async def create(self, name: str, email: str, password_hash: str) -> User:
         user = User(name=name, email=email, password_hash=password_hash)
-        await self.collection.insert_one({
-            "_id": user.id,
-            "name": user.name,
-            "email": user.email,
-            "password_hash": user.password_hash,
-            "avatar_url": user.avatar_url,
-            "created_at": user.created_at,
-            "updated_at": user.updated_at
-        })
+        self.db.add(user)
+        await self.db.commit()
         return user

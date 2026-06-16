@@ -1,86 +1,49 @@
 from datetime import datetime, timezone
 from typing import Optional
+from sqlalchemy import select, func, extract
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.budget import Budget
+from app.models.expense import Expense, ExpenseSplit
 
 class BudgetRepository:
-    def __init__(self, db):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.collection = db["budgets"]
 
     async def create(self, user_id: str, month: int, year: int, amount: float) -> Budget:
         budget = Budget(user_id=user_id, month=month, year=year, amount=amount)
-        await self.collection.insert_one({
-            "_id": budget.id,
-            "user_id": budget.user_id,
-            "month": budget.month,
-            "year": budget.year,
-            "amount": budget.amount,
-            "created_at": budget.created_at,
-            "updated_at": budget.updated_at
-        })
+        self.db.add(budget)
+        await self.db.commit()
         return budget
 
     async def get_by_month(self, user_id: str, month: int, year: int) -> Optional[Budget]:
-        doc = await self.collection.find_one({"user_id": user_id, "month": month, "year": year})
-        return Budget(**doc) if doc else None
+        stmt = select(Budget).where(Budget.user_id == user_id, Budget.month == month, Budget.year == year)
+        result = await self.db.execute(stmt)
+        return result.scalars().first()
 
     async def get_all(self, user_id: str) -> list[Budget]:
-        cursor = self.collection.find({"user_id": user_id}).sort([("year", -1), ("month", -1)])
-        docs = await cursor.to_list(length=1000)
-        return [Budget(**doc) for doc in docs]
+        stmt = select(Budget).where(Budget.user_id == user_id).order_by(Budget.year.desc(), Budget.month.desc())
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())
 
     async def update(self, budget: Budget, amount: float) -> Budget:
         budget.amount = amount
-        await self.collection.update_one(
-            {"_id": budget.id},
-            {"$set": {"amount": amount, "updated_at": datetime.now(timezone.utc)}}
-        )
+        budget.updated_at = datetime.now(timezone.utc)
+        self.db.add(budget)
+        await self.db.commit()
         return budget
 
     async def get_monthly_spent(self, user_id: str, month: int, year: int) -> float:
         """Sum of expense splits share_amount for given month (accepted splits only)."""
-        pipeline = [
-            {
-                "$match": {
-                    "splits": {
-                        "$elemMatch": {
-                            "user_id": user_id,
-                            "status": "accepted"
-                        }
-                    }
-                }
-            },
-            {
-                "$project": {
-                    "year": {"$year": "$expense_date"},
-                    "month": {"$month": "$expense_date"},
-                    "splits": 1
-                }
-            },
-            {
-                "$match": {
-                    "year": year,
-                    "month": month
-                }
-            },
-            {
-                "$unwind": "$splits"
-            },
-            {
-                "$match": {
-                    "splits.user_id": user_id,
-                    "splits.status": "accepted"
-                }
-            },
-            {
-                "$group": {
-                    "_id": None,
-                    "total": {"$sum": "$splits.share_amount"}
-                }
-            }
-        ]
-        cursor = self.db["expenses"].aggregate(pipeline)
-        result = await cursor.to_list(length=1)
-        if result:
-            return float(result[0]["total"])
-        return 0.0
+        stmt = (
+            select(func.sum(ExpenseSplit.share_amount))
+            .join(Expense)
+            .where(
+                ExpenseSplit.user_id == user_id,
+                ExpenseSplit.status == "accepted",
+                extract("month", Expense.expense_date) == month,
+                extract("year", Expense.expense_date) == year
+            )
+        )
+        result = await self.db.execute(stmt)
+        val = result.scalar()
+        return float(val) if val is not None else 0.0

@@ -24,6 +24,14 @@ services:
       - key: SECRET_KEY
         value: please-update-in-dashboard
       - key: DATABASE_URL
-        value: please-update-in-dashboard
+        fromDatabase:
+          name: budget-buddy-db
+          property: connectionString
       - key: ALLOWED_ORIGINS
         value: please-update-in-dashboard
+
+databases:
+  - name: budget-buddy-db
+    plan: free
+    databaseName: budget_buddy
+    user: budgetbuddy
