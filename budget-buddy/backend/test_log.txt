@@ -1,0 +1,900 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.13, pytest-9.1.0, pluggy-1.6.0
+rootdir: /home/runner/work/room/room/budget-buddy/backend
+plugins: asyncio-1.4.0, anyio-4.14.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 4 items
+
+tests/test_auth.py .FF                                                   [ 75%]
+tests/test_dashboard.py F                                                [100%]
+
+=================================== FAILURES ===================================
+___________________________ test_register_and_login ____________________________
+
+    @pytest.mark.asyncio
+    async def test_register_and_login():
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            # Register
+>           register_resp = await client.post(
+                "/api/v1/auth/register",
+                json={"name": "Test User", "email": "test@example.com", "password": "Test1234"},
+            )
+
+tests/test_auth.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/httpx/_client.py:1859: in post
+    return await self.request(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/httpx/_client.py:1540: in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/httpx/_client.py:1629: in send
+    response = await self._send_handling_auth(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/httpx/_client.py:1657: in _send_handling_auth
+    response = await self._send_handling_redirects(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/httpx/_client.py:1694: in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/httpx/_client.py:1730: in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/httpx/_transports/asgi.py:170: in handle_async_request
+    await self.app(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/applications.py:1162: in __call__
+    await super().__call__(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/middleware/cors.py:88: in __call__
+    await self.app(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/routing.py:680: in app
+    await route.handle(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py:1609: in handle
+    await self.original_router.handle(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py:2047: in handle
+    await included_router._handle_selected(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py:1629: in _handle_selected
+    await original_route.handle(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py:1218: in handle
+    await app(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py:143: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py:129: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py:683: in app
+    raw_response = await run_endpoint_function(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py:337: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app/api/auth/routes.py:27: in register
+    return await service.register(data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app/api/auth/service.py:22: in register
+    existing = await self.repo.get_by_email(data.email)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app/api/auth/repository.py:9: in get_by_email
+    doc = await self.collection.find_one({"email": email})
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/concurrent/futures/thread.py:59: in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/collection.py:1754: in find_one
+    for result in cursor.limit(-1):
+                  ^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/cursor.py:1166: in __next__
+    return self.next()
+           ^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/cursor.py:1142: in next
+    if len(self._data) or self._refresh():
+                          ^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/cursor.py:1090: in _refresh
+    self._send_message(q)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/cursor.py:985: in _send_message
+    response = client._run_operation(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/_csot.py:125: in csot_wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py:1956: in _run_operation
+    return self._retryable_read(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py:2076: in _retryable_read
+    return self._retry_internal(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/_csot.py:125: in csot_wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py:2038: in _retry_internal
+    ).run()
+      ^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py:2811: in run
+    res = self._read() if self._is_read else self._write()
+          ^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py:3027: in _read
+    self._server = self._get_server()
+                   ^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py:2975: in _get_server
+    return self._client._select_server(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py:1851: in _select_server
+    server = topology.select_server(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/topology.py:428: in select_server
+    server = self._select_server(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/topology.py:402: in _select_server
+    servers = self.select_servers(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/topology.py:298: in select_servers
+    server_descriptions = self._select_servers_loop(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Topology <TopologyDescription id: 6a310d73f6c7b31ca8136b24, topology_type: Unknown, servers: [<ServerDescription ('12...iolation of protocol (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>>
+selector = Primary(), timeout = 5.0, operation = 'find', operation_id = None
+address = None, deprioritized_servers = []
+
+    def _select_servers_loop(
+        self,
+        selector: Callable[[Selection], Selection],
+        timeout: float,
+        operation: str,
+        operation_id: Optional[int],
+        address: Optional[_Address],
+        deprioritized_servers: Optional[list[Server]] = None,
+    ) -> list[ServerDescription]:
+        """select_servers() guts. Hold the lock when calling this."""
+        now = time.monotonic()
+        end_time = now + timeout
+        logged_waiting = False
+    
+        if _SERVER_SELECTION_LOGGER.isEnabledFor(logging.DEBUG):
+            _debug_log(
+                _SERVER_SELECTION_LOGGER,
+                message=_ServerSelectionStatusMessage.STARTED,
+                selector=selector,
+                operation=operation,
+                operationId=operation_id,
+                topologyDescription=self.description,
+                clientId=self.description._topology_settings._topology_id,
+            )
+    
+        server_descriptions = self._description.apply_selector(
+            selector,
+            address,
+            custom_selector=self._settings.server_selector,
+            deprioritized_servers=[server.description for server in deprioritized_servers]
+            if deprioritized_servers
+            else None,
+        )
+    
+        while not server_descriptions:
+            # No suitable servers.
+            if timeout == 0 or now > end_time:
+                if _SERVER_SELECTION_LOGGER.isEnabledFor(logging.DEBUG):
+                    _debug_log(
+                        _SERVER_SELECTION_LOGGER,
+                        message=_ServerSelectionStatusMessage.FAILED,
+                        selector=selector,
+                        operation=operation,
+                        operationId=operation_id,
+                        topologyDescription=self.description,
+                        clientId=self.description._topology_settings._topology_id,
+                        failure=self._error_message(selector),
+                    )
+>               raise ServerSelectionTimeoutError(
+                    f"{self._error_message(selector)}, Timeout: {timeout}s, Topology Description: {self.description!r}"
+                )
+E               pymongo.errors.ServerSelectionTimeoutError: SSL handshake failed: 127.0.0.1:27017: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 5.0s, Topology Description: <TopologyDescription id: 6a310d73f6c7b31ca8136b24, topology_type: Unknown, servers: [<ServerDescription ('127.0.0.1', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('SSL handshake failed: 127.0.0.1:27017: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>
+
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/topology.py:359: ServerSelectionTimeoutError
+------------------------------ Captured log call -------------------------------
+ERROR    Budget Buddy:main.py:82 Unhandled error: SSL handshake failed: 127.0.0.1:27017: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 5.0s, Topology Description: <TopologyDescription id: 6a310d73f6c7b31ca8136b24, topology_type: Unknown, servers: [<ServerDescription ('127.0.0.1', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('SSL handshake failed: 127.0.0.1:27017: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py", line 1609, in handle
+    await self.original_router.handle(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py", line 2047, in handle
+    await included_router._handle_selected(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py", line 1629, in _handle_selected
+    await original_route.handle(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py", line 1218, in handle
+    await app(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py", line 143, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py", line 129, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py", line 683, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py", line 337, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/room/room/budget-buddy/backend/app/api/auth/routes.py", line 27, in register
+    return await service.register(data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/room/room/budget-buddy/backend/app/api/auth/service.py", line 22, in register
+    existing = await self.repo.get_by_email(data.email)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/room/room/budget-buddy/backend/app/api/auth/repository.py", line 9, in get_by_email
+    doc = await self.collection.find_one({"email": email})
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/concurrent/futures/thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/collection.py", line 1754, in find_one
+    for result in cursor.limit(-1):
+                  ^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/cursor.py", line 1166, in __next__
+    return self.next()
+           ^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/cursor.py", line 1142, in next
+    if len(self._data) or self._refresh():
+                          ^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/cursor.py", line 1090, in _refresh
+    self._send_message(q)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/cursor.py", line 985, in _send_message
+    response = client._run_operation(
+               ^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/_csot.py", line 125, in csot_wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 1956, in _run_operation
+    return self._retryable_read(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2076, in _retryable_read
+    return self._retry_internal(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/_csot.py", line 125, in csot_wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2038, in _retry_internal
+    ).run()
+      ^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2811, in run
+    res = self._read() if self._is_read else self._write()
+          ^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 3027, in _read
+    self._server = self._get_server()
+                   ^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2975, in _get_server
+    return self._client._select_server(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 1851, in _select_server
+    server = topology.select_server(
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/topology.py", line 428, in select_server
+    server = self._select_server(
+             ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/topology.py", line 402, in _select_server
+    servers = self.select_servers(
+              ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/topology.py", line 298, in select_servers
+    server_descriptions = self._select_servers_loop(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/topology.py", line 359, in _select_servers_loop
+    raise ServerSelectionTimeoutError(
+pymongo.errors.ServerSelectionTimeoutError: SSL handshake failed: 127.0.0.1:27017: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 5.0s, Topology Description: <TopologyDescription id: 6a310d73f6c7b31ca8136b24, topology_type: Unknown, servers: [<ServerDescription ('127.0.0.1', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('SSL handshake failed: 127.0.0.1:27017: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>
+__________________________ test_login_wrong_password ___________________________
+
+    @pytest.mark.asyncio
+    async def test_login_wrong_password():
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+>           resp = await client.post(
+                "/api/v1/auth/login",
+                json={"email": "test@example.com", "password": "WrongPass999"},
+            )
+
+tests/test_auth.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/httpx/_client.py:1859: in post
+    return await self.request(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/httpx/_client.py:1540: in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/httpx/_client.py:1629: in send
+    response = await self._send_handling_auth(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/httpx/_client.py:1657: in _send_handling_auth
+    response = await self._send_handling_redirects(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/httpx/_client.py:1694: in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/httpx/_client.py:1730: in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/httpx/_transports/asgi.py:170: in handle_async_request
+    await self.app(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/applications.py:1162: in __call__
+    await super().__call__(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/middleware/cors.py:88: in __call__
+    await self.app(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/routing.py:680: in app
+    await route.handle(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py:1609: in handle
+    await self.original_router.handle(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py:2047: in handle
+    await included_router._handle_selected(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py:1629: in _handle_selected
+    await original_route.handle(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py:1218: in handle
+    await app(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py:143: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py:129: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py:683: in app
+    raw_response = await run_endpoint_function(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py:337: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app/api/auth/routes.py:37: in login
+    return await service.login(data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+app/api/auth/service.py:33: in login
+    user = await self.repo.get_by_email(data.email)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app/api/auth/repository.py:9: in get_by_email
+    doc = await self.collection.find_one({"email": email})
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/concurrent/futures/thread.py:59: in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/collection.py:1754: in find_one
+    for result in cursor.limit(-1):
+                  ^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/cursor.py:1166: in __next__
+    return self.next()
+           ^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/cursor.py:1142: in next
+    if len(self._data) or self._refresh():
+                          ^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/cursor.py:1090: in _refresh
+    self._send_message(q)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/cursor.py:985: in _send_message
+    response = client._run_operation(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/_csot.py:125: in csot_wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py:1956: in _run_operation
+    return self._retryable_read(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py:2076: in _retryable_read
+    return self._retry_internal(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/_csot.py:125: in csot_wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py:2038: in _retry_internal
+    ).run()
+      ^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py:2811: in run
+    res = self._read() if self._is_read else self._write()
+          ^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py:3027: in _read
+    self._server = self._get_server()
+                   ^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py:2975: in _get_server
+    return self._client._select_server(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py:1851: in _select_server
+    server = topology.select_server(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/topology.py:428: in select_server
+    server = self._select_server(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/topology.py:402: in _select_server
+    servers = self.select_servers(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/topology.py:298: in select_servers
+    server_descriptions = self._select_servers_loop(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Topology <TopologyDescription id: 6a310d78f6c7b31ca8136b25, topology_type: Unknown, servers: [<ServerDescription ('12...iolation of protocol (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>>
+selector = Primary(), timeout = 5.0, operation = 'find', operation_id = None
+address = None, deprioritized_servers = []
+
+    def _select_servers_loop(
+        self,
+        selector: Callable[[Selection], Selection],
+        timeout: float,
+        operation: str,
+        operation_id: Optional[int],
+        address: Optional[_Address],
+        deprioritized_servers: Optional[list[Server]] = None,
+    ) -> list[ServerDescription]:
+        """select_servers() guts. Hold the lock when calling this."""
+        now = time.monotonic()
+        end_time = now + timeout
+        logged_waiting = False
+    
+        if _SERVER_SELECTION_LOGGER.isEnabledFor(logging.DEBUG):
+            _debug_log(
+                _SERVER_SELECTION_LOGGER,
+                message=_ServerSelectionStatusMessage.STARTED,
+                selector=selector,
+                operation=operation,
+                operationId=operation_id,
+                topologyDescription=self.description,
+                clientId=self.description._topology_settings._topology_id,
+            )
+    
+        server_descriptions = self._description.apply_selector(
+            selector,
+            address,
+            custom_selector=self._settings.server_selector,
+            deprioritized_servers=[server.description for server in deprioritized_servers]
+            if deprioritized_servers
+            else None,
+        )
+    
+        while not server_descriptions:
+            # No suitable servers.
+            if timeout == 0 or now > end_time:
+                if _SERVER_SELECTION_LOGGER.isEnabledFor(logging.DEBUG):
+                    _debug_log(
+                        _SERVER_SELECTION_LOGGER,
+                        message=_ServerSelectionStatusMessage.FAILED,
+                        selector=selector,
+                        operation=operation,
+                        operationId=operation_id,
+                        topologyDescription=self.description,
+                        clientId=self.description._topology_settings._topology_id,
+                        failure=self._error_message(selector),
+                    )
+>               raise ServerSelectionTimeoutError(
+                    f"{self._error_message(selector)}, Timeout: {timeout}s, Topology Description: {self.description!r}"
+                )
+E               pymongo.errors.ServerSelectionTimeoutError: SSL handshake failed: 127.0.0.1:27017: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 5.0s, Topology Description: <TopologyDescription id: 6a310d78f6c7b31ca8136b25, topology_type: Unknown, servers: [<ServerDescription ('127.0.0.1', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('SSL handshake failed: 127.0.0.1:27017: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>
+
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/topology.py:359: ServerSelectionTimeoutError
+------------------------------ Captured log call -------------------------------
+ERROR    Budget Buddy:main.py:82 Unhandled error: SSL handshake failed: 127.0.0.1:27017: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 5.0s, Topology Description: <TopologyDescription id: 6a310d78f6c7b31ca8136b25, topology_type: Unknown, servers: [<ServerDescription ('127.0.0.1', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('SSL handshake failed: 127.0.0.1:27017: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py", line 1609, in handle
+    await self.original_router.handle(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py", line 2047, in handle
+    await included_router._handle_selected(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py", line 1629, in _handle_selected
+    await original_route.handle(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py", line 1218, in handle
+    await app(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py", line 143, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py", line 129, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py", line 683, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py", line 337, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/room/room/budget-buddy/backend/app/api/auth/routes.py", line 37, in login
+    return await service.login(data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/room/room/budget-buddy/backend/app/api/auth/service.py", line 33, in login
+    user = await self.repo.get_by_email(data.email)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/room/room/budget-buddy/backend/app/api/auth/repository.py", line 9, in get_by_email
+    doc = await self.collection.find_one({"email": email})
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/concurrent/futures/thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/collection.py", line 1754, in find_one
+    for result in cursor.limit(-1):
+                  ^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/cursor.py", line 1166, in __next__
+    return self.next()
+           ^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/cursor.py", line 1142, in next
+    if len(self._data) or self._refresh():
+                          ^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/cursor.py", line 1090, in _refresh
+    self._send_message(q)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/cursor.py", line 985, in _send_message
+    response = client._run_operation(
+               ^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/_csot.py", line 125, in csot_wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 1956, in _run_operation
+    return self._retryable_read(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2076, in _retryable_read
+    return self._retry_internal(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/_csot.py", line 125, in csot_wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2038, in _retry_internal
+    ).run()
+      ^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2811, in run
+    res = self._read() if self._is_read else self._write()
+          ^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 3027, in _read
+    self._server = self._get_server()
+                   ^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2975, in _get_server
+    return self._client._select_server(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 1851, in _select_server
+    server = topology.select_server(
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/topology.py", line 428, in select_server
+    server = self._select_server(
+             ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/topology.py", line 402, in _select_server
+    servers = self.select_servers(
+              ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/topology.py", line 298, in select_servers
+    server_descriptions = self._select_servers_loop(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/topology.py", line 359, in _select_servers_loop
+    raise ServerSelectionTimeoutError(
+pymongo.errors.ServerSelectionTimeoutError: SSL handshake failed: 127.0.0.1:27017: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 5.0s, Topology Description: <TopologyDescription id: 6a310d78f6c7b31ca8136b25, topology_type: Unknown, servers: [<ServerDescription ('127.0.0.1', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('SSL handshake failed: 127.0.0.1:27017: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>
+_____________________________ test_dashboard_flow ______________________________
+
+    @pytest.mark.asyncio
+    async def test_dashboard_flow():
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            # Register user 1
+>           reg1_resp = await client.post(
+                "/api/v1/auth/register",
+                json={"name": "Alice", "email": "alice@example.com", "password": "Password123"},
+            )
+
+tests/test_dashboard.py:9: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/httpx/_client.py:1859: in post
+    return await self.request(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/httpx/_client.py:1540: in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/httpx/_client.py:1629: in send
+    response = await self._send_handling_auth(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/httpx/_client.py:1657: in _send_handling_auth
+    response = await self._send_handling_redirects(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/httpx/_client.py:1694: in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/httpx/_client.py:1730: in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/httpx/_transports/asgi.py:170: in handle_async_request
+    await self.app(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/applications.py:1162: in __call__
+    await super().__call__(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/middleware/cors.py:88: in __call__
+    await self.app(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/routing.py:680: in app
+    await route.handle(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py:1609: in handle
+    await self.original_router.handle(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py:2047: in handle
+    await included_router._handle_selected(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py:1629: in _handle_selected
+    await original_route.handle(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py:1218: in handle
+    await app(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py:143: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py:129: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py:683: in app
+    raw_response = await run_endpoint_function(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py:337: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app/api/auth/routes.py:27: in register
+    return await service.register(data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app/api/auth/service.py:22: in register
+    existing = await self.repo.get_by_email(data.email)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app/api/auth/repository.py:9: in get_by_email
+    doc = await self.collection.find_one({"email": email})
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/concurrent/futures/thread.py:59: in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/collection.py:1754: in find_one
+    for result in cursor.limit(-1):
+                  ^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/cursor.py:1166: in __next__
+    return self.next()
+           ^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/cursor.py:1142: in next
+    if len(self._data) or self._refresh():
+                          ^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/cursor.py:1090: in _refresh
+    self._send_message(q)
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/cursor.py:985: in _send_message
+    response = client._run_operation(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/_csot.py:125: in csot_wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py:1956: in _run_operation
+    return self._retryable_read(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py:2076: in _retryable_read
+    return self._retry_internal(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/_csot.py:125: in csot_wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py:2038: in _retry_internal
+    ).run()
+      ^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py:2811: in run
+    res = self._read() if self._is_read else self._write()
+          ^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py:3027: in _read
+    self._server = self._get_server()
+                   ^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py:2975: in _get_server
+    return self._client._select_server(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py:1851: in _select_server
+    server = topology.select_server(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/topology.py:428: in select_server
+    server = self._select_server(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/topology.py:402: in _select_server
+    servers = self.select_servers(
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/topology.py:298: in select_servers
+    server_descriptions = self._select_servers_loop(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Topology <TopologyDescription id: 6a310d7ef6c7b31ca8136b26, topology_type: Unknown, servers: [<ServerDescription ('12...iolation of protocol (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>>
+selector = Primary(), timeout = 5.0, operation = 'find', operation_id = None
+address = None, deprioritized_servers = []
+
+    def _select_servers_loop(
+        self,
+        selector: Callable[[Selection], Selection],
+        timeout: float,
+        operation: str,
+        operation_id: Optional[int],
+        address: Optional[_Address],
+        deprioritized_servers: Optional[list[Server]] = None,
+    ) -> list[ServerDescription]:
+        """select_servers() guts. Hold the lock when calling this."""
+        now = time.monotonic()
+        end_time = now + timeout
+        logged_waiting = False
+    
+        if _SERVER_SELECTION_LOGGER.isEnabledFor(logging.DEBUG):
+            _debug_log(
+                _SERVER_SELECTION_LOGGER,
+                message=_ServerSelectionStatusMessage.STARTED,
+                selector=selector,
+                operation=operation,
+                operationId=operation_id,
+                topologyDescription=self.description,
+                clientId=self.description._topology_settings._topology_id,
+            )
+    
+        server_descriptions = self._description.apply_selector(
+            selector,
+            address,
+            custom_selector=self._settings.server_selector,
+            deprioritized_servers=[server.description for server in deprioritized_servers]
+            if deprioritized_servers
+            else None,
+        )
+    
+        while not server_descriptions:
+            # No suitable servers.
+            if timeout == 0 or now > end_time:
+                if _SERVER_SELECTION_LOGGER.isEnabledFor(logging.DEBUG):
+                    _debug_log(
+                        _SERVER_SELECTION_LOGGER,
+                        message=_ServerSelectionStatusMessage.FAILED,
+                        selector=selector,
+                        operation=operation,
+                        operationId=operation_id,
+                        topologyDescription=self.description,
+                        clientId=self.description._topology_settings._topology_id,
+                        failure=self._error_message(selector),
+                    )
+>               raise ServerSelectionTimeoutError(
+                    f"{self._error_message(selector)}, Timeout: {timeout}s, Topology Description: {self.description!r}"
+                )
+E               pymongo.errors.ServerSelectionTimeoutError: SSL handshake failed: 127.0.0.1:27017: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 5.0s, Topology Description: <TopologyDescription id: 6a310d7ef6c7b31ca8136b26, topology_type: Unknown, servers: [<ServerDescription ('127.0.0.1', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('SSL handshake failed: 127.0.0.1:27017: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>
+
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/topology.py:359: ServerSelectionTimeoutError
+------------------------------ Captured log call -------------------------------
+ERROR    Budget Buddy:main.py:82 Unhandled error: SSL handshake failed: 127.0.0.1:27017: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 5.0s, Topology Description: <TopologyDescription id: 6a310d7ef6c7b31ca8136b26, topology_type: Unknown, servers: [<ServerDescription ('127.0.0.1', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('SSL handshake failed: 127.0.0.1:27017: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py", line 1609, in handle
+    await self.original_router.handle(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py", line 2047, in handle
+    await included_router._handle_selected(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py", line 1629, in _handle_selected
+    await original_route.handle(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py", line 1218, in handle
+    await app(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py", line 143, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py", line 129, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py", line 683, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/fastapi/routing.py", line 337, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/room/room/budget-buddy/backend/app/api/auth/routes.py", line 27, in register
+    return await service.register(data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/room/room/budget-buddy/backend/app/api/auth/service.py", line 22, in register
+    existing = await self.repo.get_by_email(data.email)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/room/room/budget-buddy/backend/app/api/auth/repository.py", line 9, in get_by_email
+    doc = await self.collection.find_one({"email": email})
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/concurrent/futures/thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/collection.py", line 1754, in find_one
+    for result in cursor.limit(-1):
+                  ^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/cursor.py", line 1166, in __next__
+    return self.next()
+           ^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/cursor.py", line 1142, in next
+    if len(self._data) or self._refresh():
+                          ^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/cursor.py", line 1090, in _refresh
+    self._send_message(q)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/cursor.py", line 985, in _send_message
+    response = client._run_operation(
+               ^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/_csot.py", line 125, in csot_wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 1956, in _run_operation
+    return self._retryable_read(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2076, in _retryable_read
+    return self._retry_internal(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/_csot.py", line 125, in csot_wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2038, in _retry_internal
+    ).run()
+      ^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2811, in run
+    res = self._read() if self._is_read else self._write()
+          ^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 3027, in _read
+    self._server = self._get_server()
+                   ^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 2975, in _get_server
+    return self._client._select_server(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/mongo_client.py", line 1851, in _select_server
+    server = topology.select_server(
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/topology.py", line 428, in select_server
+    server = self._select_server(
+             ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/topology.py", line 402, in _select_server
+    servers = self.select_servers(
+              ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/topology.py", line 298, in select_servers
+    server_descriptions = self._select_servers_loop(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/site-packages/pymongo/synchronous/topology.py", line 359, in _select_servers_loop
+    raise ServerSelectionTimeoutError(
+pymongo.errors.ServerSelectionTimeoutError: SSL handshake failed: 127.0.0.1:27017: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 5.0s, Topology Description: <TopologyDescription id: 6a310d7ef6c7b31ca8136b26, topology_type: Unknown, servers: [<ServerDescription ('127.0.0.1', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('SSL handshake failed: 127.0.0.1:27017: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>
+=========================== short test summary info ============================
+FAILED tests/test_auth.py::test_register_and_login - pymongo.errors.ServerSelectionTimeoutError: SSL handshake failed: 127.0.0.1:27017: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 5.0s, Topology Description: <TopologyDescription id: 6a310d73f6c7b31ca8136b24, topology_type: Unknown, servers: [<ServerDescription ('127.0.0.1', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('SSL handshake failed: 127.0.0.1:27017: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>
+FAILED tests/test_auth.py::test_login_wrong_password - pymongo.errors.ServerSelectionTimeoutError: SSL handshake failed: 127.0.0.1:27017: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 5.0s, Topology Description: <TopologyDescription id: 6a310d78f6c7b31ca8136b25, topology_type: Unknown, servers: [<ServerDescription ('127.0.0.1', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('SSL handshake failed: 127.0.0.1:27017: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>
+FAILED tests/test_dashboard.py::test_dashboard_flow - pymongo.errors.ServerSelectionTimeoutError: SSL handshake failed: 127.0.0.1:27017: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms), Timeout: 5.0s, Topology Description: <TopologyDescription id: 6a310d7ef6c7b31ca8136b26, topology_type: Unknown, servers: [<ServerDescription ('127.0.0.1', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('SSL handshake failed: 127.0.0.1:27017: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010) (configured timeouts: socketTimeoutMS: 20000.0ms, connectTimeoutMS: 20000.0ms)')>]>
+========================= 3 failed, 1 passed in 17.05s =========================
