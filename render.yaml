@@ -1,13 +1,11 @@
 services:
   - type: web
     name: budget-buddy-backend
-    runtime: docker
-    rootDir: budget-buddy/backend
-    dockerfilePath: ./Dockerfile
     plan: free
     region: singapore
+    rootDir: budget-buddy/backend
+    dockerfile: ./Dockerfile
     healthCheckPath: /health
-
     envVars:
       - key: APP_NAME
         value: Budget Buddy
@@ -24,8 +22,8 @@ services:
       - key: DEFAULT_CURRENCY
         value: INR
       - key: SECRET_KEY
-        generateValue: true
+        value: please-update-in-dashboard
       - key: DATABASE_URL
-        value: ""
+        value: please-update-in-dashboard
       - key: ALLOWED_ORIGINS
-        value: ""
+        value: please-update-in-dashboard
