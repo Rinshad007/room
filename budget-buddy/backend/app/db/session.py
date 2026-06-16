@@ -1,4 +1,5 @@
 import asyncio
+import certifi
 from motor.motor_asyncio import AsyncIOMotorClient
 from app.core.config import settings
 
@@ -12,7 +13,11 @@ def get_database_reference():
         loop = asyncio.get_event_loop_policy().get_event_loop()
         
     if loop not in _clients:
-        _clients[loop] = AsyncIOMotorClient(settings.DATABASE_URL, serverSelectionTimeoutMS=3000)
+        _clients[loop] = AsyncIOMotorClient(
+            settings.DATABASE_URL,
+            serverSelectionTimeoutMS=5000,
+            tlsCAFile=certifi.where(),  # Fix SSL handshake on Debian/OpenSSL 3.x (Render)
+        )
         
     db_name = "test_budget_buddy" if settings.APP_ENV == "testing" else "budget_buddy"
     return _clients[loop].get_database(db_name)
