@@ -30,6 +30,8 @@ jobs:
 
   backend-tests:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     services:
       mongodb:
@@ -65,5 +67,15 @@ jobs:
           SECRET_KEY: test-secret-key-for-ci-pipeline-runs-must-be-long-enough-32-chars
           APP_ENV: testing
           ALLOWED_ORIGINS: http://localhost:3000,http://localhost:5173
-        run: pytest tests/
+        run: |
+          pytest tests/ > test_log.txt 2>&1
         working-directory: budget-buddy/backend
+
+      - name: Commit and push logs on failure
+        if: failure()
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add budget-buddy/backend/test_log.txt
+          git commit -m "ci: save backend test logs on failure"
+          git push origin main
