@@ -28,7 +28,15 @@ class ExpenseRepository:
         return split
 
     async def get_by_id(self, expense_id: str) -> Optional[Expense]:
-        return await self.db.get(Expense, expense_id)
+        from sqlalchemy.orm import selectinload
+        self.db.expire_all()
+        stmt = (
+            select(Expense)
+            .where(Expense.id == expense_id)
+            .options(selectinload(Expense.splits))
+        )
+        result = await self.db.execute(stmt)
+        return result.scalars().first()
 
     async def get_user_expenses(self, user_id: str) -> list[Expense]:
         stmt = (
