@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: budget-buddy-backend
+    runtime: docker
+    rootDir: budget-buddy/backend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: singapore   # closest to India — change if needed (oregon, frankfurt, ohio)
+    healthCheckPath: /health
+
+    envVars:
+      - key: APP_NAME
+        value: Budget Buddy
+      - key: APP_ENV
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "30"
+      - key: REFRESH_TOKEN_EXPIRE_DAYS
+        value: "7"
+      - key: DEFAULT_CURRENCY
+        value: INR
+
+      # ⚠️  Set these as SECRET values in the Render dashboard — do NOT hardcode here
+      - key: SECRET_KEY
+        sync: false          # Render will prompt you to enter this securely
+      - key: DATABASE_URL
+        sync: false          # Your MongoDB Atlas connection string
+      - key: ALLOWED_ORIGINS
+        sync: false          # e.g. https://your-frontend.vercel.app
