@@ -1,4 +1,4 @@
-from motor.motor_asyncio import AsyncIOMotorDatabase
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.budgets.repository import BudgetRepository
 from app.api.budgets.schemas import BudgetCreate, BudgetPublic, BudgetUpdate
@@ -7,7 +7,7 @@ from app.models.user import User
 
 
 class BudgetService:
-    def __init__(self, db: AsyncIOMotorDatabase):
+    def __init__(self, db: AsyncSession):
         self.repo = BudgetRepository(db)
 
     async def create_budget(self, current_user: User, data: BudgetCreate) -> BudgetPublic:

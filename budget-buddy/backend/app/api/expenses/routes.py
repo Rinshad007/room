@@ -1,7 +1,7 @@
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, Query
-from motor.motor_asyncio import AsyncIOMotorDatabase
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth.dependencies import CurrentUser
 from app.api.expenses.schemas import (
@@ -21,7 +21,7 @@ router = APIRouter(prefix="/expenses", tags=["Expenses"])
 async def create_expense(
     data: ExpenseCreate,
     current_user: CurrentUser,
-    db: Annotated[AsyncIOMotorDatabase, Depends(get_db)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """Create a new expense with automatic split calculation."""
     service = ExpenseService(db)
@@ -31,7 +31,7 @@ async def create_expense(
 @router.get("/", response_model=ExpenseListResponse)
 async def list_my_expenses(
     current_user: CurrentUser,
-    db: Annotated[AsyncIOMotorDatabase, Depends(get_db)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """List all expenses where the user is a payer or participant."""
     service = ExpenseService(db)
@@ -42,7 +42,7 @@ async def list_my_expenses(
 async def list_group_expenses(
     group_id: str,
     current_user: CurrentUser,
-    db: Annotated[AsyncIOMotorDatabase, Depends(get_db)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """List all expenses for a specific group."""
     service = ExpenseService(db)
@@ -53,7 +53,7 @@ async def list_group_expenses(
 async def get_expense(
     expense_id: str,
     current_user: CurrentUser,
-    db: Annotated[AsyncIOMotorDatabase, Depends(get_db)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """Get a single expense by ID."""
     service = ExpenseService(db)
@@ -64,7 +64,7 @@ async def get_expense(
 async def delete_expense(
     expense_id: str,
     current_user: CurrentUser,
-    db: Annotated[AsyncIOMotorDatabase, Depends(get_db)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """Delete an expense (payer only)."""
     service = ExpenseService(db)
@@ -76,7 +76,7 @@ async def update_split_status(
     split_id: str,
     data: UpdateSplitStatus,
     current_user: CurrentUser,
-    db: Annotated[AsyncIOMotorDatabase, Depends(get_db)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """Accept or dispute your share of an expense."""
     service = ExpenseService(db)

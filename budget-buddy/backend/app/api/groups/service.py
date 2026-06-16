@@ -1,4 +1,4 @@
-from motor.motor_asyncio import AsyncIOMotorDatabase
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.groups.repository import GroupRepository
 from app.api.groups.schemas import (
@@ -15,7 +15,7 @@ from app.models.user import User
 
 
 class GroupService:
-    def __init__(self, db: AsyncIOMotorDatabase):
+    def __init__(self, db: AsyncSession):
         self.repo = GroupRepository(db)
         self.user_repo = UserRepository(db)
 

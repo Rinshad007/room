@@ -1,4 +1,4 @@
-from motor.motor_asyncio import AsyncIOMotorDatabase
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.expenses.repository import ExpenseRepository
 from app.api.expenses.schemas import (
@@ -17,7 +17,7 @@ from app.utils.splits import compute_splits
 
 
 class ExpenseService:
-    def __init__(self, db: AsyncIOMotorDatabase):
+    def __init__(self, db: AsyncSession):
         self.repo = ExpenseRepository(db)
         self.user_repo = UserRepository(db)
         self.notif_service = NotificationService(db)

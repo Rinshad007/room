@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from motor.motor_asyncio import AsyncIOMotorDatabase
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth.dependencies import CurrentUser
 from app.api.auth.schemas import (
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 @router.post("/register", response_model=TokenResponse, status_code=201)
 async def register(
     data: RegisterRequest,
-    db: Annotated[AsyncIOMotorDatabase, Depends(get_db)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """Register a new user and return JWT tokens."""
     service = AuthService(db)
@@ -30,7 +30,7 @@ async def register(
 @router.post("/login", response_model=TokenResponse)
 async def login(
     data: LoginRequest,
-    db: Annotated[AsyncIOMotorDatabase, Depends(get_db)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """Login with email and password."""
     service = AuthService(db)
@@ -40,7 +40,7 @@ async def login(
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh_token(
     data: RefreshRequest,
-    db: Annotated[AsyncIOMotorDatabase, Depends(get_db)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """Exchange a refresh token for a new access token."""
     service = AuthService(db)

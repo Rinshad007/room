@@ -1,4 +1,4 @@
-from motor.motor_asyncio import AsyncIOMotorDatabase
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.users.repository import UserRepository
 from app.api.users.schemas import UserPublic, UserUpdateRequest, UserSearchResponse
@@ -7,7 +7,7 @@ from app.models.user import User
 
 
 class UserService:
-    def __init__(self, db: AsyncIOMotorDatabase):
+    def __init__(self, db: AsyncSession):
         self.repo = UserRepository(db)
 
     async def get_profile(self, user_id: str) -> UserPublic:

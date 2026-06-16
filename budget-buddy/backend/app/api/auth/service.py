@@ -1,4 +1,4 @@
-from motor.motor_asyncio import AsyncIOMotorDatabase
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth.repository import AuthRepository
 from app.api.auth.schemas import RegisterRequest, LoginRequest, TokenResponse
@@ -15,7 +15,7 @@ from app.models.user import User
 
 
 class AuthService:
-    def __init__(self, db: AsyncIOMotorDatabase):
+    def __init__(self, db: AsyncSession):
         self.repo = AuthRepository(db)
 
     async def register(self, data: RegisterRequest) -> TokenResponse:

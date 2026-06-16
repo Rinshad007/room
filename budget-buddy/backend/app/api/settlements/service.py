@@ -1,4 +1,4 @@
-from motor.motor_asyncio import AsyncIOMotorDatabase
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.settlements.repository import SettlementRepository
 from app.api.settlements.schemas import (
@@ -18,7 +18,7 @@ from app.utils.balance import compute_balance_summary, compute_user_balances
 
 
 class SettlementService:
-    def __init__(self, db: AsyncIOMotorDatabase):
+    def __init__(self, db: AsyncSession):
         self.repo = SettlementRepository(db)
         self.user_repo = UserRepository(db)
         self.notif_service = NotificationService(db)

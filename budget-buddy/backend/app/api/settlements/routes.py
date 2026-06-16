@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from motor.motor_asyncio import AsyncIOMotorDatabase
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth.dependencies import CurrentUser
 from app.api.settlements.schemas import (
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/settlements", tags=["Settlements"])
 async def create_settlement(
     data: SettlementCreate,
     current_user: CurrentUser,
-    db: Annotated[AsyncIOMotorDatabase, Depends(get_db)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """Record a settlement payment."""
     service = SettlementService(db)
@@ -30,7 +30,7 @@ async def create_settlement(
 @router.get("/", response_model=SettlementListResponse)
 async def list_settlements(
     current_user: CurrentUser,
-    db: Annotated[AsyncIOMotorDatabase, Depends(get_db)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """List all settlements for the current user."""
     service = SettlementService(db)
@@ -40,7 +40,7 @@ async def list_settlements(
 @router.get("/balances", response_model=BalanceDetail)
 async def get_balances(
     current_user: CurrentUser,
-    db: Annotated[AsyncIOMotorDatabase, Depends(get_db)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """Get balance summary and per-user breakdown."""
     service = SettlementService(db)
@@ -51,7 +51,7 @@ async def get_balances(
 async def approve_settlement(
     settlement_id: str,
     current_user: CurrentUser,
-    db: Annotated[AsyncIOMotorDatabase, Depends(get_db)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """Approve a pending settlement payment."""
     service = SettlementService(db)

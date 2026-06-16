@@ -1,4 +1,4 @@
-from motor.motor_asyncio import AsyncIOMotorDatabase
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.friends.repository import FriendRepository
 from app.api.friends.schemas import (
@@ -22,7 +22,7 @@ from app.models.user import User
 
 
 class FriendService:
-    def __init__(self, db: AsyncIOMotorDatabase):
+    def __init__(self, db: AsyncSession):
         self.repo = FriendRepository(db)
         self.user_repo = UserRepository(db)
 
