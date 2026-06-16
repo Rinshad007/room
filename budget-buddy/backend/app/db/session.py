@@ -18,8 +18,13 @@ else:
 
 AsyncSessionLocal = async_sessionmaker(async_engine, expire_on_commit=False, class_=AsyncSession)
 
+from datetime import datetime
+from sqlalchemy import DateTime
+
 class Base(DeclarativeBase):
-    pass
+    type_annotation_map = {
+        datetime: DateTime(timezone=True),
+    }
 
 async def get_db():
     async with AsyncSessionLocal() as session:
