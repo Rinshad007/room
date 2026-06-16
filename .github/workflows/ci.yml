@@ -36,6 +36,11 @@ jobs:
         image: mongo:7.0
         ports:
           - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout repository
@@ -56,7 +61,7 @@ jobs:
 
       - name: Run tests
         env:
-          DATABASE_URL: mongodb://localhost:27017
+          DATABASE_URL: mongodb://127.0.0.1:27017
           SECRET_KEY: test-secret-key-for-ci-pipeline-runs-must-be-long-enough-32-chars
           APP_ENV: testing
           ALLOWED_ORIGINS: http://localhost:3000,http://localhost:5173
