@@ -29,14 +29,16 @@ class ExpenseRepository:
 
     async def get_by_id(self, expense_id: str) -> Optional[Expense]:
         from sqlalchemy.orm import selectinload
-        self.db.expire_all()
         stmt = (
             select(Expense)
             .where(Expense.id == expense_id)
             .options(selectinload(Expense.splits))
         )
         result = await self.db.execute(stmt)
-        return result.scalars().first()
+        expense = result.scalars().first()
+        if expense:
+            await self.db.refresh(expense, ["splits"])
+        return expense
 
     async def get_user_expenses(self, user_id: str) -> list[Expense]:
         stmt = (
