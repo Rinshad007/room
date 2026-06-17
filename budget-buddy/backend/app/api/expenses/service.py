@@ -35,12 +35,22 @@ class ExpenseService:
             expense_date=data.expense_date,
         )
 
+        # Map 'you' to current_user.id in participants and split details
+        mapped_participants = [current_user.id if p == "you" else p for p in data.participants]
+        mapped_details = None
+        if data.split_details:
+            from app.api.expenses.schemas import SplitEntry
+            mapped_details = [
+                SplitEntry(user_id=current_user.id if d.user_id == "you" else d.user_id, value=d.value)
+                for d in data.split_details
+            ]
+
         # Compute splits
         split_amounts = compute_splits(
             total=float(data.amount),
             split_type=data.split_type,
-            participants=data.participants,
-            details=data.split_details,
+            participants=mapped_participants,
+            details=mapped_details,
         )
 
         for user_id, share in split_amounts.items():

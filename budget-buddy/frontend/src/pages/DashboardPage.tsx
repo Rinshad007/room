@@ -53,6 +53,8 @@ export default function DashboardPage() {
     }
   };
 
+  const [activeTab, setActiveTab] = useState<'splits' | 'personal'>('splits');
+
   if (loading) {
     return (
       <Layout>
@@ -78,6 +80,12 @@ export default function DashboardPage() {
   const budgetSpent = currentBudget?.total_spent ?? 0;
   const budgetAmount = currentBudget?.total_budget ?? 0;
   const budgetPct = currentBudget?.percentage_used ?? 0;
+
+  // Filter recent expenses into personal vs split bills
+  const filteredExpenses = recentExpenses.filter(exp => {
+    const isPersonal = exp.splits.length <= 1;
+    return activeTab === 'personal' ? isPersonal : !isPersonal;
+  });
 
   return (
     <Layout>
@@ -105,6 +113,23 @@ export default function DashboardPage() {
               <span className="text-label-caps text-on-surface-variant uppercase">You are owed</span>
               <span className="text-monetary-md text-secondary">₹{youAreOwed.toLocaleString('en-IN')}</span>
             </div>
+          </div>
+        </section>
+
+        {/* Total Spent & Expenses Summary */}
+        <section className="glass-panel rounded-2xl p-4 flex items-center justify-between bg-surface-container-low border border-outline-variant/10">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary-container text-primary flex items-center justify-center">
+              <span className="material-symbols-outlined text-sm">payments</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs text-on-surface-variant font-medium">Total Spent (Paid by You)</span>
+              <span className="text-lg font-bold text-primary">₹{(dashboardData?.total_spent ?? 0).toLocaleString('en-IN')}</span>
+            </div>
+          </div>
+          <div className="text-right flex flex-col justify-center">
+            <span className="text-[10px] text-on-surface-variant/75 font-label-caps uppercase">All-time Expenses</span>
+            <span className="text-sm font-semibold text-primary">{dashboardData?.total_expenses ?? 0}</span>
           </div>
         </section>
 
@@ -215,11 +240,31 @@ export default function DashboardPage() {
             </button>
           </div>
 
+          {/* Activity Tabs */}
+          <div className="flex p-1 bg-surface-container-low rounded-xl border border-outline-variant/10">
+            <button
+              type="button"
+              onClick={() => setActiveTab('splits')}
+              className={`flex-1 py-2 text-center rounded-lg font-semibold text-xs transition-all ${activeTab === 'splits' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-primary'}`}
+            >
+              Split Bills
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('personal')}
+              className={`flex-1 py-2 text-center rounded-lg font-semibold text-xs transition-all ${activeTab === 'personal' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-primary'}`}
+            >
+              Personal Expenses
+            </button>
+          </div>
+
           <div className="glass-panel rounded-2xl p-4 flex flex-col gap-0">
-            {recentExpenses.length === 0 ? (
-              <p className="py-6 text-center text-body-md text-on-surface-variant/60 italic">No recent expenses</p>
+            {filteredExpenses.length === 0 ? (
+              <p className="py-6 text-center text-body-md text-on-surface-variant/60 italic">
+                No recent {activeTab === 'personal' ? 'personal expenses' : 'split bills'}
+              </p>
             ) : (
-              recentExpenses.map((exp, idx) => (
+              filteredExpenses.map((exp, idx) => (
                 <div key={exp.id}>
                   {idx > 0 && <div className="w-full h-px bg-outline-variant/30 my-3" />}
                   <div className="flex items-center justify-between">
@@ -236,13 +281,15 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex flex-col items-end">
                       <span className="text-monetary-md text-primary font-bold">₹{exp.amount.toLocaleString('en-IN')}</span>
-                      <span className="text-label-caps text-on-surface-variant mt-0.5">
-                        {exp.paid_by === 'you' || exp.paid_by === user?.id ? (
-                          <span className="text-secondary-fixed-dim bg-secondary/15 px-2 py-0.5 rounded-full">Paid</span>
-                        ) : (
-                          <span className="text-error bg-error/10 px-2 py-0.5 rounded-full">Borrowed</span>
-                        )}
-                      </span>
+                      {activeTab === 'splits' && (
+                        <span className="text-label-caps text-on-surface-variant mt-0.5">
+                          {exp.paid_by === 'you' || exp.paid_by === user?.id ? (
+                            <span className="text-secondary-fixed-dim bg-secondary/15 px-2 py-0.5 rounded-full">Paid</span>
+                          ) : (
+                            <span className="text-error bg-error/10 px-2 py-0.5 rounded-full">Borrowed</span>
+                          )}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
