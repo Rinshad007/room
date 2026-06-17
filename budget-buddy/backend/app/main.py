@@ -29,7 +29,9 @@ async def lifespan(app: FastAPI):
         logger.info("Verifying and creating PostgreSQL tables...")
         async with async_engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-        logger.info("PostgreSQL tables verified and created.")
+            from sqlalchemy import text
+            await conn.execute(text("UPDATE expense_splits SET status = 'accepted' WHERE status = 'pending'"))
+        logger.info("PostgreSQL tables verified and created. Splitting status migration complete.")
     except Exception as e:
         logger.error(f"Error creating database tables: {e}")
     yield
