@@ -28,7 +28,15 @@ export default function RegisterPage() {
       toast.success('Welcome to Budget Buddy!');
       navigate('/dashboard');
     } catch (err: any) {
-      toast.error(err.response?.data?.detail || 'Registration failed');
+      const detail = err.response?.data?.detail;
+      if (Array.isArray(detail)) {
+        // Extract message from Pydantic validation error array
+        toast.error(detail[0]?.msg || 'Registration failed');
+      } else if (typeof detail === 'string') {
+        toast.error(detail);
+      } else {
+        toast.error('Registration failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -52,7 +60,7 @@ export default function RegisterPage() {
           {[
             { label: 'Full Name', key: 'name', type: 'text', placeholder: 'Rahul Sharma', auto: 'name' },
             { label: 'Email', key: 'email', type: 'email', placeholder: 'you@example.com', auto: 'email' },
-            { label: 'Password', key: 'password', type: 'password', placeholder: 'Min. 8 characters', auto: 'new-password' },
+            { label: 'Password', key: 'password', type: 'password', placeholder: 'Min. 8 chars (1 letter, 1 digit)', auto: 'new-password' },
             { label: 'Confirm Password', key: 'confirm', type: 'password', placeholder: 'Repeat password', auto: 'new-password' },
           ].map(({ label, key, type, placeholder, auto }) => (
             <div key={key} className="flex flex-col gap-1.5">
