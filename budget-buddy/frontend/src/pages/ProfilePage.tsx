@@ -109,14 +109,24 @@ export default function ProfilePage() {
           </form>
         </section>
 
-        {/* Action Button */}
-        <button
-          onClick={handleLogout}
-          className="btn-secondary w-full h-12 text-sm text-error border-error/20 hover:bg-error/5"
-        >
-          <span className="material-symbols-outlined text-[18px]">logout</span>
-          Sign Out
-        </button>
+        {/* Action Buttons */}
+        <div className="space-y-3">
+          <button
+            onClick={() => navigate('/friends')}
+            className="btn-secondary w-full h-12 text-sm text-primary border-primary/20 hover:bg-primary/5 flex items-center justify-center gap-2"
+          >
+            <span className="material-symbols-outlined text-[18px]">group</span>
+            Manage Friends
+          </button>
+
+          <button
+            onClick={handleLogout}
+            className="btn-secondary w-full h-12 text-sm text-error border-error/20 hover:bg-error/5 flex items-center justify-center gap-2"
+          >
+            <span className="material-symbols-outlined text-[18px]">logout</span>
+            Sign Out
+          </button>
+        </div>
 
       </div>
     </Layout>

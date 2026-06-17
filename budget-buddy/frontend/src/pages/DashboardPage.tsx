@@ -131,23 +131,23 @@ export default function DashboardPage() {
           </button>
 
           <button
-            onClick={() => navigate('/groups?create=true')}
+            onClick={() => navigate('/groups')}
             className="flex flex-col items-center justify-center gap-2 p-3 glass-panel rounded-2xl active:scale-95 transition-transform hover:bg-white"
           >
             <div className="w-10 h-10 rounded-full bg-surface-container text-primary flex items-center justify-center border border-outline-variant/30">
-              <span className="material-symbols-outlined">group_add</span>
+              <span className="material-symbols-outlined">groups</span>
             </div>
-            <span className="text-label-caps text-primary text-center">Group</span>
+            <span className="text-label-caps text-primary text-center">Groups</span>
           </button>
 
           <button
-            onClick={() => navigate('/analytics')}
+            onClick={() => navigate('/friends')}
             className="flex flex-col items-center justify-center gap-2 p-3 glass-panel rounded-2xl active:scale-95 transition-transform hover:bg-white"
           >
-            <div className="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
-              <span className="material-symbols-outlined">bar_chart_4_bars</span>
+            <div className="w-10 h-10 rounded-full bg-surface-container text-primary flex items-center justify-center border border-outline-variant/30">
+              <span className="material-symbols-outlined">group</span>
             </div>
-            <span className="text-label-caps text-indigo-600 text-center">Analytics</span>
+            <span className="text-label-caps text-primary text-center">Friends</span>
           </button>
         </section>
 
