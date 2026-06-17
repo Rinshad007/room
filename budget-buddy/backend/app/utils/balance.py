@@ -7,36 +7,35 @@ from app.models.settlement import Settlement
 
 async def compute_balance_summary(db: AsyncSession, user_id: str) -> dict:
     """Return total_payable, total_receivable, net_balance."""
-    # Find all accepted splits involving the user
-    stmt = (
-        select(Expense)
-        .join(ExpenseSplit)
+
+    # ── What others OWE YOU: expenses where you PAID, all statuses ─────────
+    stmt_recv = (
+        select(ExpenseSplit)
+        .join(Expense, Expense.id == ExpenseSplit.expense_id)
         .where(
-            ExpenseSplit.status == "accepted",
-            or_(
-                ExpenseSplit.user_id == user_id,
-                Expense.paid_by == user_id
-            )
+            Expense.paid_by == user_id,
+            ExpenseSplit.user_id != user_id,
         )
-        .options(selectinload(Expense.splits))
     )
-    result = await db.execute(stmt)
-    expenses = result.scalars().unique().all()
+    res_recv = await db.execute(stmt_recv)
+    recv_splits = res_recv.scalars().all()
+    total_receivable = sum(float(s.share_amount) for s in recv_splits)
 
-    total_payable = 0.0       # user owes others
-    total_receivable = 0.0    # others owe user
+    # ── What YOU OWE others: only your accepted splits where you didn't pay ─
+    stmt_pay = (
+        select(ExpenseSplit)
+        .join(Expense, Expense.id == ExpenseSplit.expense_id)
+        .where(
+            ExpenseSplit.user_id == user_id,
+            Expense.paid_by != user_id,
+            ExpenseSplit.status == "accepted",
+        )
+    )
+    res_pay = await db.execute(stmt_pay)
+    pay_splits = res_pay.scalars().all()
+    total_payable = sum(float(s.share_amount) for s in pay_splits)
 
-    for exp in expenses:
-        paid_by = exp.paid_by
-        for split in exp.splits:
-            if split.status != "accepted":
-                continue
-            if split.user_id == user_id and paid_by != user_id:
-                total_payable += float(split.share_amount)
-            elif paid_by == user_id and split.user_id != user_id:
-                total_receivable += float(split.share_amount)
-
-    # Reduce by completed settlements
+    # ── Reduce by completed settlements ────────────────────────────────────
     stmt_settle = (
         select(Settlement)
         .where(
@@ -49,7 +48,7 @@ async def compute_balance_summary(db: AsyncSession, user_id: str) -> dict:
     )
     result_settle = await db.execute(stmt_settle)
     settlements = result_settle.scalars().all()
-    
+
     for s in settlements:
         if s.payer_id == user_id:
             total_payable -= float(s.amount)
@@ -67,36 +66,39 @@ async def compute_balance_summary(db: AsyncSession, user_id: str) -> dict:
     }
 
 
+
 async def compute_user_balances(db: AsyncSession, user_id: str) -> list[dict]:
     """Return per-user balance breakdown (who owes who what)."""
-    stmt = (
-        select(Expense)
-        .join(ExpenseSplit)
+    net: dict[str, float] = defaultdict(float)
+
+    # Others owe YOU — all their splits on expenses YOU paid
+    stmt_recv = (
+        select(ExpenseSplit, Expense.paid_by)
+        .join(Expense, Expense.id == ExpenseSplit.expense_id)
         .where(
-            ExpenseSplit.status == "accepted",
-            or_(
-                ExpenseSplit.user_id == user_id,
-                Expense.paid_by == user_id
-            )
+            Expense.paid_by == user_id,
+            ExpenseSplit.user_id != user_id,
         )
-        .options(selectinload(Expense.splits))
     )
-    result = await db.execute(stmt)
-    expenses = result.scalars().unique().all()
+    res_recv = await db.execute(stmt_recv)
+    for split, _ in res_recv.all():
+        net[split.user_id] += float(split.share_amount)
 
-    net = defaultdict(float)
+    # YOU owe others — only your accepted splits where someone else paid
+    stmt_pay = (
+        select(ExpenseSplit, Expense.paid_by)
+        .join(Expense, Expense.id == ExpenseSplit.expense_id)
+        .where(
+            ExpenseSplit.user_id == user_id,
+            Expense.paid_by != user_id,
+            ExpenseSplit.status == "accepted",
+        )
+    )
+    res_pay = await db.execute(stmt_pay)
+    for split, paid_by in res_pay.all():
+        net[paid_by] -= float(split.share_amount)
 
-    for exp in expenses:
-        paid_by = exp.paid_by
-        for split in exp.splits:
-            if split.status != "accepted":
-                continue
-            if split.user_id == user_id and paid_by != user_id:
-                net[paid_by] -= float(split.share_amount)
-            elif paid_by == user_id and split.user_id != user_id:
-                net[split.user_id] += float(split.share_amount)
-
-    # Apply settlements
+    # Apply completed settlements
     stmt_settle = (
         select(Settlement)
         .where(
@@ -109,7 +111,7 @@ async def compute_user_balances(db: AsyncSession, user_id: str) -> list[dict]:
     )
     result_settle = await db.execute(stmt_settle)
     settlements = result_settle.scalars().all()
-    
+
     for s in settlements:
         if s.payer_id == user_id:
             net[s.receiver_id] += float(s.amount)
