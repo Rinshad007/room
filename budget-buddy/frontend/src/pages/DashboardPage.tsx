@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import { analyticsAPI, expensesAPI, budgetsAPI } from '../api/services';
-import type { DashboardData, Expense, Budget } from '../types';
+import type { DashboardData, Expense, BudgetSummary } from '../types';
 import { useAuthStore } from '../store/auth';
 
 export default function DashboardPage() {
@@ -10,7 +10,7 @@ export default function DashboardPage() {
   const { user } = useAuthStore();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [recentExpenses, setRecentExpenses] = useState<Expense[]>([]);
-  const [currentBudget, setCurrentBudget] = useState<Budget | null>(null);
+  const [currentBudget, setCurrentBudget] = useState<BudgetSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,7 +28,7 @@ export default function DashboardPage() {
         // Load monthly budget (current month/year)
         try {
           const now = new Date();
-          const bRes = await budgetsAPI.get(now.getMonth() + 1, now.getFullYear());
+          const bRes = await budgetsAPI.summary(now.getMonth() + 1, now.getFullYear());
           setCurrentBudget(bRes.data);
         } catch {
           setCurrentBudget(null);
@@ -75,9 +75,9 @@ export default function DashboardPage() {
   const youOwe = dashboardData?.total_payable ?? 0;
   const youAreOwed = dashboardData?.total_receivable ?? 0;
 
-  const budgetSpent = currentBudget?.spent ?? 0;
-  const budgetAmount = currentBudget?.amount ?? 0;
-  const budgetPct = budgetAmount > 0 ? Math.min(Math.round((budgetSpent / budgetAmount) * 100), 100) : 0;
+  const budgetSpent = currentBudget?.total_spent ?? 0;
+  const budgetAmount = currentBudget?.total_budget ?? 0;
+  const budgetPct = currentBudget?.percentage_used ?? 0;
 
   return (
     <Layout>
@@ -157,10 +157,19 @@ export default function DashboardPage() {
               <div className="w-full h-2 rounded-full bg-surface-variant overflow-hidden">
                 <div 
                   className={`h-full rounded-full transition-all duration-500 ${budgetPct >= 90 ? 'bg-error' : 'bg-secondary'}`}
-                  style={{ width: `${budgetPct}%` }}
+                  style={{ width: `${Math.min(budgetPct, 100)}%` }}
                 />
               </div>
-              <span className="text-label-caps text-on-surface-variant self-end uppercase">{budgetPct}% Used</span>
+              <div className="flex justify-between w-full">
+                {currentBudget?.is_over_budget ? (
+                  <span className="text-label-caps text-error uppercase font-bold flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[14px]">warning</span> Over Budget!
+                  </span>
+                ) : (
+                  <span></span>
+                )}
+                <span className="text-label-caps text-on-surface-variant self-end uppercase">{budgetPct}% Used</span>
+              </div>
             </>
           ) : (
             <span className="text-body-md text-on-surface-variant/60 italic text-sm">Tap to set up a monthly budget</span>

@@ -1,7 +1,7 @@
 import api from './client';
 import type {
   User, TokenResponse, Group, Expense, ExpenseCreate, ExpenseListResponse,
-  Settlement, BalanceDetail, Budget, DashboardData, NotificationListResponse, GroupListResponse, FriendListResponse
+  Settlement, BalanceDetail, Budget, BudgetSummary, DashboardData, NotificationListResponse, GroupListResponse, FriendListResponse
 } from '../types';
 
 // ─── Auth ──────────────────────────────────────────────────────────────
@@ -70,6 +70,7 @@ export const budgetsAPI = {
     api.post<Budget>('/budgets/', data),
   list: () => api.get<Budget[]>('/budgets/'),
   get: (month: number, year: number) => api.get<Budget>(`/budgets/${month}/${year}`),
+  summary: (month: number, year: number) => api.get<BudgetSummary>(`/budgets/summary/${month}/${year}`),
   update: (month: number, year: number, amount: number) =>
     api.patch<Budget>(`/budgets/${month}/${year}`, { amount }),
 };

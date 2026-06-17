@@ -41,6 +41,17 @@ async def get_budget(
     return await service.get_budget(current_user, month, year)
 
 
+@router.get("/summary/{month}/{year}")
+async def get_budget_summary(
+    month: int,
+    year: int,
+    current_user: CurrentUser,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    service = BudgetService(db)
+    return await service.get_summary(current_user, month, year)
+
+
 @router.patch("/{month}/{year}", response_model=BudgetPublic)
 async def update_budget(
     month: int,

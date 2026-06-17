@@ -1,6 +1,7 @@
 from collections import defaultdict
 from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from app.models.expense import Expense, ExpenseSplit
 from app.models.settlement import Settlement
 
@@ -17,9 +18,10 @@ async def compute_balance_summary(db: AsyncSession, user_id: str) -> dict:
                 Expense.paid_by == user_id
             )
         )
+        .options(selectinload(Expense.splits))
     )
     result = await db.execute(stmt)
-    expenses = result.scalars().all()
+    expenses = result.scalars().unique().all()
 
     total_payable = 0.0       # user owes others
     total_receivable = 0.0    # others owe user
@@ -77,9 +79,10 @@ async def compute_user_balances(db: AsyncSession, user_id: str) -> list[dict]:
                 Expense.paid_by == user_id
             )
         )
+        .options(selectinload(Expense.splits))
     )
     result = await db.execute(stmt)
-    expenses = result.scalars().all()
+    expenses = result.scalars().unique().all()
 
     net = defaultdict(float)
 

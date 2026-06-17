@@ -1,6 +1,6 @@
 from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel, Field
+from typing import Optional, List
+from pydantic import BaseModel, Field, computed_field
 
 
 class BudgetCreate(BaseModel):
@@ -23,3 +23,20 @@ class BudgetPublic(BaseModel):
 
 class BudgetUpdate(BaseModel):
     amount: float = Field(..., gt=0)
+
+
+class CategorySpend(BaseModel):
+    category: str
+    spent: float
+
+
+class BudgetSummary(BaseModel):
+    month: int
+    year: int
+    total_budget: float
+    total_spent: float
+    remaining: float
+    percentage_used: float
+    is_over_budget: bool
+    categories: List[CategorySpend]
+

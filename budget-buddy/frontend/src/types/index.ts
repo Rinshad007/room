@@ -131,6 +131,22 @@ export interface Budget {
   remaining: number;
 }
 
+export interface CategorySpend {
+  category: Category;
+  spent: number;
+}
+
+export interface BudgetSummary {
+  month: number;
+  year: number;
+  total_budget: number;
+  total_spent: number;
+  remaining: number;
+  percentage_used: number;
+  is_over_budget: boolean;
+  categories: CategorySpend[];
+}
+
 export interface Notification {
   id: string;
   user_id: string;

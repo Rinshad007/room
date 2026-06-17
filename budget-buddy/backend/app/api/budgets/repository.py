@@ -47,3 +47,22 @@ class BudgetRepository:
         result = await self.db.execute(stmt)
         val = result.scalar()
         return float(val) if val is not None else 0.0
+
+    async def get_monthly_spent_by_category(self, user_id: str, month: int, year: int) -> list[dict]:
+        """Returns list of {category, spent} for all categories in the given month."""
+        stmt = (
+            select(Expense.category, func.sum(ExpenseSplit.share_amount).label("total"))
+            .join(ExpenseSplit, ExpenseSplit.expense_id == Expense.id)
+            .where(
+                ExpenseSplit.user_id == user_id,
+                ExpenseSplit.status == "accepted",
+                extract("month", Expense.expense_date) == month,
+                extract("year", Expense.expense_date) == year
+            )
+            .group_by(Expense.category)
+            .order_by(func.sum(ExpenseSplit.share_amount).desc())
+        )
+        result = await self.db.execute(stmt)
+        rows = result.all()
+        return [{"category": row.category, "spent": float(row.total)} for row in rows]
+

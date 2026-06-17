@@ -77,3 +77,25 @@ class BudgetService:
             spent=spent,
             remaining=max(0.0, float(updated.amount) - spent),
         )
+
+    async def get_summary(self, current_user: User, month: int, year: int) -> dict:
+        budget = await self.repo.get_by_month(current_user.id, month, year)
+        amount = float(budget.amount) if budget else 0.0
+        
+        spent = await self.repo.get_monthly_spent(current_user.id, month, year)
+        category_spent = await self.repo.get_monthly_spent_by_category(current_user.id, month, year)
+        
+        remaining = max(0.0, amount - spent)
+        pct = (spent / amount) * 100 if amount > 0 else 0.0
+
+        return {
+            "month": month,
+            "year": year,
+            "total_budget": amount,
+            "total_spent": spent,
+            "remaining": remaining,
+            "percentage_used": round(pct, 2),
+            "is_over_budget": spent > amount and amount > 0,
+            "categories": category_spent,
+        }
+

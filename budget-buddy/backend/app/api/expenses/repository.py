@@ -15,13 +15,13 @@ class ExpenseRepository:
         return await self.get_by_id(expense.id)
 
     async def add_split(
-        self, expense_id: str, user_id: str, share_amount: float
+        self, expense_id: str, user_id: str, share_amount: float, status: str = "pending"
     ) -> ExpenseSplit:
         split = ExpenseSplit(
             expense_id=expense_id,
             user_id=user_id,
             share_amount=share_amount,
-            status="pending"
+            status=status
         )
         self.db.add(split)
         await self.db.commit()

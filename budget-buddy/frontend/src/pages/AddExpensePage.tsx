@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import { groupsAPI, friendsAPI, expensesAPI } from '../api/services';
@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 
 export default function AddExpensePage() {
   const navigate = useNavigate();
+  const formRef = useRef<HTMLFormElement>(null);
   
   // Static state
   const categories: Category[] = ['Food', 'Travel', 'Shopping', 'Rent', 'Entertainment', 'Others'];
@@ -167,8 +168,8 @@ export default function AddExpensePage() {
 
   return (
     <Layout showBack title="Add Expense">
-      <div className="page-container page-enter pb-32">
-        <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="page-container page-enter" style={{ paddingBottom: '9rem' }}>
+        <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
           
           {/* Amount input */}
           <div className="flex flex-col items-center justify-center py-4 bg-white rounded-2xl border border-outline-variant/35 shadow-sm">
@@ -387,20 +388,33 @@ export default function AddExpensePage() {
             </div>
           </div>
 
-          {/* Save Action Button */}
-          <div className="fixed bottom-0 left-0 w-full p-container-padding bg-gradient-to-t from-surface via-surface/90 to-transparent z-40 pb-8">
-            <div className="max-w-md mx-auto">
-              <button
-                type="submit"
-                className="w-full h-14 bg-primary text-on-primary rounded-2xl font-semibold flex items-center justify-center space-x-2 shadow-lg active:scale-[0.98] transition-transform hover:bg-primary/95"
-              >
-                <span className="material-symbols-outlined">save</span>
-                <span>Save Expense</span>
-              </button>
-            </div>
-          </div>
 
         </form>
+      </div>
+
+
+      {/* Save button — fixed above the BottomNav (nav height = 64px / 4rem) */}
+      <div
+        style={{
+          position: 'fixed',
+          left: 0,
+          right: 0,
+          bottom: '64px',
+          zIndex: 45,
+          padding: '12px 16px 16px',
+          background: 'linear-gradient(to top, #f8f9fa 55%, transparent)',
+        }}
+      >
+        <div style={{ maxWidth: '32rem', margin: '0 auto' }}>
+          <button
+            type="button"
+            onClick={() => formRef.current?.requestSubmit()}
+            className="w-full h-14 bg-primary text-on-primary rounded-2xl font-semibold text-base flex items-center justify-center gap-2 shadow-float active:scale-[0.98] transition-transform"
+          >
+            <span className="material-symbols-outlined">save</span>
+            <span>Save Expense</span>
+          </button>
+        </div>
       </div>
     </Layout>
   );
