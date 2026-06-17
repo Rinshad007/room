@@ -75,13 +75,20 @@ export const budgetsAPI = {
     api.patch<Budget>(`/budgets/${month}/${year}`, { amount }),
 };
 
-// ─── Analytics ─────────────────────────────────────────────────────────
+// ─── Analytics ─────────────────────────────────────────────────────────────
 export const analyticsAPI = {
   dashboard: () => api.get<DashboardData>('/analytics/dashboard'),
-  monthly: (year?: number) => api.get(`/analytics/monthly${year ? `?year=${year}` : ''}`),
-  categories: (month?: number, year?: number) =>
-    api.get(`/analytics/categories${month ? `?month=${month}&year=${year}` : ''}`),
-  trends: (months?: number) => api.get(`/analytics/trends${months ? `?months=${months}` : ''}`),
+  monthly: (year?: number) => {
+    const y = year ?? new Date().getFullYear();
+    return api.get(`/analytics/monthly?year=${y}`);
+  },
+  categories: (month?: number, year?: number) => {
+    const now = new Date();
+    const m = month ?? now.getMonth() + 1;
+    const y = year ?? now.getFullYear();
+    return api.get(`/analytics/categories?month=${m}&year=${y}`);
+  },
+  trends: (months?: number) => api.get(`/analytics/trends?months=${months ?? 6}`),
 };
 
 // ─── Notifications ─────────────────────────────────────────────────────

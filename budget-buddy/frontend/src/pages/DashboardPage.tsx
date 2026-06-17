@@ -109,7 +109,7 @@ export default function DashboardPage() {
         </section>
 
         {/* Quick Actions */}
-        <section className="grid grid-cols-3 gap-4">
+        <section className="grid grid-cols-4 gap-3">
           <button
             onClick={() => navigate('/add-expense')}
             className="flex flex-col items-center justify-center gap-2 p-3 glass-panel rounded-2xl active:scale-95 transition-transform hover:bg-white"
@@ -117,7 +117,7 @@ export default function DashboardPage() {
             <div className="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center">
               <span className="material-symbols-outlined">add</span>
             </div>
-            <span className="text-label-caps text-primary text-center">Add Expense</span>
+            <span className="text-label-caps text-primary text-center">Add</span>
           </button>
           
           <button
@@ -127,7 +127,7 @@ export default function DashboardPage() {
             <div className="w-10 h-10 rounded-full bg-surface-container text-primary flex items-center justify-center border border-outline-variant/30">
               <span className="material-symbols-outlined">payments</span>
             </div>
-            <span className="text-label-caps text-primary text-center">Settle Up</span>
+            <span className="text-label-caps text-primary text-center">Settle</span>
           </button>
 
           <button
@@ -137,7 +137,17 @@ export default function DashboardPage() {
             <div className="w-10 h-10 rounded-full bg-surface-container text-primary flex items-center justify-center border border-outline-variant/30">
               <span className="material-symbols-outlined">group_add</span>
             </div>
-            <span className="text-label-caps text-primary text-center">New Group</span>
+            <span className="text-label-caps text-primary text-center">Group</span>
+          </button>
+
+          <button
+            onClick={() => navigate('/analytics')}
+            className="flex flex-col items-center justify-center gap-2 p-3 glass-panel rounded-2xl active:scale-95 transition-transform hover:bg-white"
+          >
+            <div className="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
+              <span className="material-symbols-outlined">bar_chart_4_bars</span>
+            </div>
+            <span className="text-label-caps text-indigo-600 text-center">Analytics</span>
           </button>
         </section>
 
@@ -175,6 +185,26 @@ export default function DashboardPage() {
             <span className="text-body-md text-on-surface-variant/60 italic text-sm">Tap to set up a monthly budget</span>
           )}
         </section>
+
+        {/* Analytics Banner */}
+        <button
+          onClick={() => navigate('/analytics')}
+          className="glass-panel rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:bg-white transition-colors active:scale-95 group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
+              <span className="material-symbols-outlined text-indigo-600">bar_chart_4_bars</span>
+            </div>
+            <div className="flex flex-col items-start">
+              <span className="text-sm font-bold text-on-surface">Monthly Analytics</span>
+              <span className="text-xs text-on-surface-variant/70">Charts · Trends · Insights</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 text-indigo-600 font-semibold text-sm group-hover:translate-x-0.5 transition-transform">
+            View
+            <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+          </div>
+        </button>
 
         {/* Recent Activity */}
         <section className="flex flex-col gap-3">
