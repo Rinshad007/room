@@ -23,8 +23,11 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       const res = await authAPI.register({ name: form.name, email: form.email, password: form.password });
-      const { access_token, refresh_token, user } = res.data;
-      setAuth(user, access_token, refresh_token);
+      const { access_token, refresh_token } = res.data;
+      localStorage.setItem('access_token', access_token);
+      localStorage.setItem('refresh_token', refresh_token);
+      const meRes = await authAPI.me();
+      setAuth(meRes.data, access_token, refresh_token);
       toast.success('Welcome to Budget Buddy!');
       navigate('/dashboard');
     } catch (err: any) {
