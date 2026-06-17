@@ -30,21 +30,31 @@ class SettlementService:
         if not receiver:
             raise NotFoundException("Receiver not found")
 
+        status = data.status or "pending"
         settlement = await self.repo.create(
             payer_id=current_user.id,
             receiver_id=data.receiver_id,
             amount=data.amount,
             payment_method=data.payment_method,
+            status=status,
         )
 
-        await self.notif_service.create(
-            user_id=data.receiver_id,
-            title="Settlement pending approval",
-            message=f"{current_user.name} recorded a payment of ₹{data.amount:.2f} via {data.payment_method}. Please confirm.",
-            notification_type="settlement_pending",
-        )
+        if status == "completed":
+            await self.notif_service.create(
+                user_id=data.receiver_id,
+                title="Settlement completed",
+                message=f"{current_user.name} settled up ₹{data.amount:.2f} via {data.payment_method}.",
+                notification_type="settlement_completed",
+            )
+        else:
+            await self.notif_service.create(
+                user_id=data.receiver_id,
+                title="Settlement pending approval",
+                message=f"{current_user.name} recorded a payment of ₹{data.amount:.2f} via {data.payment_method}. Please confirm.",
+                notification_type="settlement_pending",
+            )
 
-        logger.info(f"Settlement recorded: {current_user.id} -> {data.receiver_id}, ₹{data.amount}")
+        logger.info(f"Settlement recorded: {current_user.id} -> {data.receiver_id}, ₹{data.amount} (status: {status})")
         return SettlementPublic.model_validate(settlement)
 
     async def approve_settlement(

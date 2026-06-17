@@ -10,12 +10,14 @@ export default function ProfilePage() {
   const { user, setUser, logout } = useAuthStore();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [upiId, setUpiId] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (user) {
       setName(user.name);
       setEmail(user.email);
+      setUpiId(user.upi_id || '');
     }
   }, [user]);
 
@@ -25,7 +27,7 @@ export default function ProfilePage() {
 
     try {
       setSaving(true);
-      const res = await usersAPI.update({ name, email });
+      const res = await usersAPI.update({ name, email, upi_id: upiId });
       setUser(res.data);
       toast.success('Profile updated successfully!');
     } catch (err: any) {
@@ -83,6 +85,17 @@ export default function ProfilePage() {
                 onChange={(e) => setEmail(e.target.value)}
                 className="input-field h-12 text-sm bg-surface-container-low"
                 required
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-label-caps text-on-surface-variant uppercase ml-1">UPI ID</label>
+              <input
+                type="text"
+                value={upiId}
+                onChange={(e) => setUpiId(e.target.value)}
+                placeholder="e.g. username@bank"
+                className="input-field h-12 text-sm bg-surface-container-low"
               />
             </div>
 

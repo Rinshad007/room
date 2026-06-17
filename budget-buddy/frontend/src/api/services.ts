@@ -57,7 +57,7 @@ export const expensesAPI = {
 
 // ─── Settlements ───────────────────────────────────────────────────────
 export const settlementsAPI = {
-  create: (data: { receiver_id: string; amount: number; payment_method: string }) =>
+  create: (data: { receiver_id: string; amount: number; payment_method: string; status?: 'pending' | 'completed' }) =>
     api.post<Settlement>('/settlements/', data),
   list: () => api.get<Settlement[]>('/settlements/'),
   balances: () => api.get<BalanceDetail>('/settlements/balances'),

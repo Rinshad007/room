@@ -44,7 +44,7 @@ class ExpenseService:
         )
 
         for user_id, share in split_amounts.items():
-            status = "accepted" if user_id == current_user.id else "pending"
+            status = "accepted"
             await self.repo.add_split(expense.id, user_id, share, status=status)
 
             # Notify each participant (except the payer)

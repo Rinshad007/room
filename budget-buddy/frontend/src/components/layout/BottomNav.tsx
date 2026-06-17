@@ -1,10 +1,10 @@
 import { NavLink, useLocation } from 'react-router-dom';
 
 const navItems = [
-  { to: '/dashboard', icon: 'dashboard', label: 'Dashboard' },
-  { to: '/friends', icon: 'group', label: 'Friends' },
-  { to: '/groups', icon: 'grid_view', label: 'Groups' },
-  { to: '/history', icon: 'receipt_long', label: 'History' },
+  { to: '/dashboard', icon: 'dashboard', label: 'Home' },
+  { to: '/settlements', icon: 'payments', label: 'Settle Up' },
+  { to: '/analytics', icon: 'bar_chart_4_bars', label: 'Analytics' },
+  { to: '/budget', icon: 'account_balance_wallet', label: 'Budget' },
 ];
 
 export default function BottomNav() {

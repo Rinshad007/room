@@ -14,13 +14,15 @@ class SettlementRepository:
         receiver_id: str,
         amount: float,
         payment_method: str,
+        status: str = "pending",
     ) -> Settlement:
         s = Settlement(
             payer_id=payer_id,
             receiver_id=receiver_id,
             amount=amount,
             payment_method=payment_method,
-            status="pending",
+            status=status,
+            settled_at=datetime.now(timezone.utc) if status == "completed" else None,
         )
         self.db.add(s)
         await self.db.commit()

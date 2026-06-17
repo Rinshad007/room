@@ -5,6 +5,7 @@ export interface User {
   name: string;
   email: string;
   avatar_url?: string;
+  upi_id?: string;
   created_at: string;
 }
 
