@@ -77,7 +77,7 @@ export default function DashboardPage() {
   const youOwe = dashboardData?.total_payable ?? 0;
   const youAreOwed = dashboardData?.total_receivable ?? 0;
 
-  const budgetSpent = currentBudget?.total_spent ?? 0;
+  const monthlyNetBalance = currentBudget?.monthly_net_balance ?? 0;
   const budgetAmount = currentBudget?.total_budget ?? 0;
   const budgetPct = currentBudget?.percentage_used ?? 0;
 
@@ -184,7 +184,14 @@ export default function DashboardPage() {
           <div className="flex justify-between items-end">
             <span className="text-monetary-md text-primary font-semibold">Monthly Budget</span>
             <span className="text-body-md text-on-surface-variant font-medium">
-              ₹{budgetSpent.toLocaleString('en-IN')} / {budgetAmount > 0 ? `₹${budgetAmount.toLocaleString('en-IN')}` : 'Not set'}
+              {monthlyNetBalance < 0 ? (
+                <span>₹{Math.abs(monthlyNetBalance).toLocaleString('en-IN')} (Net Spent)</span>
+              ) : monthlyNetBalance > 0 ? (
+                <span className="text-secondary font-semibold">+₹{monthlyNetBalance.toLocaleString('en-IN')} (Surplus)</span>
+              ) : (
+                <span>₹0 (Net)</span>
+              )}
+              {budgetAmount > 0 ? ` / ₹${budgetAmount.toLocaleString('en-IN')}` : ' / Not set'}
             </span>
           </div>
           {budgetAmount > 0 ? (

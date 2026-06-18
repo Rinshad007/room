@@ -142,6 +142,8 @@ export interface BudgetSummary {
   year: number;
   total_budget: number;
   total_spent: number;
+  monthly_net_balance: number;
+  net_spent: number;
   remaining: number;
   percentage_used: number;
   is_over_budget: boolean;
