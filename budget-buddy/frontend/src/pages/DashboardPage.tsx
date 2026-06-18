@@ -78,6 +78,7 @@ export default function DashboardPage() {
   const youAreOwed = dashboardData?.total_receivable ?? 0;
 
   const monthlyNetBalance = currentBudget?.monthly_net_balance ?? 0;
+  const netSpent = currentBudget?.net_spent ?? 0;
   const budgetAmount = currentBudget?.total_budget ?? 0;
   const budgetPct = currentBudget?.percentage_used ?? 0;
 
@@ -94,11 +95,22 @@ export default function DashboardPage() {
         <section className="glass-panel rounded-2xl p-6 flex flex-col gap-4 relative overflow-hidden">
           <div className="absolute -top-10 -right-10 w-32 h-32 bg-secondary-container rounded-full mix-blend-multiply filter blur-3xl opacity-35"></div>
           
-          <div className="flex flex-col">
-            <span className="text-body-md text-on-surface-variant font-medium">Net Balance</span>
-            <span className={`font-display-currency text-display-currency ${netBalance >= 0 ? 'text-primary' : 'text-error'}`}>
-              ₹{Math.abs(netBalance).toLocaleString('en-IN')}
-            </span>
+          <div className="flex justify-between items-start">
+            <div className="flex flex-col">
+              <span className="text-body-md text-on-surface-variant font-medium">Net Balance</span>
+              <span className={`font-display-currency text-display-currency ${netBalance >= 0 ? 'text-primary' : 'text-error'}`}>
+                ₹{Math.abs(netBalance).toLocaleString('en-IN')}
+              </span>
+            </div>
+            {budgetAmount > 0 && (
+              <div className="flex flex-col items-end text-right">
+                <span className="text-body-sm text-on-surface-variant font-medium">Monthly Budget Used</span>
+                <span className="text-sm font-bold text-primary">
+                  ₹{netSpent.toLocaleString('en-IN')} / ₹{budgetAmount.toLocaleString('en-IN')}
+                </span>
+                <span className="text-[10px] text-on-surface-variant/85 font-semibold">{budgetPct}% Used</span>
+              </div>
+            )}
           </div>
 
           <div className="w-full h-px bg-outline-variant/30 my-1" />
