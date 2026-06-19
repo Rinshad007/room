@@ -437,11 +437,14 @@ export const expensesAPI = {
       payment_method: data.payment_method,
       category: data.category,
       split_type: data.split_type as SplitType,
-      group_id: data.group_id || undefined,
       expense_date: data.expense_date,
       created_at: new Date().toISOString(),
       splits
     };
+    
+    if (data.group_id) {
+      expenseData.group_id = data.group_id;
+    }
     
     await set(expenseRef, expenseData);
     
@@ -547,9 +550,12 @@ export const settlementsAPI = {
       amount: data.amount,
       payment_method: data.payment_method as PaymentMethod,
       status: data.status || 'completed',
-      settled_at: data.status === 'completed' || !data.status ? new Date().toISOString() : undefined,
       created_at: new Date().toISOString()
     };
+    
+    if (data.status === 'completed' || !data.status) {
+      settleData.settled_at = new Date().toISOString();
+    }
     
     await set(settlementRef, settleData);
     
@@ -780,9 +786,8 @@ export const budgetsAPI = {
     }
 
     const monthlyNetBalance = Math.round((totalReceivable - totalPayable) * 100) / 100;
-    const netSpent = Math.max(0, -monthlyNetBalance);
-    const remaining = Math.max(0, budgetAmount - netSpent);
-    const pct = budgetAmount > 0 ? (netSpent / budgetAmount) * 100 : 0;
+    const remaining = Math.max(0, budgetAmount - totalSpent);
+    const pct = budgetAmount > 0 ? (totalSpent / budgetAmount) * 100 : 0;
 
     const categoriesList = Object.entries(categorySpentMap).map(([category, spent]) => ({
       category: category as Category,
@@ -795,10 +800,10 @@ export const budgetsAPI = {
       total_budget: budgetAmount,
       total_spent: Math.round(totalSpent * 100) / 100,
       monthly_net_balance: monthlyNetBalance,
-      net_spent: netSpent,
+      net_spent: Math.round(totalSpent * 100) / 100,
       remaining: Math.round(remaining * 100) / 100,
       percentage_used: Math.round(pct * 100) / 100,
-      is_over_budget: netSpent > budgetAmount && budgetAmount > 0,
+      is_over_budget: totalSpent > budgetAmount && budgetAmount > 0,
       categories: categoriesList
     });
   }
@@ -810,7 +815,7 @@ export const analyticsAPI = {
     const uid = getCurrentUserId();
     const snapExp = await get(ref(db, 'expenses'));
     let totalExpenses = 0;
-    let totalSpentPaidByMe = 0;
+    let totalSpentMyShare = 0;
     
     if (snapExp.exists()) {
       Object.values(snapExp.val()).forEach((exp: any) => {
@@ -819,8 +824,9 @@ export const analyticsAPI = {
         if (isPayer || isSplitter) {
           totalExpenses++;
         }
-        if (isPayer) {
-          totalSpentPaidByMe += exp.amount;
+        const mySplit = (exp.splits || []).find((s: any) => s.user_id === uid);
+        if (mySplit && mySplit.status === 'accepted') {
+          totalSpentMyShare += mySplit.share_amount;
         }
       });
     }
@@ -829,7 +835,7 @@ export const analyticsAPI = {
     
     return wrapResponse({
       total_expenses: totalExpenses,
-      total_spent: Math.round(totalSpentPaidByMe * 100) / 100,
+      total_spent: Math.round(totalSpentMyShare * 100) / 100,
       ...balance
     });
   },

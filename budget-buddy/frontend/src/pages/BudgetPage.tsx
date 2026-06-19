@@ -170,9 +170,9 @@ export default function BudgetPage() {
                 {/* Stats Row */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="glass-panel rounded-2xl p-4 flex flex-col gap-1">
-                    <span className="text-xs text-on-surface-variant uppercase font-semibold">Net Spent</span>
-                    <span className={`text-monetary-md font-bold ${budget.monthly_net_balance > 0 ? 'text-secondary' : 'text-primary'}`}>
-                      {budget.monthly_net_balance > 0 ? `+₹${budget.monthly_net_balance.toLocaleString('en-IN')}` : `₹${Math.abs(budget.monthly_net_balance).toLocaleString('en-IN')}`}
+                    <span className="text-xs text-on-surface-variant uppercase font-semibold">Total Spent</span>
+                    <span className="text-monetary-md font-bold text-primary">
+                      ₹{budget.total_spent.toLocaleString('en-IN')}
                     </span>
                   </div>
                   <div className="glass-panel rounded-2xl p-4 flex flex-col gap-1">

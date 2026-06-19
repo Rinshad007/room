@@ -323,9 +323,9 @@ export default function AnalyticsPage() {
           />
           <StatCard
             icon="payments"
-            label="Total Paid"
+            label="Total Spent"
             value={fmt(totalPaidByMe)}
-            sub="you paid"
+            sub="all time"
             accent="#F97316"
           />
           <StatCard
@@ -358,8 +358,8 @@ export default function AnalyticsPage() {
             </div>
           ) : (
             <>
-              <div className="h-52">
-                <ResponsiveContainer width="100%" height="100%">
+              <div className="h-52 w-full min-w-0">
+                <ResponsiveContainer width="100%" height={208}>
                   <PieChart>
                     <defs>
                       {categoriesData.map((c, i) => (
@@ -441,8 +441,8 @@ export default function AnalyticsPage() {
               <p className="text-sm text-on-surface-variant/60 italic">No monthly data for {year}</p>
             </div>
           ) : (
-            <div className="h-52">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="h-52 w-full min-w-0">
+              <ResponsiveContainer width="100%" height={208}>
                 <BarChart
                   data={monthlyData}
                   margin={{ top: 4, right: 4, left: -24, bottom: 0 }}
@@ -494,8 +494,8 @@ export default function AnalyticsPage() {
               <span className="text-xs text-on-surface-variant/60 font-medium">Last 6 months</span>
             </div>
 
-            <div className="h-44">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="h-44 w-full min-w-0">
+              <ResponsiveContainer width="100%" height={176}>
                 <AreaChart data={trendData} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
                   <defs>
                     <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">

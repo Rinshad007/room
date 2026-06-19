@@ -346,7 +346,7 @@ export default function SettlementsPage() {
                         Once paid, tap below to complete and reflect in balances:
                       </p>
                       <button
-                        onClick={() => handleSettleUp(activeSettlement.friendId, activeSettlement.amount, 'GPay', 'completed')}
+                        onClick={() => handleSettleUp(activeSettlement.friendId, activeSettlement.amount, 'GPay', 'pending')}
                         className="btn-primary w-full h-10 text-xs shadow-none bg-secondary text-on-secondary hover:bg-secondary/95"
                       >
                         Confirm Payment Sent
@@ -363,7 +363,7 @@ export default function SettlementsPage() {
 
                     <div className="space-y-2">
                       <button
-                        onClick={() => handleSettleUp(activeSettlement.friendId, activeSettlement.amount, 'Cash', 'completed')}
+                        onClick={() => handleSettleUp(activeSettlement.friendId, activeSettlement.amount, 'Cash', 'pending')}
                         className="btn-primary w-full h-12 text-sm shadow-none rounded-xl"
                       >
                         Record as Cash Payment
@@ -383,7 +383,7 @@ export default function SettlementsPage() {
                   <div className="border-t border-outline-variant/10 pt-3 flex justify-between items-center text-xs">
                     <span className="text-on-surface-variant/60">Paying with Cash instead?</span>
                     <button
-                      onClick={() => handleSettleUp(activeSettlement.friendId, activeSettlement.amount, 'Cash', 'completed')}
+                      onClick={() => handleSettleUp(activeSettlement.friendId, activeSettlement.amount, 'Cash', 'pending')}
                       className="text-primary font-bold hover:underline"
                     >
                       Record Cash

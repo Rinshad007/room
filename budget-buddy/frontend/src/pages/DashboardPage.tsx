@@ -1,15 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
-import { analyticsAPI, expensesAPI, budgetsAPI } from '../api/services';
-import type { DashboardData, Expense, BudgetSummary } from '../types';
-import { useAuthStore } from '../store/auth';
+import { analyticsAPI, budgetsAPI } from '../api/services';
+import type { DashboardData, BudgetSummary } from '../types';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
-  const [recentExpenses, setRecentExpenses] = useState<Expense[]>([]);
   const [currentBudget, setCurrentBudget] = useState<BudgetSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -20,10 +17,6 @@ export default function DashboardPage() {
         // Load analytics summary
         const dRes = await analyticsAPI.dashboard();
         setDashboardData(dRes.data);
-
-        // Load recent expenses
-        const eRes = await expensesAPI.list(0, 5);
-        setRecentExpenses(eRes.data.expenses || []);
 
         // Load monthly budget (current month/year)
         try {
@@ -41,19 +34,6 @@ export default function DashboardPage() {
     }
     loadData();
   }, []);
-
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'Food': return 'restaurant';
-      case 'Travel': return 'flight';
-      case 'Shopping': return 'shopping_cart';
-      case 'Rent': return 'home';
-      case 'Entertainment': return 'movie';
-      default: return 'payments';
-    }
-  };
-
-  const [activeTab, setActiveTab] = useState<'splits' | 'personal'>('splits');
 
   if (loading) {
     return (
@@ -77,16 +57,9 @@ export default function DashboardPage() {
   const youOwe = dashboardData?.total_payable ?? 0;
   const youAreOwed = dashboardData?.total_receivable ?? 0;
 
-  const monthlyNetBalance = currentBudget?.monthly_net_balance ?? 0;
   const netSpent = currentBudget?.net_spent ?? 0;
   const budgetAmount = currentBudget?.total_budget ?? 0;
   const budgetPct = currentBudget?.percentage_used ?? 0;
-
-  // Filter recent expenses into personal vs split bills
-  const filteredExpenses = recentExpenses.filter(exp => {
-    const isPersonal = exp.splits.length <= 1;
-    return activeTab === 'personal' ? isPersonal : !isPersonal;
-  });
 
   return (
     <Layout>
@@ -97,9 +70,9 @@ export default function DashboardPage() {
           
           <div className="flex justify-between items-start">
             <div className="flex flex-col">
-              <span className="text-body-md text-on-surface-variant font-medium">Net Balance</span>
-              <span className={`font-display-currency text-display-currency ${netBalance >= 0 ? 'text-primary' : 'text-error'}`}>
-                ₹{Math.abs(netBalance).toLocaleString('en-IN')}
+              <span className="text-body-md text-on-surface-variant font-medium">Total Expense</span>
+              <span className="font-display-currency text-display-currency text-primary">
+                ₹{(dashboardData?.total_spent ?? 0).toLocaleString('en-IN')}
               </span>
             </div>
             {budgetAmount > 0 && (
@@ -121,29 +94,21 @@ export default function DashboardPage() {
               <span className="text-monetary-md text-error">₹{youOwe.toLocaleString('en-IN')}</span>
             </div>
             <div className="w-px h-8 bg-outline-variant/30" />
-            <div className="flex flex-col text-right">
+            <div className="flex flex-col text-center">
               <span className="text-label-caps text-on-surface-variant uppercase">You are owed</span>
               <span className="text-monetary-md text-secondary">₹{youAreOwed.toLocaleString('en-IN')}</span>
+            </div>
+            <div className="w-px h-8 bg-outline-variant/30" />
+            <div className="flex flex-col text-right">
+              <span className="text-label-caps text-on-surface-variant uppercase">Net Balance</span>
+              <span className={`text-monetary-md font-bold ${netBalance >= 0 ? 'text-secondary' : 'text-error'}`}>
+                {netBalance >= 0 ? `+₹${netBalance.toLocaleString('en-IN')}` : `-₹${Math.abs(netBalance).toLocaleString('en-IN')}`}
+              </span>
             </div>
           </div>
         </section>
 
-        {/* Total Spent & Expenses Summary */}
-        <section className="glass-panel rounded-2xl p-4 flex items-center justify-between bg-surface-container-low border border-outline-variant/10">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary-container text-primary flex items-center justify-center">
-              <span className="material-symbols-outlined text-sm">payments</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xs text-on-surface-variant font-medium">Total Spent (Paid by You)</span>
-              <span className="text-lg font-bold text-primary">₹{(dashboardData?.total_spent ?? 0).toLocaleString('en-IN')}</span>
-            </div>
-          </div>
-          <div className="text-right flex flex-col justify-center">
-            <span className="text-[10px] text-on-surface-variant/75 font-label-caps uppercase">All-time Expenses</span>
-            <span className="text-sm font-semibold text-primary">{dashboardData?.total_expenses ?? 0}</span>
-          </div>
-        </section>
+
 
         {/* Quick Actions */}
         <section className="grid grid-cols-4 gap-3">
@@ -178,13 +143,13 @@ export default function DashboardPage() {
           </button>
 
           <button
-            onClick={() => navigate('/friends')}
+            onClick={() => navigate('/history')}
             className="flex flex-col items-center justify-center gap-2 p-3 glass-panel rounded-2xl active:scale-95 transition-transform hover:bg-white"
           >
             <div className="w-10 h-10 rounded-full bg-surface-container text-primary flex items-center justify-center border border-outline-variant/30">
-              <span className="material-symbols-outlined">group</span>
+              <span className="material-symbols-outlined">history</span>
             </div>
-            <span className="text-label-caps text-primary text-center">Friends</span>
+            <span className="text-label-caps text-primary text-center">History</span>
           </button>
         </section>
 
@@ -196,14 +161,11 @@ export default function DashboardPage() {
           <div className="flex justify-between items-end">
             <span className="text-monetary-md text-primary font-semibold">Monthly Budget</span>
             <span className="text-body-md text-on-surface-variant font-medium">
-              {monthlyNetBalance < 0 ? (
-                <span>₹{Math.abs(monthlyNetBalance).toLocaleString('en-IN')} (Net Spent)</span>
-              ) : monthlyNetBalance > 0 ? (
-                <span className="text-secondary font-semibold">+₹{monthlyNetBalance.toLocaleString('en-IN')} (Surplus)</span>
+              {budgetAmount > 0 ? (
+                <span>₹{netSpent.toLocaleString('en-IN')} / ₹{budgetAmount.toLocaleString('en-IN')}</span>
               ) : (
-                <span>₹0 (Net)</span>
+                <span className="text-on-surface-variant/60 italic text-sm">Not set</span>
               )}
-              {budgetAmount > 0 ? ` / ₹${budgetAmount.toLocaleString('en-IN')}` : ' / Not set'}
             </span>
           </div>
           {budgetAmount > 0 ? (
@@ -250,72 +212,7 @@ export default function DashboardPage() {
           </div>
         </button>
 
-        {/* Recent Activity */}
-        <section className="flex flex-col gap-3">
-          <div className="flex justify-between items-center px-1">
-            <h2 className="text-headline-lg-mobile text-primary font-bold">Recent Activity</h2>
-            <button onClick={() => navigate('/history')} className="text-body-md text-primary hover:underline font-semibold">
-              See All
-            </button>
-          </div>
 
-          {/* Activity Tabs */}
-          <div className="flex p-1 bg-surface-container-low rounded-xl border border-outline-variant/10">
-            <button
-              type="button"
-              onClick={() => setActiveTab('splits')}
-              className={`flex-1 py-2 text-center rounded-lg font-semibold text-xs transition-all ${activeTab === 'splits' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-primary'}`}
-            >
-              Split Bills
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('personal')}
-              className={`flex-1 py-2 text-center rounded-lg font-semibold text-xs transition-all ${activeTab === 'personal' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-primary'}`}
-            >
-              Personal Expenses
-            </button>
-          </div>
-
-          <div className="glass-panel rounded-2xl p-4 flex flex-col gap-0">
-            {filteredExpenses.length === 0 ? (
-              <p className="py-6 text-center text-body-md text-on-surface-variant/60 italic">
-                No recent {activeTab === 'personal' ? 'personal expenses' : 'split bills'}
-              </p>
-            ) : (
-              filteredExpenses.map((exp, idx) => (
-                <div key={exp.id}>
-                  {idx > 0 && <div className="w-full h-px bg-outline-variant/30 my-3" />}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center text-on-surface-variant">
-                        <span className="material-symbols-outlined">{getCategoryIcon(exp.category)}</span>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-body-md text-primary font-semibold truncate max-w-[150px]">{exp.title}</span>
-                        <span className="text-label-caps text-on-surface-variant">
-                          {new Date(exp.expense_date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} • {exp.category}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end">
-                      <span className="text-monetary-md text-primary font-bold">₹{exp.amount.toLocaleString('en-IN')}</span>
-                      {activeTab === 'splits' && (
-                        <span className="text-label-caps text-on-surface-variant mt-0.5">
-                          {exp.paid_by === 'you' || exp.paid_by === user?.id ? (
-                            <span className="text-secondary-fixed-dim bg-secondary/15 px-2 py-0.5 rounded-full">Paid</span>
-                          ) : (
-                            <span className="text-error bg-error/10 px-2 py-0.5 rounded-full">Borrowed</span>
-                          )}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
       </div>
     </Layout>
   );
