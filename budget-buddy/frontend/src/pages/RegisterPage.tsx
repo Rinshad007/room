@@ -31,7 +31,7 @@ export default function RegisterPage() {
       const meRes = await authAPI.me();
       setAuth(meRes.data, access_token, refresh_token);
       toast.success('Welcome to Budget Buddy!');
-      navigate('/dashboard');
+      navigate('/add-expense');
     } catch (err: any) {
       const detail = err.response?.data?.detail;
       if (Array.isArray(detail)) {

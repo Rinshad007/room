@@ -94,11 +94,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Live indicator */}
-          <div className="flex items-center gap-1.5 mt-1">
-            <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
-            <span className="text-[10px] text-on-surface-variant/60 font-medium">Live · updates instantly</span>
-          </div>
+
         </section>
 
         {/* ── Quick Actions ─────────────────────────────────────────────── */}

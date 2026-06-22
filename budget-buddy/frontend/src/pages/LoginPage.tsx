@@ -22,7 +22,7 @@ export default function LoginPage() {
       const meRes = await authAPI.me();
       setAuth(meRes.data, access_token, refresh_token);
       toast.success('Welcome back!');
-      navigate('/dashboard');
+      navigate('/add-expense');
     } catch (err: any) {
       toast.error(err.response?.data?.detail || 'Invalid credentials');
     } finally {
