@@ -101,21 +101,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Divider */}
-        <div className="flex items-center gap-3 my-2">
-          <div className="flex-1 h-px bg-outline-variant/40" />
-          <span className="font-label-caps text-label-caps text-on-surface-variant">OR</span>
-          <div className="flex-1 h-px bg-outline-variant/40" />
-        </div>
 
-        {/* Demo account */}
-        <button
-          onClick={() => setForm({ email: 'demo@budgetbuddy.app', password: 'Demo1234' })}
-          className="btn-secondary w-full h-12 text-sm"
-        >
-          <span className="material-symbols-outlined text-[18px]">play_circle</span>
-          Try Demo Account
-        </button>
       </div>
 
       <p className="mt-6 text-body-md text-on-surface-variant">
