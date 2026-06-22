@@ -539,30 +539,65 @@ export const expensesAPI = {
 export const settlementsAPI = {
   create: async (data: { receiver_id: string; amount: number; payment_method: string; status?: 'pending' | 'completed' }) => {
     const uid = getCurrentUserId();
+    const requestedStatus = data.status || 'pending';
+
+    // ── Duplicate guard ─────────────────────────────────────────────────
+    // Prevent creating a duplicate settlement if one already exists between
+    // the same payer → receiver with 'pending' status.
+    const existingSnap = await get(ref(db, 'settlements'));
+    if (existingSnap.exists()) {
+      const existing = Object.values(existingSnap.val()) as any[];
+      const duplicate = existing.find(
+        (s) =>
+          s.payer_id === uid &&
+          s.receiver_id === data.receiver_id &&
+          s.status === 'pending'
+      );
+      if (duplicate) {
+        // Return the existing record instead of creating a new one
+        return wrapResponse(duplicate as Settlement);
+      }
+    }
+
     const settlementRef = push(ref(db, 'settlements'));
     const settleId = settlementRef.key;
     if (!settleId) throw new Error('Failed to generate settlement ID');
-    
+
     const settleData: Settlement = {
       id: settleId,
       payer_id: uid,
       receiver_id: data.receiver_id,
       amount: data.amount,
       payment_method: data.payment_method as PaymentMethod,
-      status: data.status || 'completed',
+      status: requestedStatus,
       created_at: new Date().toISOString()
     };
-    
-    if (data.status === 'completed' || !data.status) {
+
+    if (requestedStatus === 'completed') {
       settleData.settled_at = new Date().toISOString();
     }
-    
+
     await set(settlementRef, settleData);
-    
+
     const senderSnap = await get(ref(db, `users/${uid}`));
     const senderName = senderSnap.exists() ? (senderSnap.val() as User).name : 'Someone';
-    await createNotification(data.receiver_id, 'Settlement Received', `${senderName} settled ₹${data.amount} with you`, 'settlement_completed');
-    
+
+    if (requestedStatus === 'completed') {
+      await createNotification(
+        data.receiver_id,
+        'Settlement Completed',
+        `${senderName} settled ₹${data.amount} with you via ${data.payment_method}.`,
+        'settlement_completed'
+      );
+    } else {
+      await createNotification(
+        data.receiver_id,
+        'Settlement Pending Confirmation',
+        `${senderName} recorded a payment of ₹${data.amount} via ${data.payment_method}. Please confirm.`,
+        'settlement_pending'
+      );
+    }
+
     return wrapResponse(settleData);
   },
 
@@ -577,18 +612,44 @@ export const settlementsAPI = {
         }
       });
     }
+    // Newest first
     settlements.sort((a, b) => b.created_at.localeCompare(a.created_at));
     return wrapResponse(settlements);
   },
 
   approve: async (id: string) => {
+    const uid = getCurrentUserId();
     const settleRef = ref(db, `settlements/${id}`);
+    const snap = await get(settleRef);
+    if (!snap.exists()) throw new Error('Settlement not found');
+    const settlement = snap.val() as Settlement;
+
+    // Only the receiver can approve
+    if (settlement.receiver_id !== uid) {
+      throw new Error('Only the receiver can approve this settlement');
+    }
+    // Idempotent — already completed
+    if (settlement.status === 'completed') {
+      return wrapResponse(settlement);
+    }
+
     await update(settleRef, {
       status: 'completed',
       settled_at: new Date().toISOString()
     });
-    const updated = await get(settleRef);
-    return wrapResponse(updated.val() as Settlement);
+    const updated = (await get(settleRef)).val() as Settlement;
+
+    // Notify the payer
+    const receiverSnap = await get(ref(db, `users/${uid}`));
+    const receiverName = receiverSnap.exists() ? (receiverSnap.val() as User).name : 'Your friend';
+    await createNotification(
+      settlement.payer_id,
+      'Settlement Approved',
+      `${receiverName} confirmed your payment of ₹${settlement.amount}.`,
+      'settlement_completed'
+    );
+
+    return wrapResponse(updated);
   },
 
   balances: async () => {
@@ -606,7 +667,7 @@ async function computeBalanceSummary(userId: string) {
   const snapExp = await get(ref(db, 'expenses'));
   let totalReceivable = 0;
   let totalPayable = 0;
-  
+
   if (snapExp.exists()) {
     Object.values(snapExp.val()).forEach((exp: any) => {
       if (exp.paid_by === userId) {
@@ -620,11 +681,13 @@ async function computeBalanceSummary(userId: string) {
       }
     });
   }
-  
+
+  // Deduct BOTH completed AND pending settlements so the displayed balance
+  // reflects in-flight payments (prevents reappearing "You owe" cards).
   const snapSettle = await get(ref(db, 'settlements'));
   if (snapSettle.exists()) {
     Object.values(snapSettle.val()).forEach((s: any) => {
-      if (s.status === 'completed') {
+      if (s.status === 'completed' || s.status === 'pending') {
         if (s.payer_id === userId) {
           totalPayable -= s.amount;
         } else if (s.receiver_id === userId) {
@@ -633,11 +696,11 @@ async function computeBalanceSummary(userId: string) {
       }
     });
   }
-  
+
   totalPayable = Math.max(0, Math.round(totalPayable * 100) / 100);
   totalReceivable = Math.max(0, Math.round(totalReceivable * 100) / 100);
   const netBalance = Math.round((totalReceivable - totalPayable) * 100) / 100;
-  
+
   return {
     total_payable: totalPayable,
     total_receivable: totalReceivable,
@@ -647,7 +710,7 @@ async function computeBalanceSummary(userId: string) {
 
 async function computeUserBalances(userId: string) {
   const net: Record<string, number> = {};
-  
+
   const snapExp = await get(ref(db, 'expenses'));
   if (snapExp.exists()) {
     Object.values(snapExp.val()).forEach((exp: any) => {
@@ -665,20 +728,25 @@ async function computeUserBalances(userId: string) {
       }
     });
   }
-  
+
+  // Deduct BOTH completed AND pending settlements.
+  // Pending = payer has recorded a payment but receiver hasn't confirmed yet.
+  // We still reduce their balance to prevent duplicate settles.
   const snapSettle = await get(ref(db, 'settlements'));
   if (snapSettle.exists()) {
     Object.values(snapSettle.val()).forEach((s: any) => {
-      if (s.status === 'completed') {
+      if (s.status === 'completed' || s.status === 'pending') {
         if (s.payer_id === userId) {
+          // I paid them → they owe me less → net[them] goes up (toward 0)
           net[s.receiver_id] = (net[s.receiver_id] || 0) + s.amount;
         } else if (s.receiver_id === userId) {
+          // They paid me → I owe them less → net[them] goes toward 0
           net[s.payer_id] = (net[s.payer_id] || 0) - s.amount;
         }
       }
     });
   }
-  
+
   return Object.entries(net)
     .map(([uid, bal]) => ({
       user_id: uid,
