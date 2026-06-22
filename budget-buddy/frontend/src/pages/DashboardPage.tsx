@@ -3,9 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import { useRealtimeStore } from '../hooks/useRealtimeStore';
 import { useAuthStore } from '../store/auth';
-import type { BudgetSummary } from '../types';
-import { useState, useEffect } from 'react';
-import { budgetsAPI } from '../api/services';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -13,15 +10,6 @@ export default function DashboardPage() {
 
   // ── Real-time data from Firebase ──────────────────────────────────────────
   const { ready, summary, myExpenses } = useRealtimeStore(user?.id);
-
-  // ── Budget (not real-time, but refreshed on mount) ────────────────────────
-  const [currentBudget, setCurrentBudget] = useState<BudgetSummary | null>(null);
-  useEffect(() => {
-    const now = new Date();
-    budgetsAPI.summary(now.getMonth() + 1, now.getFullYear())
-      .then(r => setCurrentBudget(r.data))
-      .catch(() => setCurrentBudget(null));
-  }, []);
 
   // ── Derived values (memoized) ─────────────────────────────────────────────
   const totalSpent = useMemo(() => {
@@ -35,10 +23,6 @@ export default function DashboardPage() {
   const netBalance  = summary?.net_balance     ?? 0;
   const youOwe      = summary?.total_payable   ?? 0;
   const youAreOwed  = summary?.total_receivable ?? 0;
-
-  const budgetAmount = currentBudget?.total_budget    ?? 0;
-  const netSpent     = currentBudget?.net_spent       ?? 0;
-  const budgetPct    = currentBudget?.percentage_used ?? 0;
 
   // ── Loading skeleton ──────────────────────────────────────────────────────
   if (!ready) {
@@ -118,42 +102,6 @@ export default function DashboardPage() {
           ))}
         </section>
 
-        {/* ── Monthly Budget ────────────────────────────────────────────── */}
-        <section
-          onClick={() => navigate('/budget')}
-          className="glass-panel rounded-2xl p-4 flex flex-col gap-3 cursor-pointer hover:bg-white transition-colors"
-        >
-          <div className="flex justify-between items-end">
-            <span className="text-monetary-md text-primary font-semibold">Monthly Budget</span>
-            <span className="text-body-md text-on-surface-variant font-medium">
-              {budgetAmount > 0 ? (
-                <span>₹{netSpent.toLocaleString('en-IN')} / ₹{budgetAmount.toLocaleString('en-IN')}</span>
-              ) : (
-                <span className="text-on-surface-variant/60 italic text-sm">Not set</span>
-              )}
-            </span>
-          </div>
-          {budgetAmount > 0 ? (
-            <>
-              <div className="w-full h-2 rounded-full bg-surface-variant overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ${budgetPct >= 90 ? 'bg-error' : 'bg-secondary'}`}
-                  style={{ width: `${Math.min(budgetPct, 100)}%` }}
-                />
-              </div>
-              <div className="flex justify-between w-full">
-                {currentBudget?.is_over_budget ? (
-                  <span className="text-label-caps text-error uppercase font-bold flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[14px]">warning</span> Over Budget!
-                  </span>
-                ) : <span />}
-                <span className="text-label-caps text-on-surface-variant self-end uppercase">{budgetPct}% Used</span>
-              </div>
-            </>
-          ) : (
-            <span className="text-body-md text-on-surface-variant/60 italic text-sm">Tap to set up a monthly budget</span>
-          )}
-        </section>
 
         {/* ── Analytics Banner ──────────────────────────────────────────── */}
         <button
