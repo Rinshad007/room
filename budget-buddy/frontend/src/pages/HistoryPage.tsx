@@ -1,15 +1,12 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import Layout from '../components/layout/Layout';
-import { expensesAPI, settlementsAPI } from '../api/services';
+import { expensesAPI } from '../api/services';
 import { useRealtimeStore } from '../hooks/useRealtimeStore';
 import type { Expense, Settlement, Category } from '../types';
 import { useAuthStore } from '../store/auth';
 import toast from 'react-hot-toast';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-type HistoryItem =
-  | { type: 'expense'; date: Date; data: Expense }
-  | { type: 'settlement'; date: Date; data: Settlement };
 
 interface EditState {
   id: string;

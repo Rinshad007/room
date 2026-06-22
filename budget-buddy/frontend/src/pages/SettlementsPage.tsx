@@ -22,7 +22,6 @@ export default function SettlementsPage() {
     ready,
     mySettlements,
     perUserBalances,
-    friends,
     resolveName,
     users,
   } = useRealtimeStore(user?.id);

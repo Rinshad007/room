@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { ref, onValue, off } from 'firebase/database';
+import { ref, onValue } from 'firebase/database';
 import { db } from '../firebase';
 import type { Expense, Settlement, User, FriendWithRequest } from '../types';
 

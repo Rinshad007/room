@@ -70,15 +70,6 @@ export default function DashboardPage() {
                 ₹{totalSpent.toLocaleString('en-IN')}
               </span>
             </div>
-            {budgetAmount > 0 && (
-              <div className="flex flex-col items-end text-right">
-                <span className="text-body-sm text-on-surface-variant font-medium">Budget Used</span>
-                <span className="text-sm font-bold text-primary">
-                  ₹{netSpent.toLocaleString('en-IN')} / ₹{budgetAmount.toLocaleString('en-IN')}
-                </span>
-                <span className="text-[10px] text-on-surface-variant/85 font-semibold">{budgetPct}% Used</span>
-              </div>
-            )}
           </div>
 
           <div className="w-full h-px bg-outline-variant/30 my-1" />
