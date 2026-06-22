@@ -510,6 +510,16 @@ export const expensesAPI = {
     return wrapResponse({ success: true });
   },
 
+  update: async (id: string, data: { title?: string; description?: string; category?: string; amount?: number; expense_date?: string }) => {
+    const expenseRef = ref(db, `expenses/${id}`);
+    const snap = await get(expenseRef);
+    if (!snap.exists()) throw new Error('Expense not found');
+    await update(expenseRef, data);
+    const updated = await get(expenseRef);
+    return wrapResponse(updated.val() as Expense);
+  },
+
+
   updateSplitStatus: async (split_id: string, status: string) => {
     const snapshot = await get(ref(db, 'expenses'));
     let matchedExpense: Expense | null = null;
