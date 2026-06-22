@@ -121,11 +121,6 @@ export default function SettlementsPage() {
     <Layout showBack title="Settle Up">
       <div className="page-container page-enter pb-24 space-y-6">
 
-        {/* Live indicator */}
-        <div className="flex items-center gap-1.5 px-1">
-          <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
-          <span className="text-[10px] text-on-surface-variant/60 font-medium">Live · updates instantly</span>
-        </div>
 
         {/* ── Balance Cards ───────────────────────────────────────────── */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
