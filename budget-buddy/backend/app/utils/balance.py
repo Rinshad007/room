@@ -35,11 +35,13 @@ async def compute_balance_summary(db: AsyncSession, user_id: str) -> dict:
     pay_splits = res_pay.scalars().all()
     total_payable = sum(float(s.share_amount) for s in pay_splits)
 
-    # ── Reduce by completed settlements ────────────────────────────────────
+    # ── Reduce by completed AND pending settlements ───────────────────────
+    # Pending settlements already represent in-flight payments — deducting them
+    # prevents the payer from settling the same debt twice.
     stmt_settle = (
         select(Settlement)
         .where(
-            Settlement.status == "completed",
+            Settlement.status.in_(["completed", "pending"]),
             or_(
                 Settlement.payer_id == user_id,
                 Settlement.receiver_id == user_id
@@ -98,11 +100,12 @@ async def compute_user_balances(db: AsyncSession, user_id: str) -> list[dict]:
     for split, paid_by in res_pay.all():
         net[paid_by] -= float(split.share_amount)
 
-    # Apply completed settlements
+    # Apply completed AND pending settlements
+    # Pending = in-flight payment — still reduce balances to prevent duplicates
     stmt_settle = (
         select(Settlement)
         .where(
-            Settlement.status == "completed",
+            Settlement.status.in_(["completed", "pending"]),
             or_(
                 Settlement.payer_id == user_id,
                 Settlement.receiver_id == user_id

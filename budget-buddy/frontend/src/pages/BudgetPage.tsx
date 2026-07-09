@@ -3,6 +3,7 @@ import Layout from '../components/layout/Layout';
 import { budgetsAPI } from '../api/services';
 import type { BudgetSummary, CategorySpend } from '../types';
 import toast from 'react-hot-toast';
+import { matchCategoryIcon } from '../utils/categoryHelpers';
 
 export default function BudgetPage() {
   const now = new Date();
@@ -38,26 +39,14 @@ export default function BudgetPage() {
 
   const handleSaveBudget = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (amountInput <= 0) {
-      toast.error('Budget amount must be greater than 0');
-      return;
-    }
-
+    if (amountInput <= 0) return;
+    setSaving(true);
     try {
-      setSaving(true);
-      if (budget && budget.total_budget > 0) {
-        await budgetsAPI.update(currentMonth, currentYear, amountInput);
-      } else {
-        await budgetsAPI.create({
-          month: currentMonth,
-          year: currentYear,
-          amount: amountInput
-        });
-      }
-      toast.success('Budget saved successfully!');
+      await budgetsAPI.create({ total_budget: amountInput, month: currentMonth, year: currentYear });
+      toast.success('Budget limit saved!');
       loadBudget(currentMonth, currentYear);
-    } catch (err) {
-      toast.error('Failed to save budget');
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to save budget');
     } finally {
       setSaving(false);
     }
@@ -91,14 +80,7 @@ export default function BudgetPage() {
   ];
 
   const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'Food': return 'restaurant';
-      case 'Travel': return 'flight';
-      case 'Shopping': return 'shopping_cart';
-      case 'Rent': return 'home';
-      case 'Entertainment': return 'movie';
-      default: return 'payments';
-    }
+    return matchCategoryIcon(category);
   };
 
   // Ring calculation
@@ -171,7 +153,9 @@ export default function BudgetPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="glass-panel rounded-2xl p-4 flex flex-col gap-1">
                     <span className="text-xs text-on-surface-variant uppercase font-semibold">Total Spent</span>
-                    <span className="text-monetary-md text-primary font-bold">₹{budget.total_spent.toLocaleString('en-IN')}</span>
+                    <span className="text-monetary-md font-bold text-primary">
+                      ₹{budget.total_spent.toLocaleString('en-IN')}
+                    </span>
                   </div>
                   <div className="glass-panel rounded-2xl p-4 flex flex-col gap-1">
                     <span className="text-xs text-on-surface-variant uppercase font-semibold">Remaining</span>
@@ -194,7 +178,7 @@ export default function BudgetPage() {
                           <div key={cat.category} className="flex flex-col gap-1.5">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <span className="material-symbols-outlined text-[16px] text-on-surface-variant">{getCategoryIcon(cat.category)}</span>
+                                <span className="text-base">{getCategoryIcon(cat.category)}</span>
                                 <span className="text-sm font-semibold text-primary">{cat.category}</span>
                               </div>
                               <span className="text-sm font-bold text-primary">₹{cat.spent.toLocaleString('en-IN')}</span>

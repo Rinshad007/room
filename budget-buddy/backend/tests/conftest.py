@@ -1,11 +1,14 @@
+import os
+# Force application environment to testing BEFORE importing session or settings
+os.environ["APP_ENV"] = "testing"
+
 import asyncio
 import pytest
 import pytest_asyncio
-from app.db.session import async_engine, Base
 from app.core.config import settings
-
-# Force application environment to testing
 settings.APP_ENV = "testing"
+
+from app.db.session import async_engine, Base
 
 async def _reset_db():
     """Drop and recreate all tables"""

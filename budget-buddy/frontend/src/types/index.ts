@@ -5,6 +5,7 @@ export interface User {
   name: string;
   email: string;
   avatar_url?: string;
+  upi_id?: string;
   created_at: string;
 }
 
@@ -45,7 +46,7 @@ export interface GroupMember {
 }
 
 export type SplitType = 'equal' | 'percentage' | 'custom';
-export type Category = 'Food' | 'Travel' | 'Shopping' | 'Rent' | 'Entertainment' | 'Others';
+export type Category = string;
 export type PaymentMethod = 'GPay' | 'Cash';
 export type SplitStatus = 'pending' | 'accepted' | 'disputed';
 
@@ -141,6 +142,8 @@ export interface BudgetSummary {
   year: number;
   total_budget: number;
   total_spent: number;
+  monthly_net_balance: number;
+  net_spent: number;
   remaining: number;
   percentage_used: number;
   is_over_budget: boolean;

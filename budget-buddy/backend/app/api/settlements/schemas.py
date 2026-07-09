@@ -7,6 +7,7 @@ class SettlementCreate(BaseModel):
     receiver_id: str
     amount: float = Field(..., gt=0)
     payment_method: Literal["GPay", "Cash"] = "Cash"
+    status: Optional[str] = "pending"
 
 
 class SettlementPublic(BaseModel):
