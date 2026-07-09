@@ -42,7 +42,7 @@ export default function BudgetPage() {
     if (amountInput <= 0) return;
     setSaving(true);
     try {
-      await budgetsAPI.create({ total_budget: amountInput, month: currentMonth, year: currentYear });
+      await budgetsAPI.create({ amount: amountInput, month: currentMonth, year: currentYear });
       toast.success('Budget limit saved!');
       loadBudget(currentMonth, currentYear);
     } catch (err: any) {
