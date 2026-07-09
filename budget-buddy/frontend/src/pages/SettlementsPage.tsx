@@ -94,14 +94,16 @@ export default function SettlementsPage() {
   };
 
   // ── UPI helpers ───────────────────────────────────────────────────────────
-  const getUpiLink = (a: ActiveSettlement) =>
-    a.upiId
-      ? `upi://pay?pa=${encodeURIComponent(a.upiId)}&pn=${encodeURIComponent(a.name)}&am=${a.amount}&cu=INR&tn=BudgetBuddy%20Settlement`
-      : '';
-  const getQrUrl = (a: ActiveSettlement) =>
-    a.upiId
-      ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(getUpiLink(a))}`
-      : '';
+  const getUpiLink = (a: ActiveSettlement) => {
+    if (!a.upiId) return '';
+    const isIOS = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(window.navigator.userAgent);
+    const params = `?pa=${encodeURIComponent(a.upiId)}&pn=${encodeURIComponent(a.name)}&am=${a.amount}&cu=INR&tn=BudgetBuddy%20Settlement`;
+    return isIOS ? `gpay://upi/pay${params}` : `upi://pay${params}`;
+  };
+  const getQrUrl = (a: ActiveSettlement) => {
+    const link = getUpiLink(a);
+    return link ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(link)}` : '';
+  };
 
   // ── Loading skeleton ──────────────────────────────────────────────────────
   if (!ready) {
@@ -118,7 +120,7 @@ export default function SettlementsPage() {
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <Layout showBack title="Settle Up">
+    <Layout title="Settle Up">
       <div className="page-container page-enter pb-24 space-y-6">
 
 

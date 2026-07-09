@@ -182,5 +182,3 @@ export interface FriendListResponse {
   friends: FriendWithRequest[];
   total: number;
 }
-
-

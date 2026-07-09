@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "Budget Buddy",
+    "slug": "budget-buddy",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "scheme": "budgetbuddy",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.budgetbuddy.app"
+    },
+    "android": {
+      "package": "com.budgetbuddy.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0A0A0F",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "@react-native-google-signin/google-signin"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "97519dda-e31d-4509-8f8c-baf5b03dac8b"
+      }
+    }
+  }
+}

@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
-import { groupsAPI, friendsAPI, expensesAPI } from '../api/services';
+import { groupsAPI, friendsAPI, expensesAPI, usersAPI } from '../api/services';
 import type { Group, FriendWithRequest, SplitType, Category } from '../types';
 import { useAuthStore } from '../store/auth';
+import { matchCategoryIcon } from '../utils/categoryHelpers';
 import toast from 'react-hot-toast';
 
 export default function AddExpensePage() {
@@ -11,8 +12,21 @@ export default function AddExpensePage() {
   const { user } = useAuthStore();
   const formRef = useRef<HTMLFormElement>(null);
   
-  // Static state
-  const categories: Category[] = ['Food', 'Travel', 'Shopping', 'Rent', 'Entertainment', 'Others'];
+  // Custom categories state
+  const [customCategories, setCustomCategories] = useState<{ name: string; icon: string }[]>([]);
+  const [newCatName, setNewCatName] = useState('');
+  const [showAddCatModal, setShowAddCatModal] = useState(false);
+
+  const defaultCategories = [
+    { name: 'Food', icon: '🍔' },
+    { name: 'Travel', icon: '✈️' },
+    { name: 'Shopping', icon: '🛍️' },
+    { name: 'Rent', icon: '🏠' },
+    { name: 'Entertainment', icon: '🎬' },
+    { name: 'Others', icon: '📦' }
+  ];
+
+  const allCategories = [...defaultCategories, ...customCategories];
 
   // Form inputs
   const [amount, setAmount] = useState<number>(0);
@@ -41,12 +55,32 @@ export default function AddExpensePage() {
         setGroups(groupsRes.data.groups);
         const friendsRes = await friendsAPI.list();
         setFriends(friendsRes.data.friends || []);
+        
+        const catRes = await usersAPI.getCustomCategories();
+        setCustomCategories(catRes.data);
       } catch (err) {
         console.error(err);
       }
     }
     loadInitialData();
   }, []);
+
+  const handleAddCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCatName.trim()) return;
+    const name = newCatName.trim();
+    const icon = matchCategoryIcon(name);
+    try {
+      await usersAPI.addCustomCategory(name, icon);
+      setCustomCategories([...customCategories, { name, icon }]);
+      setCategory(name);
+      setNewCatName('');
+      setShowAddCatModal(false);
+      toast.success(`Category "${name}" ${icon} created!`);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to create category');
+    }
+  };
 
   // Update participants list when Group changes
   useEffect(() => {
@@ -172,7 +206,7 @@ export default function AddExpensePage() {
   };
 
   return (
-    <Layout showBack title="Add Expense">
+    <Layout title="Add Expense">
       <div className="page-container page-enter" style={{ paddingBottom: '9rem' }}>
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
           
@@ -249,30 +283,35 @@ export default function AddExpensePage() {
           {/* Categories Horizontal Selector */}
           <div className="space-y-2">
             <label className="block text-on-surface-variant font-label-caps text-label-caps uppercase ml-1">Category</label>
-            <div className="flex space-x-3 overflow-x-auto hide-scrollbar pb-2 px-1">
-              {categories.map(cat => {
-                const isSelected = category === cat;
+            <div className="flex space-x-3 overflow-x-auto hide-scrollbar pb-2 px-1 items-center">
+              {allCategories.map(cat => {
+                const isSelected = category === cat.name;
                 return (
                   <button
-                    key={cat}
+                    key={cat.name}
                     type="button"
-                    onClick={() => setCategory(cat)}
+                    onClick={() => setCategory(cat.name)}
                     className={`flex flex-col items-center space-y-1.5 min-w-[72px] transition-all duration-200 ${isSelected ? 'scale-105 opacity-100' : 'opacity-65 hover:opacity-100'}`}
                   >
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${isSelected ? 'bg-primary text-on-primary shadow-md' : 'bg-surface-container-high text-on-surface'}`}>
-                      <span className="material-symbols-outlined text-[20px]">
-                        {cat === 'Food' && 'restaurant'}
-                        {cat === 'Travel' && 'flight'}
-                        {cat === 'Shopping' && 'shopping_cart'}
-                        {cat === 'Rent' && 'home'}
-                        {cat === 'Entertainment' && 'movie'}
-                        {cat === 'Others' && 'more_horiz'}
-                      </span>
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl transition-all ${isSelected ? 'bg-primary text-on-primary shadow-md' : 'bg-surface-container-high text-on-surface'}`}>
+                      {cat.icon}
                     </div>
-                    <span className={`text-[10px] font-label-caps uppercase tracking-wider ${isSelected ? 'text-primary font-bold' : 'text-on-surface-variant'}`}>{cat}</span>
+                    <span className={`text-[10px] font-label-caps uppercase tracking-wider ${isSelected ? 'text-primary font-bold' : 'text-on-surface-variant'}`}>{cat.name}</span>
                   </button>
                 );
               })}
+              
+              {/* Add Custom Category Button */}
+              <button
+                type="button"
+                onClick={() => setShowAddCatModal(true)}
+                className="flex flex-col items-center space-y-1.5 min-w-[72px] opacity-65 hover:opacity-100 transition-all duration-200"
+              >
+                <div className="w-12 h-12 rounded-full border border-dashed border-primary/40 flex items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 transition-colors">
+                  <span className="material-symbols-outlined text-[20px]">add</span>
+                </div>
+                <span className="text-[10px] font-label-caps uppercase tracking-wider text-primary font-bold">Add</span>
+              </button>
             </div>
           </div>
 
@@ -417,6 +456,41 @@ export default function AddExpensePage() {
           </button>
         </div>
       </div>
+
+      {/* New Category Modal */}
+      {showAddCatModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm flex flex-col gap-4 shadow-xl border border-outline-variant/30">
+            <div className="flex justify-between items-center">
+              <h3 className="font-bold text-headline-lg-mobile text-primary">New Category</h3>
+              <button onClick={() => setShowAddCatModal(false)} className="text-on-surface-variant">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <form onSubmit={handleAddCategory} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-label-caps text-on-surface-variant uppercase">Category Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Gym, Electricity, Cafe"
+                  value={newCatName}
+                  onChange={(e) => setNewCatName(e.target.value)}
+                  className="input-field h-12 text-sm"
+                />
+                {newCatName.trim() && (
+                  <p className="text-xs text-on-surface-variant/70 mt-1 flex items-center gap-1.5">
+                    Matched Icon: <span className="text-lg bg-surface-container p-1 rounded">{matchCategoryIcon(newCatName)}</span>
+                  </p>
+                )}
+              </div>
+              <button type="submit" className="btn-primary w-full h-12 text-sm shadow-none mt-2">
+                Create Category
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }

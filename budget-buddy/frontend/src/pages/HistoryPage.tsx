@@ -6,6 +6,8 @@ import type { Expense, Settlement, Category } from '../types';
 import { useAuthStore } from '../store/auth';
 import toast from 'react-hot-toast';
 
+import { matchCategoryIcon } from '../utils/categoryHelpers';
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface EditState {
@@ -20,14 +22,7 @@ interface EditState {
 const CATEGORIES: Category[] = ['Food', 'Travel', 'Shopping', 'Rent', 'Entertainment', 'Others'];
 
 const getCategoryIcon = (cat: string) => {
-  switch (cat) {
-    case 'Food': return 'restaurant';
-    case 'Travel': return 'flight';
-    case 'Shopping': return 'shopping_cart';
-    case 'Rent': return 'home';
-    case 'Entertainment': return 'movie';
-    default: return 'payments';
-  }
+  return matchCategoryIcon(cat);
 };
 
 // ─── Swipeable Row ────────────────────────────────────────────────────────────
@@ -249,8 +244,8 @@ export default function HistoryPage() {
                     <div className="bg-white rounded-xl p-4 border border-outline-variant/20 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex items-center justify-between hover:shadow-md transition-shadow">
                       {/* Left: icon + info */}
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 shrink-0 rounded-full bg-surface-variant flex items-center justify-center text-on-surface-variant">
-                          <span className="material-symbols-outlined">{getCategoryIcon(exp.category)}</span>
+                        <div className="w-10 h-10 shrink-0 rounded-full bg-surface-variant flex items-center justify-center text-xl">
+                          <span>{getCategoryIcon(exp.category)}</span>
                         </div>
                         <div className="min-w-0">
                           <h3 className="font-semibold text-body-md text-primary truncate max-w-[140px] sm:max-w-[200px]">
