@@ -30,10 +30,14 @@ async def dashboard_summary(
     result_count = await db.execute(stmt_count)
     total_expenses = result_count.scalar() or 0
 
-    # Total amount spent (as payer)
+    # Total amount spent (as user's accepted splits)
     stmt_spent = (
-        select(func.sum(Expense.amount))
-        .where(Expense.paid_by == current_user.id)
+        select(func.sum(ExpenseSplit.share_amount))
+        .join(Expense, Expense.id == ExpenseSplit.expense_id)
+        .where(
+            ExpenseSplit.user_id == current_user.id,
+            ExpenseSplit.status == "accepted"
+        )
     )
     result_spent = await db.execute(stmt_spent)
     total_spent_val = result_spent.scalar()

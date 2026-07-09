@@ -85,6 +85,8 @@ class BudgetService:
         spent = await self.repo.get_monthly_spent(current_user.id, month, year)
         category_spent = await self.repo.get_monthly_spent_by_category(current_user.id, month, year)
         
+        net_balance = await self.repo.get_monthly_net_balance(current_user.id, month, year)
+        
         remaining = max(0.0, amount - spent)
         pct = (spent / amount) * 100 if amount > 0 else 0.0
 
@@ -93,6 +95,8 @@ class BudgetService:
             "year": year,
             "total_budget": amount,
             "total_spent": spent,
+            "monthly_net_balance": net_balance,
+            "net_spent": spent,
             "remaining": remaining,
             "percentage_used": round(pct, 2),
             "is_over_budget": spent > amount and amount > 0,

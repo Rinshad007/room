@@ -9,6 +9,7 @@ export default function LoginPage() {
   const { setAuth } = useAuthStore();
   const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +22,7 @@ export default function LoginPage() {
       const meRes = await authAPI.me();
       setAuth(meRes.data, access_token, refresh_token);
       toast.success('Welcome back!');
-      navigate('/dashboard');
+      navigate('/add-expense');
     } catch (err: any) {
       toast.error(err.response?.data?.detail || 'Invalid credentials');
     } finally {
@@ -64,15 +65,27 @@ export default function LoginPage() {
 
           <div className="flex flex-col gap-1.5">
             <label className="font-label-caps text-label-caps text-on-surface-variant uppercase">Password</label>
-            <input
-              type="password"
-              placeholder="Enter your password"
-              value={form.password}
-              onChange={e => setForm({ ...form, password: e.target.value })}
-              className="input-field"
-              required
-              autoComplete="current-password"
-            />
+            <div className="relative w-full">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Enter your password"
+                value={form.password}
+                onChange={e => setForm({ ...form, password: e.target.value })}
+                className="input-field pr-12"
+                required
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/60 hover:text-primary active:scale-95 transition-all duration-200 flex items-center justify-center cursor-pointer"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                <span className="material-symbols-outlined select-none text-[20px]">
+                  {showPassword ? 'visibility_off' : 'visibility'}
+                </span>
+              </button>
+            </div>
           </div>
 
           <button
@@ -88,21 +101,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Divider */}
-        <div className="flex items-center gap-3 my-2">
-          <div className="flex-1 h-px bg-outline-variant/40" />
-          <span className="font-label-caps text-label-caps text-on-surface-variant">OR</span>
-          <div className="flex-1 h-px bg-outline-variant/40" />
-        </div>
 
-        {/* Demo account */}
-        <button
-          onClick={() => setForm({ email: 'demo@budgetbuddy.app', password: 'Demo1234' })}
-          className="btn-secondary w-full h-12 text-sm"
-        >
-          <span className="material-symbols-outlined text-[18px]">play_circle</span>
-          Try Demo Account
-        </button>
       </div>
 
       <p className="mt-6 text-body-md text-on-surface-variant">

@@ -175,6 +175,8 @@ export default function AnalyticsPage() {
   const [categoriesData, setCategoriesData] = useState<CategoryData[]>([]);
   const [monthlyData, setMonthlyData] = useState<MonthlyPoint[]>([]);
   const [trendData, setTrendData] = useState<TrendPoint[]>([]);
+  const [totalExpenses, setTotalExpenses] = useState(0);
+  const [totalPaidByMe, setTotalPaidByMe] = useState(0);
 
   // ── Fetch data whenever month/year changes ───────────────────────────────
   useEffect(() => {
@@ -182,10 +184,11 @@ export default function AnalyticsPage() {
     async function load() {
       setLoading(true);
       try {
-        const [catRes, monthlyRes, trendRes] = await Promise.allSettled([
+        const [catRes, monthlyRes, trendRes, dashRes] = await Promise.allSettled([
           analyticsAPI.categories(month, year),
           analyticsAPI.monthly(year),
           analyticsAPI.trends(6),
+          analyticsAPI.dashboard(),
         ]);
 
         if (!alive) return;
@@ -233,6 +236,13 @@ export default function AnalyticsPage() {
           }
           setTrendData(arr);
         }
+
+        // Dashboard totals
+        if (dashRes.status === 'fulfilled') {
+          const d = dashRes.value.data;
+          setTotalExpenses(d?.total_expenses ?? 0);
+          setTotalPaidByMe(d?.total_spent ?? 0);
+        }
       } catch (err) {
         console.error(err);
         toast.error('Failed to load analytics');
@@ -245,14 +255,14 @@ export default function AnalyticsPage() {
   }, [month, year]);
 
   // ── Derived stats ────────────────────────────────────────────────────────
+  // totalSpent = my share of expenses this month (from accepted category splits)
   const totalSpent = useMemo(() => categoriesData.reduce((s, c) => s + c.value, 0), [categoriesData]);
   const topCategory = useMemo(
     () => categoriesData.sort((a, b) => b.value - a.value)[0],
     [categoriesData]
   );
 
-  const daysInMonth = new Date(year, month, 0).getDate();
-  const avgDaily = totalSpent / daysInMonth;
+
 
   // Compare to previous month from monthlyData
   const prevMonthAmount = useMemo(() => {
@@ -305,17 +315,17 @@ export default function AnalyticsPage() {
         {/* Stat Cards */}
         <div className="grid grid-cols-2 gap-3">
           <StatCard
-            icon="payments"
-            label="Total Spent"
-            value={fmt(totalSpent)}
-            sub={`${daysInMonth} days`}
+            icon="receipt_long"
+            label="Total Expenses"
+            value={String(totalExpenses)}
+            sub="all time"
             accent="#6366f1"
           />
           <StatCard
-            icon="trending_up"
-            label="Daily Avg"
-            value={fmt(avgDaily)}
-            sub="per day"
+            icon="payments"
+            label="Total Spent"
+            value={fmt(totalPaidByMe)}
+            sub="all time"
             accent="#F97316"
           />
           <StatCard
@@ -348,8 +358,8 @@ export default function AnalyticsPage() {
             </div>
           ) : (
             <>
-              <div className="h-52">
-                <ResponsiveContainer width="100%" height="100%">
+              <div className="h-52 w-full min-w-0">
+                <ResponsiveContainer width="100%" height={208}>
                   <PieChart>
                     <defs>
                       {categoriesData.map((c, i) => (
@@ -371,7 +381,7 @@ export default function AnalyticsPage() {
                       animationBegin={0}
                       animationDuration={600}
                     >
-                      {categoriesData.map((c, i) => (
+                      {categoriesData.map((_c, i) => (
                         <Cell key={i} fill={`url(#grad-${i})`} />
                       ))}
                     </Pie>
@@ -431,8 +441,8 @@ export default function AnalyticsPage() {
               <p className="text-sm text-on-surface-variant/60 italic">No monthly data for {year}</p>
             </div>
           ) : (
-            <div className="h-52">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="h-52 w-full min-w-0">
+              <ResponsiveContainer width="100%" height={208}>
                 <BarChart
                   data={monthlyData}
                   margin={{ top: 4, right: 4, left: -24, bottom: 0 }}
@@ -484,8 +494,8 @@ export default function AnalyticsPage() {
               <span className="text-xs text-on-surface-variant/60 font-medium">Last 6 months</span>
             </div>
 
-            <div className="h-44">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="h-44 w-full min-w-0">
+              <ResponsiveContainer width="100%" height={176}>
                 <AreaChart data={trendData} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
                   <defs>
                     <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">

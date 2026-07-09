@@ -8,6 +8,7 @@ class UserPublic(BaseModel):
     name: str
     email: str
     avatar_url: Optional[str] = None
+    upi_id: Optional[str] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -16,6 +17,7 @@ class UserPublic(BaseModel):
 class UserUpdateRequest(BaseModel):
     name: Optional[str] = Field(None, min_length=2, max_length=100)
     avatar_url: Optional[str] = Field(None, max_length=500)
+    upi_id: Optional[str] = Field(None, max_length=100)
 
 
 class UserSearchResponse(BaseModel):

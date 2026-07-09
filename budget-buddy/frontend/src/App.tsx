@@ -32,7 +32,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function AnonymousRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
-  return !isAuthenticated ? <>{children}</> : <Navigate to="/dashboard" replace />;
+  return !isAuthenticated ? <>{children}</> : <Navigate to="/add-expense" replace />;
 }
 
 export default function App() {
@@ -133,7 +133,7 @@ export default function App() {
           />
 
           {/* Fallback */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/add-expense" replace />} />
         </Routes>
       </BrowserRouter>
       <Toaster

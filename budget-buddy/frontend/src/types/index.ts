@@ -5,6 +5,7 @@ export interface User {
   name: string;
   email: string;
   avatar_url?: string;
+  upi_id?: string;
   created_at: string;
 }
 
@@ -141,6 +142,8 @@ export interface BudgetSummary {
   year: number;
   total_budget: number;
   total_spent: number;
+  monthly_net_balance: number;
+  net_spent: number;
   remaining: number;
   percentage_used: number;
   is_over_budget: boolean;

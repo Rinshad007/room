@@ -9,6 +9,8 @@ export default function RegisterPage() {
   const { setAuth } = useAuthStore();
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,12 +25,23 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       const res = await authAPI.register({ name: form.name, email: form.email, password: form.password });
-      const { access_token, refresh_token, user } = res.data;
-      setAuth(user, access_token, refresh_token);
+      const { access_token, refresh_token } = res.data;
+      localStorage.setItem('access_token', access_token);
+      localStorage.setItem('refresh_token', refresh_token);
+      const meRes = await authAPI.me();
+      setAuth(meRes.data, access_token, refresh_token);
       toast.success('Welcome to Budget Buddy!');
-      navigate('/dashboard');
+      navigate('/add-expense');
     } catch (err: any) {
-      toast.error(err.response?.data?.detail || 'Registration failed');
+      const detail = err.response?.data?.detail;
+      if (Array.isArray(detail)) {
+        // Extract message from Pydantic validation error array
+        toast.error(detail[0]?.msg || 'Registration failed');
+      } else if (typeof detail === 'string') {
+        toast.error(detail);
+      } else {
+        toast.error('Registration failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -49,25 +62,85 @@ export default function RegisterPage() {
         <h2 className="font-headline-lg-mobile text-headline-lg-mobile text-primary">Create Account</h2>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {[
-            { label: 'Full Name', key: 'name', type: 'text', placeholder: 'Rahul Sharma', auto: 'name' },
-            { label: 'Email', key: 'email', type: 'email', placeholder: 'you@example.com', auto: 'email' },
-            { label: 'Password', key: 'password', type: 'password', placeholder: 'Min. 8 characters', auto: 'new-password' },
-            { label: 'Confirm Password', key: 'confirm', type: 'password', placeholder: 'Repeat password', auto: 'new-password' },
-          ].map(({ label, key, type, placeholder, auto }) => (
-            <div key={key} className="flex flex-col gap-1.5">
-              <label className="font-label-caps text-label-caps text-on-surface-variant uppercase">{label}</label>
+          {/* Full Name */}
+          <div className="flex flex-col gap-1.5">
+            <label className="font-label-caps text-label-caps text-on-surface-variant uppercase">Full Name</label>
+            <input
+              type="text"
+              placeholder="Rahul Sharma"
+              value={form.name}
+              onChange={e => setForm({ ...form, name: e.target.value })}
+              className="input-field"
+              autoComplete="name"
+              required
+            />
+          </div>
+
+          {/* Email */}
+          <div className="flex flex-col gap-1.5">
+            <label className="font-label-caps text-label-caps text-on-surface-variant uppercase">Email</label>
+            <input
+              type="email"
+              placeholder="you@example.com"
+              value={form.email}
+              onChange={e => setForm({ ...form, email: e.target.value })}
+              className="input-field"
+              autoComplete="email"
+              required
+            />
+          </div>
+
+          {/* Password */}
+          <div className="flex flex-col gap-1.5">
+            <label className="font-label-caps text-label-caps text-on-surface-variant uppercase">Password</label>
+            <div className="relative w-full">
               <input
-                type={type}
-                placeholder={placeholder}
-                value={form[key as keyof typeof form]}
-                onChange={e => setForm({ ...form, [key]: e.target.value })}
-                className="input-field"
-                autoComplete={auto}
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Min. 8 chars (1 letter, 1 digit)"
+                value={form.password}
+                onChange={e => setForm({ ...form, password: e.target.value })}
+                className="input-field pr-12"
+                autoComplete="new-password"
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/60 hover:text-primary active:scale-95 transition-all duration-200 flex items-center justify-center cursor-pointer"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                <span className="material-symbols-outlined select-none text-[20px]">
+                  {showPassword ? 'visibility_off' : 'visibility'}
+                </span>
+              </button>
             </div>
-          ))}
+          </div>
+
+          {/* Confirm Password */}
+          <div className="flex flex-col gap-1.5">
+            <label className="font-label-caps text-label-caps text-on-surface-variant uppercase">Confirm Password</label>
+            <div className="relative w-full">
+              <input
+                type={showConfirm ? 'text' : 'password'}
+                placeholder="Repeat password"
+                value={form.confirm}
+                onChange={e => setForm({ ...form, confirm: e.target.value })}
+                className="input-field pr-12"
+                autoComplete="new-password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm(!showConfirm)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/60 hover:text-primary active:scale-95 transition-all duration-200 flex items-center justify-center cursor-pointer"
+                aria-label={showConfirm ? 'Hide password' : 'Show password'}
+              >
+                <span className="material-symbols-outlined select-none text-[20px]">
+                  {showConfirm ? 'visibility_off' : 'visibility'}
+                </span>
+              </button>
+            </div>
+          </div>
 
           <button
             type="submit"

@@ -171,7 +171,9 @@ export default function BudgetPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="glass-panel rounded-2xl p-4 flex flex-col gap-1">
                     <span className="text-xs text-on-surface-variant uppercase font-semibold">Total Spent</span>
-                    <span className="text-monetary-md text-primary font-bold">₹{budget.total_spent.toLocaleString('en-IN')}</span>
+                    <span className="text-monetary-md font-bold text-primary">
+                      ₹{budget.total_spent.toLocaleString('en-IN')}
+                    </span>
                   </div>
                   <div className="glass-panel rounded-2xl p-4 flex flex-col gap-1">
                     <span className="text-xs text-on-surface-variant uppercase font-semibold">Remaining</span>

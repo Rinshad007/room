@@ -58,6 +58,13 @@ export default function TopBar({ title = 'Budget Buddy', showBack, showNotificat
 
           <div className="flex items-center gap-2">
             {right}
+            <button
+              onClick={() => navigate('/friends')}
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high/50 transition-colors active:scale-95"
+              title="Friends"
+            >
+              <span className="material-symbols-outlined text-on-surface-variant">group</span>
+            </button>
             {showNotifications && (
               <button
                 className="relative w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high/50 transition-colors active:scale-95"
