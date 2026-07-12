@@ -35,8 +35,12 @@ export default function TopBar({ title = 'Budget Buddy', showBack, showNotificat
 
   return (
     <>
-      <header className="fixed top-0 w-full z-50 border-b border-outline-variant/30 shadow-sm bg-surface/80 backdrop-blur-md h-14">
-        <div className="flex items-center justify-between px-container-padding h-full w-full max-w-lg mx-auto">
+      <header
+        className="fixed top-0 w-full z-50 border-b border-outline-variant/30 shadow-sm bg-surface/80 backdrop-blur-md"
+        /* pt accounts for iPhone Dynamic Island / notch */
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      >
+        <div className="flex items-center justify-between px-container-padding h-14 w-full max-w-lg mx-auto">
           <div className="flex items-center gap-3">
             {showBack ? (
               <button
@@ -84,7 +88,10 @@ export default function TopBar({ title = 'Budget Buddy', showBack, showNotificat
 
       {/* Notification dropdown panel */}
       {showPanel && (
-        <div className="fixed top-14 right-4 z-50 w-80 glass-panel rounded-2xl overflow-hidden shadow-float max-h-96 overflow-y-auto hide-scrollbar page-enter">
+        <div
+          className="fixed right-4 z-50 w-80 glass-panel rounded-2xl overflow-hidden shadow-float max-h-96 overflow-y-auto hide-scrollbar page-enter"
+          style={{ top: 'calc(env(safe-area-inset-top, 0px) + 3.75rem)' }}
+        >
           <div className="flex items-center justify-between p-4 border-b border-outline-variant/30">
             <span className="font-monetary-md text-monetary-md text-primary">Notifications</span>
             {unread > 0 && (

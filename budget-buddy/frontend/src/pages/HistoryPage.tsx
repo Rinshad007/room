@@ -244,8 +244,8 @@ export default function HistoryPage() {
                     <div className="bg-white rounded-xl p-4 border border-outline-variant/20 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex items-center justify-between hover:shadow-md transition-shadow">
                       {/* Left: icon + info */}
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 shrink-0 rounded-full bg-surface-variant flex items-center justify-center text-xl">
-                          <span>{getCategoryIcon(exp.category)}</span>
+                        <div className="icon-circle bg-surface-variant text-xl" style={{ width: 40, height: 40 }}>
+                          {getCategoryIcon(exp.category)}
                         </div>
                         <div className="min-w-0">
                           <h3 className="font-semibold text-body-md text-primary truncate max-w-[140px] sm:max-w-[200px]">

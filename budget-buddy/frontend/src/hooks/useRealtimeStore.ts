@@ -128,10 +128,10 @@ function startListeners() {
   if (_subscribed) return;
   _subscribed = true;
 
-  let readyCount = 0;
-  const checkReady = () => {
-    readyCount++;
-    if (readyCount >= 4 && !_state.ready) {
+  const loadedNodes = new Set<string>();
+  const checkReady = (nodeName: string) => {
+    loadedNodes.add(nodeName);
+    if (loadedNodes.size >= 4 && !_state.ready) {
       _state = { ..._state, ready: true };
       notify();
     }
@@ -143,7 +143,7 @@ function startListeners() {
       ..._state,
       expenses: snap.exists() ? Object.values(snap.val()) as Expense[] : [],
     };
-    checkReady();
+    checkReady('expenses');
     notify();
   });
 
@@ -153,7 +153,7 @@ function startListeners() {
       ..._state,
       settlements: snap.exists() ? Object.values(snap.val()) as Settlement[] : [],
     };
-    checkReady();
+    checkReady('settlements');
     notify();
   });
 
@@ -163,7 +163,7 @@ function startListeners() {
       ..._state,
       users: snap.exists() ? (snap.val() as Record<string, User>) : {},
     };
-    checkReady();
+    checkReady('users');
     notify();
   });
 
@@ -173,7 +173,7 @@ function startListeners() {
       ..._state,
       friendships: snap.exists() ? Object.values(snap.val()) : [],
     };
-    checkReady();
+    checkReady('friendships');
     notify();
   });
 }

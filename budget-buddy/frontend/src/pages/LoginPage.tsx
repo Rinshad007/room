@@ -64,7 +64,7 @@ export default function LoginPage() {
 
       {/* Form card */}
       <div className="glass-panel rounded-2xl p-6 w-full max-w-sm flex flex-col gap-4">
-        <h2 className="font-headline-lg-mobile text-headline-lg-mobile text-primary border-b border-border/40 pb-2">Sign In</h2>
+        <h2 className="font-headline-lg-mobile text-headline-lg-mobile text-primary border-b border-outline-variant/40 pb-2">Sign In</h2>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
@@ -110,18 +110,14 @@ export default function LoginPage() {
             disabled={loading}
             className="btn-primary w-full mt-2 h-14 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
-            {loading ? (
-              <span className="material-symbols-outlined animate-spin">refresh</span>
-            ) : (
-              'Sign In'
-            )}
+            {loading ? <span className="spinner" /> : 'Sign In'}
           </button>
         </form>
 
         <div className="flex items-center gap-3 my-2">
-          <div className="flex-1 h-[1px] bg-border/40" />
+          <div className="flex-1 h-[1px] bg-outline-variant/40" />
           <span className="text-xs text-on-surface-variant/60 font-semibold uppercase">or</span>
-          <div className="flex-1 h-[1px] bg-border/40" />
+          <div className="flex-1 h-[1px] bg-outline-variant/40" />
         </div>
 
         <button
