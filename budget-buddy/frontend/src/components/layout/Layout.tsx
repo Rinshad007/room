@@ -7,16 +7,17 @@ interface LayoutProps {
   title?: string;
   showBack?: boolean;
   rightSlot?: ReactNode;
+  hideBottomNav?: boolean;
 }
 
-export default function Layout({ children, title, showBack, rightSlot }: LayoutProps) {
+export default function Layout({ children, title, showBack, rightSlot, hideBottomNav }: LayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       <TopBar title={title} showBack={showBack} right={rightSlot} />
-      <main className="pt-14 pb-20">
+      <main className={`pt-14 ${hideBottomNav ? 'pb-4' : 'pb-20'}`}>
         {children}
       </main>
-      <BottomNav />
+      {!hideBottomNav && <BottomNav />}
     </div>
   );
 }
