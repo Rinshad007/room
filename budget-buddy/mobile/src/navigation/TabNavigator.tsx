@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { View, Text, StyleSheet, Platform, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Platform, TouchableOpacity, Keyboard } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { colors, shadows } from '../theme';
@@ -38,6 +38,24 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 // ─── Custom iOS Modern Tab Bar (Frosted Glass Capsule) ────────────────────────
 function CustomTabBar({ state, descriptors, navigation }: any) {
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener('keyboardDidShow', () => {
+      setKeyboardVisible(true);
+    });
+    const hideSubscription = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardVisible(false);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
+  if (keyboardVisible) return null;
+
   return (
     <View style={styles.tabContainer}>
       <BlurView
@@ -207,13 +225,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     width: '90%',
     maxWidth: 400,
-    backgroundColor: Platform.OS === 'android' ? 'rgba(255, 255, 255, 0.88)' : 'rgba(255, 255, 255, 0.72)', // translucent glass background tint
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255, 255, 255, 0.88)' : 'rgba(255, 255, 255, 0.15)', // transparent glassmorphism for iOS
     borderRadius: 32,
     overflow: 'hidden', // ensures glass blur effect is clipped perfectly to the border radius
     paddingVertical: 8,
     paddingHorizontal: 8,
     borderWidth: 1,
-    borderColor: Platform.OS === 'android' ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.45)', // white glass highlight border
+    borderColor: Platform.OS === 'android' ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.35)', // white glass highlight border
     justifyContent: 'space-around',
     alignItems: 'center',
     ...shadows.float,

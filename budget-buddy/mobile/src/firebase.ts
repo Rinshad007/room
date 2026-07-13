@@ -15,6 +15,11 @@ const firebaseConfig = {
   appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
 
+// Validate config keys before initializing
+if (!firebaseConfig.apiKey) {
+  console.warn("⚠️ Firebase Config Warning: EXPO_PUBLIC_FIREBASE_API_KEY is undefined. Check your .env file or build settings!");
+}
+
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
 export const auth = (() => {
