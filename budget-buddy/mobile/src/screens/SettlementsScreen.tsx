@@ -90,13 +90,42 @@ export default function SettlementsScreen() {
 
   const getUpiLink = (a: ActiveSettlement) => {
     if (!a.upiId) return '';
-    const params = `?pa=${encodeURIComponent(a.upiId)}&pn=${encodeURIComponent(a.name)}&am=${a.amount}&cu=INR&tn=BudgetBuddy%20Settlement`;
+    const formattedAmount = Number(a.amount).toFixed(2);
+    const params = `?pa=${encodeURIComponent(a.upiId.trim())}&pn=${encodeURIComponent(a.name.trim())}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent('BudgetBuddy Settlement')}`;
     return `upi://pay${params}`;
   };
 
   const getQrUrl = (a: ActiveSettlement) => {
     const link = getUpiLink(a);
     return link ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(link)}` : '';
+  };
+
+  const launchUpiApp = async (a: ActiveSettlement) => {
+    const link = getUpiLink(a);
+    if (!link) {
+      Alert.alert('Error', 'Invalid VPA details');
+      return;
+    }
+    console.log('[UPI INTENT] Initiating Launch Sequence');
+    console.log('[UPI INTENT] Target VPA:', a.upiId);
+    console.log('[UPI INTENT] Raw Deep Link:', link);
+    console.log('[UPI INTENT] Decoded Link:', decodeURIComponent(link));
+
+    try {
+      const canOpen = await Linking.canOpenURL(link);
+      if (canOpen) {
+        await Linking.openURL(link);
+        setGpayOpened(true);
+      } else {
+        console.warn('[UPI INTENT] No supporting UPI app found on device.');
+        Alert.alert('No UPI App', 'Could not find a supporting UPI app. Please pay manually or scan the QR Code.');
+        setGpayOpened(true);
+      }
+    } catch (err) {
+      console.error('[UPI INTENT] Exception thrown during intent launch:', err);
+      Alert.alert('Launch Failed', 'Failed to launch the UPI app. Please pay manually or scan the QR Code.');
+      setGpayOpened(true);
+    }
   };
 
   if (!ready) {
@@ -316,13 +345,7 @@ export default function SettlementsScreen() {
                     <Text style={styles.stepLabel}>Step 1 — Pay via GPay / UPI</Text>
                     <TouchableOpacity
                       style={styles.gpayBtn}
-                      onPress={() => {
-                        const link = getUpiLink(activeSettlement);
-                        Linking.openURL(link).then(() => setGpayOpened(true)).catch(() => {
-                          Alert.alert('No UPI App', 'Could not open a UPI app. Please pay manually.');
-                          setGpayOpened(true);
-                        });
-                      }}
+                      onPress={() => launchUpiApp(activeSettlement)}
                       activeOpacity={0.85}
                     >
                       <Ionicons name="qr-code-outline" size={20} color={colors.onPrimary} />

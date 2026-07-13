@@ -94,10 +94,11 @@ export default function SettlementsPage() {
   };
 
   // ── UPI helpers ───────────────────────────────────────────────────────────
-  const getUpiLink = (a: ActiveSettlement) =>
-    a.upiId
-      ? `upi://pay?pa=${encodeURIComponent(a.upiId)}&pn=${encodeURIComponent(a.name)}&am=${a.amount}&cu=INR&tn=BudgetBuddy%20Settlement`
-      : '';
+  const getUpiLink = (a: ActiveSettlement) => {
+    if (!a.upiId) return '';
+    const formattedAmount = Number(a.amount).toFixed(2);
+    return `upi://pay?pa=${encodeURIComponent(a.upiId.trim())}&pn=${encodeURIComponent(a.name.trim())}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent('BudgetBuddy Settlement')}`;
+  };
   const getQrUrl = (a: ActiveSettlement) =>
     a.upiId
       ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(getUpiLink(a))}`
