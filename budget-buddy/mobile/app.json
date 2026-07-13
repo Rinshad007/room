@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "Budget Buddy",
+    "slug": "budget-buddy",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.budgetbuddy.app"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "97519dda-e31d-4509-8f8c-baf5b03dac8b"
+      }
+    },
+    "owner": "safvenn"
+  }
+}
