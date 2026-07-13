@@ -1,0 +1,10 @@
+{
+  "buildCommand": "cd budget-buddy/frontend && npm run build",
+  "outputDirectory": "budget-buddy/frontend/dist",
+  "installCommand": "cd budget-buddy/frontend && npm install",
+  "framework": "vite",
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
