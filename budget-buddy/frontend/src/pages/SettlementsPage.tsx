@@ -94,16 +94,14 @@ export default function SettlementsPage() {
   };
 
   // ── UPI helpers ───────────────────────────────────────────────────────────
-  const getUpiLink = (a: ActiveSettlement) => {
-    if (!a.upiId) return '';
-    const isIOS = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(window.navigator.userAgent);
-    const params = `?pa=${encodeURIComponent(a.upiId)}&pn=${encodeURIComponent(a.name)}&am=${a.amount}&cu=INR&tn=BudgetBuddy%20Settlement`;
-    return isIOS ? `gpay://upi/pay${params}` : `upi://pay${params}`;
-  };
-  const getQrUrl = (a: ActiveSettlement) => {
-    const link = getUpiLink(a);
-    return link ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(link)}` : '';
-  };
+  const getUpiLink = (a: ActiveSettlement) =>
+    a.upiId
+      ? `upi://pay?pa=${encodeURIComponent(a.upiId)}&pn=${encodeURIComponent(a.name)}&am=${a.amount}&cu=INR&tn=BudgetBuddy%20Settlement`
+      : '';
+  const getQrUrl = (a: ActiveSettlement) =>
+    a.upiId
+      ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(getUpiLink(a))}`
+      : '';
 
   // ── Loading skeleton ──────────────────────────────────────────────────────
   if (!ready) {
@@ -356,6 +354,23 @@ function SettlementModal({ settlement, submitting, gpayOpened, onGpayOpen, onCon
 
         {settlement.upiId ? (
           <div className="space-y-4">
+            <div className="space-y-1.5">
+              <p className="text-xs font-semibold text-on-surface-variant/60 uppercase tracking-wide">UPI ID Information</p>
+              <div className="flex items-center justify-between p-3 bg-surface-container-low border border-outline-variant/20 rounded-xl">
+                <span className="text-sm font-semibold text-primary truncate mr-2 select-all">{settlement.upiId}</span>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(settlement.upiId || '');
+                    toast.success('UPI ID copied!');
+                  }}
+                  className="shrink-0 flex items-center gap-1 bg-primary/10 hover:bg-primary/15 text-primary text-xs font-bold px-3 py-1.5 rounded-lg active:scale-95 transition-all"
+                >
+                  <span className="material-symbols-outlined text-[14px]">content_copy</span>
+                  Copy
+                </button>
+              </div>
+            </div>
+
             <div className="space-y-1">
               <p className="text-xs font-semibold text-on-surface-variant/60 uppercase tracking-wide">Step 1 — Pay via GPay</p>
               <a
