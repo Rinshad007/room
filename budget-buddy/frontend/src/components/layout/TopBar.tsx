@@ -3,7 +3,6 @@ import { useAuthStore } from '../../store/auth';
 import { useState, useEffect } from 'react';
 import { notificationsAPI } from '../../api/services';
 import type { Notification } from '../../types';
-import logoImg from '../../assets/logo.png';
 
 interface TopBarProps {
   title?: string;
@@ -58,7 +57,6 @@ export default function TopBar({ title = 'Budget Buddy', showBack, showNotificat
                 {initials}
               </button>
             )}
-            <img src={logoImg} alt="Budget Buddy logo" className="w-7 h-7 object-contain" />
             <h1 className="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary">{title}</h1>
           </div>
 
