@@ -12,6 +12,7 @@ export default function FriendsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const [searching, setSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const fetchFriends = async () => {
@@ -39,12 +40,21 @@ export default function FriendsPage() {
     if (!searchQuery.trim()) return;
     try {
       setSearching(true);
+      setHasSearched(true);
       const res = await usersAPI.search(searchQuery);
       setSearchResults(res.data.users || []);
     } catch (err) {
       toast.error('Search failed');
     } finally {
       setSearching(false);
+    }
+  };
+
+  const handleQueryChange = (val: string) => {
+    setSearchQuery(val);
+    if (!val.trim()) {
+      setSearchResults([]);
+      setHasSearched(false);
     }
   };
 
@@ -147,7 +157,7 @@ export default function FriendsPage() {
 
         {activeTab === 'friends' ? (
           <>
-            {/* Search / Add Friend Form */}
+             {/* Search / Add Friend Form */}
             <section className="flex flex-col gap-3">
               <h2 className="text-headline-lg-mobile text-primary font-bold">Add Friend</h2>
               <form onSubmit={handleSearch} className="flex gap-2">
@@ -155,7 +165,7 @@ export default function FriendsPage() {
                   type="text"
                   placeholder="Search by email or name..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => handleQueryChange(e.target.value)}
                   className="input-field h-12 text-sm flex-1"
                 />
                 <button type="submit" className="btn-primary h-12 px-4 shadow-none">
@@ -189,6 +199,12 @@ export default function FriendsPage() {
                       </button>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {hasSearched && searchResults.length === 0 && !searching && (
+                <div className="p-4 bg-surface-container-low border border-outline-variant/20 rounded-xl text-center">
+                  <p className="text-sm text-on-surface-variant italic">No users found matching "{searchQuery}"</p>
                 </div>
               )}
             </section>
