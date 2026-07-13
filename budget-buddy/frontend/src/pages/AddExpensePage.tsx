@@ -182,7 +182,7 @@ export default function AddExpensePage() {
   ];
 
   return (
-    <Layout title="Add Expense">
+    <Layout title="Add Expense" hideBottomNav={showAddCatModal}>
       {/* Extra padding-bottom to clear fixed save button + bottom nav */}
       <div className="page-container page-enter" style={{ paddingBottom: 'calc(9rem + env(safe-area-inset-bottom, 0px))' }}>
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">

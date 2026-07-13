@@ -196,7 +196,7 @@ export default function HistoryPage() {
 
   if (!ready) {
     return (
-      <Layout>
+      <Layout hideBottomNav>
         <div className="page-container space-y-4">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="skeleton h-20 w-full" />
@@ -207,8 +207,8 @@ export default function HistoryPage() {
   }
 
   return (
-    <Layout>
-      <div className="page-container page-enter pb-24">
+    <Layout hideBottomNav>
+      <div className="page-container page-enter">
         <h1 className="text-headline-lg font-bold text-primary px-1">History</h1>
 
         {historyItems.length === 0 ? (

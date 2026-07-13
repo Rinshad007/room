@@ -91,8 +91,8 @@ export default function BudgetPage() {
   const strokeDashoffset = strokeDasharray - (strokeDasharray * clampedPct) / 100;
 
   return (
-    <Layout showBack title="Budgeting">
-      <div className="page-container page-enter pb-24">
+    <Layout showBack title="Budgeting" hideBottomNav>
+      <div className="page-container page-enter">
         
         {/* Month Navigator */}
         <div className="flex justify-between items-center glass-panel rounded-full px-4 py-2">

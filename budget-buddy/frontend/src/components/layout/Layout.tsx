@@ -7,9 +7,10 @@ interface LayoutProps {
   title?: string;
   showBack?: boolean;
   rightSlot?: ReactNode;
+  hideBottomNav?: boolean;
 }
 
-export default function Layout({ children, title, showBack, rightSlot }: LayoutProps) {
+export default function Layout({ children, title, showBack, rightSlot, hideBottomNav = false }: LayoutProps) {
   return (
     /* min-h-dvh: collapses correctly when iOS Safari shows/hides address bar */
     <div className="min-h-[100dvh] bg-background">
@@ -18,12 +19,12 @@ export default function Layout({ children, title, showBack, rightSlot }: LayoutP
       <main
         style={{ 
           paddingTop: 'calc(3.5rem + env(safe-area-inset-top, 0px))',
-          paddingBottom: 'calc(4.75rem + env(safe-area-inset-bottom, 16px))' 
+          paddingBottom: hideBottomNav ? 'calc(1.5rem + env(safe-area-inset-bottom, 16px))' : 'calc(4.75rem + env(safe-area-inset-bottom, 16px))' 
         }}
       >
         {children}
       </main>
-      <BottomNav />
+      {!hideBottomNav && <BottomNav />}
     </div>
   );
 }

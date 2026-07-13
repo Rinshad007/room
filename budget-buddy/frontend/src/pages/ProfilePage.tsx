@@ -46,8 +46,8 @@ export default function ProfilePage() {
   if (!user) return null;
 
   return (
-    <Layout>
-      <div className="page-container page-enter pb-24">
+    <Layout hideBottomNav>
+      <div className="page-container page-enter">
         <h1 className="text-headline-lg font-bold text-primary px-1">Profile</h1>
 
         {/* User Card */}

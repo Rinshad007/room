@@ -117,7 +117,7 @@ export default function GroupsPage() {
 
   if (loading) {
     return (
-      <Layout>
+      <Layout hideBottomNav>
         <div className="page-container space-y-6">
           <div className="skeleton h-12 w-full" />
           <div className="skeleton h-32 w-full" />
@@ -128,7 +128,7 @@ export default function GroupsPage() {
   }
 
   return (
-    <Layout>
+    <Layout hideBottomNav>
       <div className="page-container page-enter">
         {selectedGroup ? (
           /* Group Detail View */
