@@ -53,7 +53,14 @@ export default function SettlementsPage() {
   const openSettlementModal = (friendId: string, name: string, amount: number) => {
     // Fast path: get UPI from in-memory users map (already real-time)
     const upiId = users[friendId]?.upi_id || undefined;
-    setActiveSettlement({ friendId, name, amount, upiId });
+    
+    console.log("Database UPI (Self):", user?.upi_id);
+    console.log("Realtime Store UPI:", users[friendId]?.upi_id);
+    
+    const newActiveSettlement = { friendId, name, amount, upiId };
+    console.log("Active Settlement:", newActiveSettlement);
+    
+    setActiveSettlement(newActiveSettlement);
     setGpayOpened(false);
     setSubmitting(false);
   };
@@ -97,12 +104,38 @@ export default function SettlementsPage() {
   const getUpiLink = (a: ActiveSettlement) => {
     if (!a.upiId) return '';
     const formattedAmount = Number(a.amount).toFixed(2);
-    return `upi://pay?pa=${encodeURIComponent(a.upiId.trim())}&pn=${encodeURIComponent(a.name.trim())}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent('BudgetBuddy Settlement')}`;
+    // Fix: Do not encode the `@` symbol in the UPI ID as it breaks Google Pay
+    const safeUpiId = encodeURIComponent(a.upiId.trim()).replace('%40', '@');
+    
+    const baseParams = `pa=${safeUpiId}&pn=${encodeURIComponent(a.name.trim())}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent('BudgetBuddy Settlement')}`;
+    
+    // Web browsers like Chrome on Android automatically URL-encode the href (changing @ back to %40).
+    // To prevent this on Android Web, we must use the intent:// scheme.
+    const isAndroid = typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent);
+    
+    let link = `upi://pay?${baseParams}`;
+    if (isAndroid) {
+      link = `intent://pay?${baseParams}#Intent;scheme=upi;end`;
+    }
+    
+    console.log("Generated Link:", link);
+    console.log("Decoded Link:", decodeURIComponent(link));
+    
+    return link;
   };
-  const getQrUrl = (a: ActiveSettlement) =>
-    a.upiId
-      ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(getUpiLink(a))}`
-      : '';
+  const getQrUrl = (a: ActiveSettlement) => {
+    if (!a.upiId) return '';
+    const formattedAmount = Number(a.amount).toFixed(2);
+    const safeUpiId = encodeURIComponent(a.upiId.trim()).replace('%40', '@');
+    
+    // QR Codes must ALWAYS use the standard upi:// protocol, regardless of the user's OS.
+    // intent:// is only for clickable web links on Android.
+    const baseParams = `pa=${safeUpiId}&pn=${encodeURIComponent(a.name.trim())}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent('BudgetBuddy Settlement')}`;
+    const qrLink = `upi://pay?${baseParams}`;
+    
+    console.log("QR Payload:", qrLink);
+    return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrLink)}`;
+  };
 
   // ── Loading skeleton ──────────────────────────────────────────────────────
   if (!ready) {
