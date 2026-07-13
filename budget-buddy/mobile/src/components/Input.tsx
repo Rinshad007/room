@@ -27,13 +27,13 @@ export default function Input({ label, value, onChangeText, placeholder, secureT
     <View style={[styles.container, style]}>
       {label && <Text style={styles.label}>{label}</Text>}
       <View style={[styles.inputRow, focused && styles.focused, !!error && styles.errored, !editable && styles.disabled]}>
-        {icon && <Ionicons name={icon} size={18} color={colors.textMuted} style={styles.icon} />}
+        {icon && <Ionicons name={icon} size={18} color={colors.outline} style={styles.icon} />}
         <TextInput
           style={[styles.input, multiline && { height: numberOfLines ? numberOfLines * 22 : 80, textAlignVertical: 'top' }]}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.outline}
           secureTextEntry={secureTextEntry && !showPassword}
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
@@ -45,7 +45,7 @@ export default function Input({ label, value, onChangeText, placeholder, secureT
         />
         {secureTextEntry && (
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
-            <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={18} color={colors.textMuted} />
+            <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={18} color={colors.outline} />
           </TouchableOpacity>
         )}
       </View>
@@ -56,18 +56,18 @@ export default function Input({ label, value, onChangeText, placeholder, secureT
 
 const styles = StyleSheet.create({
   container: { marginBottom: spacing.md },
-  label: { color: colors.textSecondary, fontSize: fontSizes.sm, marginBottom: spacing.xs, fontWeight: '500' },
+  label: { color: colors.onSurfaceVariant, fontSize: fontSizes.sm, marginBottom: spacing.xs, fontWeight: '500' },
   inputRow: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: colors.bgInput, borderRadius: radius.md,
-    borderWidth: 1.5, borderColor: colors.border,
+    backgroundColor: colors.bgSurfaceContainerLow, borderRadius: radius.md,
+    borderWidth: 1.5, borderColor: colors.outlineVariant,
     paddingHorizontal: spacing.md,
   },
   focused: { borderColor: colors.primary },
-  errored: { borderColor: colors.danger },
+  errored: { borderColor: colors.error },
   disabled: { opacity: 0.5 },
   icon: { marginRight: spacing.sm },
-  input: { flex: 1, color: colors.textPrimary, fontSize: fontSizes.md, paddingVertical: spacing.sm + 2, minHeight: 46 },
+  input: { flex: 1, color: colors.onSurface, fontSize: fontSizes.md, paddingVertical: spacing.sm + 2, minHeight: 46 },
   eyeBtn: { padding: spacing.xs },
-  error: { color: colors.danger, fontSize: fontSizes.xs, marginTop: spacing.xs },
+  error: { color: colors.error, fontSize: fontSizes.xs, marginTop: spacing.xs },
 });

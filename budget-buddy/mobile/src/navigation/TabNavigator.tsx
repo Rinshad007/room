@@ -1,102 +1,236 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radius } from '../theme';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { View, Text, StyleSheet, Platform, TouchableOpacity } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import { colors, shadows } from '../theme';
 
 import DashboardScreen from '../screens/DashboardScreen';
 import AddExpenseScreen from '../screens/AddExpenseScreen';
+import SettlementsScreen from '../screens/SettlementsScreen';
+import AnalyticsScreen from '../screens/AnalyticsScreen';
+import HistoryScreen from '../screens/HistoryScreen';
 import GroupsScreen from '../screens/GroupsScreen';
 import FriendsScreen from '../screens/FriendsScreen';
-import SettlementsScreen from '../screens/SettlementsScreen';
-import HistoryScreen from '../screens/HistoryScreen';
-import AnalyticsScreen from '../screens/AnalyticsScreen';
 import BudgetScreen from '../screens/BudgetScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 
-export type TabParamList = {
-  Dashboard: undefined;
-  AddExpense: undefined;
-  Groups: undefined;
-  Friends: undefined;
-  Settlements: undefined;
-  History: undefined;
-  Analytics: undefined;
-  Budget: undefined;
+// ─── Type declarations ────────────────────────────────────────────────────────
+export type RootStackParamList = {
+  Tabs: undefined;
   Profile: undefined;
+  Friends: undefined;
+  Groups: undefined;
+  History: undefined;
+  Budget: undefined;
+};
+
+export type TabParamList = {
+  AddExpense: undefined;
+  Home: undefined;
+  Settlements: undefined;
+  Analytics: undefined;
 };
 
 const Tab = createBottomTabNavigator<TabParamList>();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
-const tabItems = [
-  { name: 'Dashboard', icon: 'home', label: 'Home' },
-  { name: 'History', icon: 'receipt-outline', label: 'History' },
-  { name: 'AddExpense', icon: 'add-circle', label: 'Add', isFab: true },
-  { name: 'Friends', icon: 'people-outline', label: 'Friends' },
-  { name: 'Profile', icon: 'person-outline', label: 'Profile' },
-] as const;
+// ─── Custom iOS Modern Tab Bar (Frosted Glass Capsule) ────────────────────────
+function CustomTabBar({ state, descriptors, navigation }: any) {
+  return (
+    <View style={styles.tabContainer}>
+      <BlurView
+        intensity={Platform.OS === 'web' ? 25 : 75}
+        tint="light"
+        style={styles.tabBar}
+      >
+        {state.routes.map((route: any, index: number) => {
+          const { options } = descriptors[route.key];
+          const label =
+            options.tabBarLabel !== undefined
+              ? options.tabBarLabel
+              : options.title !== undefined
+              ? options.title
+              : route.name;
 
-export default function TabNavigator() {
+          const isFocused = state.index === index;
+
+          const onPress = () => {
+            const event = navigation.emit({
+              type: 'tabPress',
+              target: route.key,
+              canPreventDefault: true,
+            });
+
+            if (!isFocused && !event.defaultPrevented) {
+              navigation.navigate(route.name, route.params);
+            }
+          };
+
+          const onLongPress = () => {
+            navigation.emit({
+              type: 'tabLongPress',
+              target: route.key,
+            });
+          };
+
+          // Get exact Web-matching Material Icon names
+          let iconName = '';
+          if (route.name === 'AddExpense') {
+            iconName = 'add-circle';
+          } else if (route.name === 'Home') {
+            iconName = 'dashboard';
+          } else if (route.name === 'Settlements') {
+            iconName = 'payments';
+          } else if (route.name === 'Analytics') {
+            iconName = 'bar-chart';
+          }
+
+          return (
+            <TouchableOpacity
+              key={route.key}
+              accessibilityRole="button"
+              accessibilityState={isFocused ? { selected: true } : {}}
+              accessibilityLabel={options.tabBarAccessibilityLabel}
+              testID={options.tabBarTestID}
+              onPress={onPress}
+              onLongPress={onLongPress}
+              style={styles.tabItem}
+              activeOpacity={0.8}
+            >
+              <MaterialIcons
+                name={iconName as any}
+                size={24}
+                color={isFocused ? colors.primary : colors.onSurfaceVariant + '99'}
+                style={styles.icon}
+              />
+              
+              {isFocused && (
+                <Text style={[
+                  styles.tabLabel,
+                  {
+                    color: colors.primary,
+                    fontWeight: '700'
+                  }
+                ]}>
+                  {label}
+                </Text>
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </BlurView>
+    </View>
+  );
+}
+
+// ─── The 4-tab bar (Ordered exactly like Web BottomNav.tsx) ───────────────────
+function BottomTabs() {
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
+      tabBar={(props) => <CustomTabBar {...props} />}
+      initialRouteName="AddExpense"
+      screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
-        tabBarShowLabel: true,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textMuted,
-        tabBarLabelStyle: styles.tabLabel,
-        tabBarIcon: ({ focused, color, size }) => {
-          const found = tabItems.find(t => t.name === route.name);
-          if (!found) return null;
-          if ((found as any).isFab) {
-            return (
-              <View style={styles.fab}>
-                <Ionicons name="add" size={30} color="#fff" />
-              </View>
-            );
-          }
-          const icon = (found.icon + (focused ? '' : '')) as keyof typeof Ionicons.glyphMap;
-          return <Ionicons name={icon} size={22} color={color} />;
-        },
-      })}
+      }}
     >
-      <Tab.Screen name="Dashboard" component={DashboardScreen} options={{ tabBarLabel: 'Home' }} />
-      <Tab.Screen name="History" component={HistoryScreen} options={{ tabBarLabel: 'History' }} />
-      <Tab.Screen name="AddExpense" component={AddExpenseScreen} options={{ tabBarLabel: '' }} />
-      <Tab.Screen name="Friends" component={FriendsScreen} options={{ tabBarLabel: 'Friends' }} />
-      <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: 'Profile' }} />
-      {/* Hidden tabs accessible via navigation */}
-      <Tab.Screen name="Groups" component={GroupsScreen} options={{ tabBarButton: () => null, tabBarLabel: '' }} />
-      <Tab.Screen name="Settlements" component={SettlementsScreen} options={{ tabBarButton: () => null, tabBarLabel: '' }} />
-      <Tab.Screen name="Analytics" component={AnalyticsScreen} options={{ tabBarButton: () => null, tabBarLabel: '' }} />
-      <Tab.Screen name="Budget" component={BudgetScreen} options={{ tabBarButton: () => null, tabBarLabel: '' }} />
+      <Tab.Screen
+        name="AddExpense"
+        component={AddExpenseScreen}
+        options={{ tabBarLabel: 'Expense' }}
+      />
+      <Tab.Screen
+        name="Home"
+        component={DashboardScreen}
+        options={{ tabBarLabel: 'Home' }}
+      />
+      <Tab.Screen
+        name="Settlements"
+        component={SettlementsScreen}
+        options={{ tabBarLabel: 'Settle Up' }}
+      />
+      <Tab.Screen
+        name="Analytics"
+        component={AnalyticsScreen}
+        options={{ tabBarLabel: 'Analytics' }}
+      />
     </Tab.Navigator>
   );
 }
 
+// ─── Root Stack (wraps tabs + modal screens) ──────────────────────────────────
+export default function TabNavigator() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Tabs" component={BottomTabs} />
+      <Stack.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="Friends"
+        component={FriendsScreen}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="Groups"
+        component={GroupsScreen}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="History"
+        component={HistoryScreen}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="Budget"
+        component={BudgetScreen}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+    </Stack.Navigator>
+  );
+}
+
 const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: colors.bgCard,
-    borderTopColor: colors.border,
-    borderTopWidth: 1,
-    height: 64,
-    paddingBottom: spacing.sm,
-    paddingTop: spacing.xs,
-  },
-  tabLabel: { fontSize: 11, fontWeight: '500' },
-  fab: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.primary,
+  tabContainer: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 24 : 12,
+    left: 0,
+    right: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.md,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 8,
+    backgroundColor: 'transparent',
+  },
+  tabBar: {
+    flexDirection: 'row',
+    width: '90%',
+    maxWidth: 400,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255, 255, 255, 0.88)' : 'rgba(255, 255, 255, 0.72)', // translucent glass background tint
+    borderRadius: 32,
+    overflow: 'hidden', // ensures glass blur effect is clipped perfectly to the border radius
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    borderWidth: 1,
+    borderColor: Platform.OS === 'android' ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.45)', // white glass highlight border
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    ...shadows.float,
+  },
+  tabItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+    height: 48,
+    position: 'relative',
+  },
+  icon: {
+    marginBottom: 2,
+  },
+  tabLabel: {
+    fontSize: 9,
+    letterSpacing: 0.1,
+    textTransform: 'uppercase',
   },
 });

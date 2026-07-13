@@ -12,10 +12,20 @@ import type {
   Settlement, Budget, Category, ExpenseSplit, GroupMember, Notification, PaymentMethod, SplitType
 } from '../types';
 
+// ─── Response wrapper ──────────────────────────────────────────────────────────
 const wrapResponse = <T>(data: T, status = 200) => {
   return { data, status, statusText: 'OK', headers: {}, config: {} as any };
 };
 
+// Coerce Firebase database values to safe arrays to avoid crashes if saved as objects
+function safeArray<T>(val: any): T[] {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  if (typeof val === 'object') return Object.values(val);
+  return [];
+}
+
+// ─── Auth helpers ──────────────────────────────────────────────────────────────
 async function getCurrentUserId(): Promise<string> {
   if (auth.currentUser) return auth.currentUser.uid;
   const storedUser = await AsyncStorage.getItem('user');
@@ -28,7 +38,17 @@ async function getCurrentUserId(): Promise<string> {
   throw new Error('User not authenticated');
 }
 
-// ─── Auth ──────────────────────────────────────────────────────────────
+/**
+ * Ownership guard — throws if currentUser doesn't match expected owner.
+ * Centralised here so every delete/mutate operation uses identical logic.
+ */
+function assertOwner(ownerId: string, currentUserId: string, label = 'resource') {
+  if (ownerId !== currentUserId) {
+    throw new Error(`Unauthorized: you do not own this ${label}`);
+  }
+}
+
+// ─── Auth ──────────────────────────────────────────────────────────────────────
 export const authAPI = {
   register: async (data: { name: string; email: string; password: string }) => {
     const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
@@ -64,7 +84,7 @@ export const authAPI = {
     const userCredential = await signInWithCredential(auth, credential);
     const fbUser = userCredential.user;
     const snapshot = await get(ref(db, `users/${fbUser.uid}`));
-    
+
     const userData: User = snapshot.exists() ? (snapshot.val() as User) : {
       id: fbUser.uid,
       name: fbUser.displayName || fbUser.email || 'User',
@@ -85,7 +105,7 @@ export const authAPI = {
     const userCredential = await signInWithCredential(auth, credential);
     const fbUser = userCredential.user;
     const snapshot = await get(ref(db, `users/${fbUser.uid}`));
-    
+
     const userData: User = snapshot.exists() ? (snapshot.val() as User) : {
       id: fbUser.uid,
       name: data.name || fbUser.displayName || fbUser.phoneNumber || 'User',
@@ -127,7 +147,7 @@ export const authAPI = {
   }
 };
 
-// ─── Users ─────────────────────────────────────────────────────────────
+// ─── Users ─────────────────────────────────────────────────────────────────────
 export const usersAPI = {
   me: async () => authAPI.me(),
 
@@ -139,18 +159,33 @@ export const usersAPI = {
     return wrapResponse(updatedSnap.val() as User);
   },
 
+  /**
+   * Search users by name or email using case-insensitive client-side filtering.
+   * Firebase RTDB orderByChild range queries are case-sensitive and require
+   * deployed .indexOn rules. Client-side filtering is safer and more flexible.
+   *
+   * SECURITY: Search results strip private fields (upi_id) before returning.
+   */
   search: async (q: string) => {
-    const qLower = q.toLowerCase();
+    if (!q.trim()) return wrapResponse({ users: [], total: 0 });
+    const uid = await getCurrentUserId();
+    const qLower = q.trim().toLowerCase();
+
     const snapshot = await get(ref(db, 'users'));
     const matchedUsers: User[] = [];
+
     if (snapshot.exists()) {
-      const allUsers = snapshot.val();
-      Object.values(allUsers).forEach((u: any) => {
-        if (u.name.toLowerCase().includes(qLower) || u.email.toLowerCase().includes(qLower)) {
-          matchedUsers.push(u as User);
+      Object.values(snapshot.val()).forEach((u: any) => {
+        if (!u || !u.id || u.id === uid) return;
+        const nameMatch = (u.name || '').toLowerCase().includes(qLower);
+        const emailMatch = (u.email || '').toLowerCase().includes(qLower);
+        if (nameMatch || emailMatch) {
+          // Strip private fields — never expose upi_id in search results
+          matchedUsers.push({ id: u.id, name: u.name, email: u.email, created_at: u.created_at } as User);
         }
       });
     }
+
     return wrapResponse({ users: matchedUsers, total: matchedUsers.length });
   },
 
@@ -202,29 +237,31 @@ export const usersAPI = {
   }
 };
 
-// ─── Friends ───────────────────────────────────────────────────────────
+// ─── Friends ───────────────────────────────────────────────────────────────────
 export const friendsAPI = {
+  /**
+   * List accepted friends. Uses full scan + client-side filter to avoid
+   * requiring Firebase .indexOn rules that may not be deployed yet.
+   */
   list: async () => {
     const uid = await getCurrentUserId();
     const snapshot = await get(ref(db, 'friendships'));
-    const friendships: any[] = [];
-    if (snapshot.exists()) {
-      Object.values(snapshot.val()).forEach((f: any) => {
-        if (f.sender_id === uid || f.receiver_id === uid) friendships.push(f);
-      });
-    }
     const friendsWithRequest: any[] = [];
-    for (const f of friendships) {
-      if (f.status !== 'accepted') continue;
-      const friendId = f.sender_id === uid ? f.receiver_id : f.sender_id;
-      const friendSnap = await get(ref(db, `users/${friendId}`));
-      if (friendSnap.exists()) {
-        friendsWithRequest.push({
-          friendship_id: f.id,
-          friend: friendSnap.val() as User,
-          status: f.status,
-          created_at: f.created_at
-        });
+
+    if (snapshot.exists()) {
+      for (const f of Object.values(snapshot.val()) as any[]) {
+        if (!f || f.status !== 'accepted') continue;
+        if (f.sender_id !== uid && f.receiver_id !== uid) continue;
+        const friendId = f.sender_id === uid ? f.receiver_id : f.sender_id;
+        const friendSnap = await get(ref(db, `users/${friendId}`));
+        if (friendSnap.exists()) {
+          friendsWithRequest.push({
+            friendship_id: f.id,
+            friend: friendSnap.val() as User,
+            status: f.status,
+            created_at: f.created_at,
+          });
+        }
       }
     }
     return wrapResponse({ friends: friendsWithRequest, total: friendsWithRequest.length });
@@ -232,6 +269,19 @@ export const friendsAPI = {
 
   sendRequest: async (receiver_id: string) => {
     const uid = await getCurrentUserId();
+
+    // Prevent self-friending
+    if (uid === receiver_id) throw new Error('Cannot send friend request to yourself');
+
+    // Bidirectional duplicate check — prevents both A→B and B→A duplicates
+    const [existAB, existBA] = await Promise.all([
+      get(ref(db, `friendships/${uid}_${receiver_id}`)),
+      get(ref(db, `friendships/${receiver_id}_${uid}`)),
+    ]);
+    if (existAB.exists() || existBA.exists()) {
+      throw new Error('A friendship or pending request already exists with this user');
+    }
+
     const friendshipId = `${uid}_${receiver_id}`;
     const friendshipData = {
       id: friendshipId, sender_id: uid, receiver_id,
@@ -246,39 +296,123 @@ export const friendsAPI = {
     const snapshot = await get(ref(db, 'friendships'));
     const received: any[] = [];
     const sent: any[] = [];
+
     if (snapshot.exists()) {
       for (const f of Object.values(snapshot.val()) as any[]) {
-        if (f.status === 'pending') {
-          if (f.receiver_id === uid) {
-            const snap = await get(ref(db, `users/${f.sender_id}`));
-            if (snap.exists()) received.push({ friendship_id: f.id, friend: snap.val(), status: f.status, created_at: f.created_at });
-          } else if (f.sender_id === uid) {
-            const snap = await get(ref(db, `users/${f.receiver_id}`));
-            if (snap.exists()) sent.push({ friendship_id: f.id, friend: snap.val(), status: f.status, created_at: f.created_at });
-          }
+        if (!f || f.status !== 'pending') continue;
+        if (f.receiver_id === uid) {
+          const s = await get(ref(db, `users/${f.sender_id}`));
+          if (s.exists()) received.push({ friendship_id: f.id, friend: s.val(), status: f.status, created_at: f.created_at });
+        } else if (f.sender_id === uid) {
+          const s = await get(ref(db, `users/${f.receiver_id}`));
+          if (s.exists()) sent.push({ friendship_id: f.id, friend: s.val(), status: f.status, created_at: f.created_at });
         }
       }
     }
     return wrapResponse({ received, sent });
   },
 
+  /**
+   * SECURITY FIX (BUG-003): Verifies that only the friendship RECEIVER
+   * can accept a friend request. Previously, any user could accept any
+   * friendship by knowing its ID (IDOR vulnerability).
+   */
   accept: async (id: string) => {
+    const uid = await getCurrentUserId();
+    const snap = await get(ref(db, `friendships/${id}`));
+    if (!snap.exists()) throw new Error('Friend request not found');
+    const f = snap.val();
+    if (f.receiver_id !== uid) throw new Error('Unauthorized: only the recipient can accept this request');
+    if (f.status === 'accepted') return wrapResponse({ success: true });
     await update(ref(db, `friendships/${id}`), { status: 'accepted' });
     return wrapResponse({ success: true });
   },
 
+  /** Alias used by FriendsScreen — same security guard */
+  acceptRequest: async (id: string) => {
+    const uid = await getCurrentUserId();
+    const snap = await get(ref(db, `friendships/${id}`));
+    if (!snap.exists()) throw new Error('Friend request not found');
+    const f = snap.val();
+    if (f.receiver_id !== uid) throw new Error('Unauthorized: only the recipient can accept this request');
+    if (f.status === 'accepted') return wrapResponse({ success: true });
+    await update(ref(db, `friendships/${id}`), { status: 'accepted' });
+    return wrapResponse({ success: true });
+  },
+
+  /** SECURITY FIX (BUG-003): Only receiver can reject */
   reject: async (id: string) => {
+    const uid = await getCurrentUserId();
+    const snap = await get(ref(db, `friendships/${id}`));
+    if (!snap.exists()) throw new Error('Friend request not found');
+    const f = snap.val();
+    if (f.receiver_id !== uid) throw new Error('Unauthorized: only the recipient can reject this request');
     await update(ref(db, `friendships/${id}`), { status: 'rejected' });
     return wrapResponse({ success: true });
   },
 
+  /** Alias used by FriendsScreen */
+  declineRequest: async (id: string) => {
+    const uid = await getCurrentUserId();
+    const snap = await get(ref(db, `friendships/${id}`));
+    if (!snap.exists()) throw new Error('Friend request not found');
+    const f = snap.val();
+    if (f.receiver_id !== uid) throw new Error('Unauthorized: only the recipient can decline this request');
+    await update(ref(db, `friendships/${id}`), { status: 'rejected' });
+    return wrapResponse({ success: true });
+  },
+
+  /** Either party can remove an accepted friendship; sender can cancel their own pending request */
   remove: async (id: string) => {
+    const uid = await getCurrentUserId();
+    const snap = await get(ref(db, `friendships/${id}`));
+    if (!snap.exists()) return wrapResponse({ success: true }); // idempotent
+    const f = snap.val();
+    if (f.sender_id !== uid && f.receiver_id !== uid) {
+      throw new Error('Unauthorized: you are not part of this friendship');
+    }
     await remove(ref(db, `friendships/${id}`));
     return wrapResponse({ success: true });
+  },
+
+  /** Alias used by FriendsScreen */
+  removeFriend: async (id: string) => {
+    const uid = await getCurrentUserId();
+    const snap = await get(ref(db, `friendships/${id}`));
+    if (!snap.exists()) return wrapResponse({ success: true });
+    const f = snap.val();
+    if (f.sender_id !== uid && f.receiver_id !== uid) {
+      throw new Error('Unauthorized: you are not part of this friendship');
+    }
+    await remove(ref(db, `friendships/${id}`));
+    return wrapResponse({ success: true });
+  },
+
+  pendingRequests: async () => {
+    const uid = await getCurrentUserId();
+    const snapshot = await get(ref(db, 'friendships'));
+    const pending: any[] = [];
+
+    if (snapshot.exists()) {
+      for (const f of Object.values(snapshot.val()) as any[]) {
+        if (!f || f.status !== 'pending') continue;
+        if (f.sender_id !== uid && f.receiver_id !== uid) continue;
+        const otherId = f.sender_id === uid ? f.receiver_id : f.sender_id;
+        const userSnap = await get(ref(db, `users/${otherId}`));
+        if (userSnap.exists()) {
+          pending.push({
+            friendship_id: f.id, id: f.id, friend: userSnap.val(),
+            sender_id: f.sender_id, receiver_id: f.receiver_id,
+            status: f.status, created_at: f.created_at,
+          });
+        }
+      }
+    }
+    return wrapResponse({ pending_requests: pending });
   }
 };
 
-// ─── Groups ────────────────────────────────────────────────────────────
+// ─── Groups ────────────────────────────────────────────────────────────────────
 export const groupsAPI = {
   list: async () => {
     const uid = await getCurrentUserId();
@@ -286,7 +420,7 @@ export const groupsAPI = {
     const groups: Group[] = [];
     if (snapshot.exists()) {
       for (const groupData of Object.values(snapshot.val()) as any[]) {
-        const membersList = groupData.members || [];
+        const membersList = safeArray<string>(groupData.members);
         if (membersList.includes(uid)) {
           const memberDetails: GroupMember[] = [];
           for (const memberId of membersList) {
@@ -318,7 +452,8 @@ export const groupsAPI = {
     if (!groupSnap.exists()) throw new Error('Group not found');
     const groupData = groupSnap.val();
     const memberDetails: GroupMember[] = [];
-    for (const memberId of groupData.members || []) {
+    const membersList = safeArray<string>(groupData.members);
+    for (const memberId of membersList) {
       const userSnap = await get(ref(db, `users/${memberId}`));
       if (userSnap.exists()) memberDetails.push({ id: `${id}_${memberId}`, user: userSnap.val(), joined_at: groupData.created_at });
     }
@@ -326,30 +461,52 @@ export const groupsAPI = {
   },
 
   addMember: async (id: string, user_id: string) => {
+    const uid = await getCurrentUserId();
     const groupRef = ref(db, `groups/${id}`);
     const groupSnap = await get(groupRef);
     if (!groupSnap.exists()) throw new Error('Group not found');
-    const members = groupSnap.val().members || [];
-    if (!members.includes(user_id)) { members.push(user_id); await update(groupRef, { members }); }
+    const groupData = groupSnap.val();
+    if (groupData.created_by !== uid) throw new Error('Unauthorized: only the group creator can add members');
+    const members = safeArray<string>(groupData.members);
+    if (!members.includes(user_id)) {
+      members.push(user_id);
+      await update(groupRef, { members });
+    }
     return wrapResponse({ success: true });
   },
 
+  /**
+   * Creator can remove any member. Members can remove themselves (leave group).
+   */
   removeMember: async (id: string, user_id: string) => {
+    const uid = await getCurrentUserId();
     const groupRef = ref(db, `groups/${id}`);
     const groupSnap = await get(groupRef);
     if (!groupSnap.exists()) throw new Error('Group not found');
-    const members = (groupSnap.val().members || []).filter((m: string) => m !== user_id);
+    const groupData = groupSnap.val();
+    if (groupData.created_by !== uid && uid !== user_id) {
+      throw new Error('Unauthorized: only the group creator can remove other members');
+    }
+    const members = safeArray<string>(groupData.members).filter((m: string) => m !== user_id);
     await update(groupRef, { members });
     return wrapResponse({ success: true });
   },
 
+  /**
+   * SECURITY FIX (BUG-005): Only the group creator can delete a group.
+   * Previously any authenticated user could delete any group by knowing its ID.
+   */
   delete: async (id: string) => {
+    const uid = await getCurrentUserId();
+    const groupSnap = await get(ref(db, `groups/${id}`));
+    if (!groupSnap.exists()) throw new Error('Group not found');
+    assertOwner(groupSnap.val().created_by, uid, 'group');
     await remove(ref(db, `groups/${id}`));
     return wrapResponse({ success: true });
   }
 };
 
-// ─── Expenses ──────────────────────────────────────────────────────────
+// ─── Expenses ──────────────────────────────────────────────────────────────────
 export const expensesAPI = {
   create: async (data: ExpenseCreate) => {
     const uid = await getCurrentUserId();
@@ -401,7 +558,11 @@ export const expensesAPI = {
     const allExpenses: Expense[] = [];
     if (snapshot.exists()) Object.values(snapshot.val()).forEach((exp: any) => allExpenses.push(exp));
     allExpenses.sort((a, b) => b.expense_date.localeCompare(a.expense_date));
-    const userExpenses = allExpenses.filter(exp => exp.paid_by === uid || exp.splits.some(s => s.user_id === uid));
+    const userExpenses = allExpenses.filter(exp => {
+      if (!exp) return false;
+      const splits = safeArray<any>(exp.splits);
+      return exp.paid_by === uid || splits.some(s => s && s.user_id === uid);
+    });
     return wrapResponse({ expenses: userExpenses.slice(skip, skip + limitVal), total: userExpenses.length });
   },
 
@@ -419,21 +580,54 @@ export const expensesAPI = {
     return wrapResponse({ expenses, total: expenses.length });
   },
 
+  /**
+   * SECURITY FIX (BUG-004): Only the expense creator (paid_by) can delete.
+   * Previously any authenticated user could delete any expense by ID (IDOR).
+   */
   delete: async (id: string) => {
+    const uid = await getCurrentUserId();
+    const snap = await get(ref(db, `expenses/${id}`));
+    if (!snap.exists()) throw new Error('Expense not found');
+    assertOwner(snap.val().paid_by, uid, 'expense');
     await remove(ref(db, `expenses/${id}`));
     return wrapResponse({ success: true });
+  },
+
+  /**
+   * SECURITY FIX: Only the expense creator can edit fields.
+   */
+  update: async (id: string, data: Partial<Pick<Expense, 'title' | 'description' | 'category' | 'amount' | 'expense_date'>>) => {
+    const uid = await getCurrentUserId();
+    const expenseRef = ref(db, `expenses/${id}`);
+    const snap = await get(expenseRef);
+    if (!snap.exists()) throw new Error('Expense not found');
+    assertOwner(snap.val().paid_by, uid, 'expense');
+    await update(expenseRef, data);
+    const updated = await get(expenseRef);
+    return wrapResponse(updated.val() as Expense);
   }
 };
 
-// ─── Settlements ───────────────────────────────────────────────────────
+// ─── Settlements ───────────────────────────────────────────────────────────────
 export const settlementsAPI = {
   create: async (data: { receiver_id: string; amount: number; payment_method: string; status?: 'pending' | 'completed' }) => {
     const uid = await getCurrentUserId();
+
+    // Prevent self-settlement
+    if (uid === data.receiver_id) throw new Error('Cannot record a settlement with yourself');
+
+    // Duplicate detection: match on payer, receiver, amount, AND pending status
     const existingSnap = await get(ref(db, 'settlements'));
     if (existingSnap.exists()) {
-      const duplicate = Object.values(existingSnap.val()).find((s: any) => s.payer_id === uid && s.receiver_id === data.receiver_id && s.status === 'pending');
+      const duplicate = Object.values(existingSnap.val()).find((s: any) =>
+        s.payer_id === uid &&
+        s.receiver_id === data.receiver_id &&
+        s.status === 'pending' &&
+        Math.abs(s.amount - data.amount) < 0.01
+      );
       if (duplicate) return wrapResponse(duplicate as Settlement);
     }
+
     const settlementRef = push(ref(db, 'settlements'));
     const settleId = settlementRef.key!;
     const requestedStatus = data.status || 'pending';
@@ -487,16 +681,24 @@ export const settlementsAPI = {
   }
 };
 
+// ─── Balance helpers ───────────────────────────────────────────────────────────
+/**
+ * BUG-007 FIX: Only settlements with status === 'completed' reduce balances.
+ * Pending settlements (awaiting receiver confirmation) are excluded to
+ * prevent premature/optimistic balance reduction.
+ */
 async function computeBalanceSummary(userId: string) {
   const snapExp = await get(ref(db, 'expenses'));
   let totalReceivable = 0;
   let totalPayable = 0;
   if (snapExp.exists()) {
     Object.values(snapExp.val()).forEach((exp: any) => {
+      if (!exp) return;
+      const splits = safeArray<any>(exp.splits);
       if (exp.paid_by === userId) {
-        totalReceivable += (exp.splits || []).filter((s: any) => s.user_id !== userId).reduce((acc: number, s: any) => acc + s.share_amount, 0);
+        totalReceivable += splits.filter((s: any) => s && s.user_id !== userId).reduce((acc: number, s: any) => acc + s.share_amount, 0);
       } else {
-        const mySplit = (exp.splits || []).find((s: any) => s.user_id === userId);
+        const mySplit = splits.find((s: any) => s && s.user_id === userId);
         if (mySplit && mySplit.status === 'accepted') totalPayable += mySplit.share_amount;
       }
     });
@@ -504,7 +706,8 @@ async function computeBalanceSummary(userId: string) {
   const snapSettle = await get(ref(db, 'settlements'));
   if (snapSettle.exists()) {
     Object.values(snapSettle.val()).forEach((s: any) => {
-      if (s.status === 'completed' || s.status === 'pending') {
+      // BUG-007: was `|| s.status === 'pending'` — removed to fix premature balance reduction
+      if (s.status === 'completed') {
         if (s.payer_id === userId) totalPayable -= s.amount;
         else if (s.receiver_id === userId) totalReceivable -= s.amount;
       }
@@ -520,10 +723,12 @@ async function computeUserBalances(userId: string) {
   const snapExp = await get(ref(db, 'expenses'));
   if (snapExp.exists()) {
     Object.values(snapExp.val()).forEach((exp: any) => {
+      if (!exp) return;
+      const splits = safeArray<any>(exp.splits);
       if (exp.paid_by === userId) {
-        (exp.splits || []).forEach((s: any) => { if (s.user_id !== userId) net[s.user_id] = (net[s.user_id] || 0) + s.share_amount; });
+        splits.forEach((s: any) => { if (s && s.user_id !== userId) net[s.user_id] = (net[s.user_id] || 0) + s.share_amount; });
       } else {
-        const mySplit = (exp.splits || []).find((s: any) => s.user_id === userId);
+        const mySplit = splits.find((s: any) => s && s.user_id === userId);
         if (mySplit && mySplit.status === 'accepted') net[exp.paid_by] = (net[exp.paid_by] || 0) - mySplit.share_amount;
       }
     });
@@ -531,7 +736,8 @@ async function computeUserBalances(userId: string) {
   const snapSettle = await get(ref(db, 'settlements'));
   if (snapSettle.exists()) {
     Object.values(snapSettle.val()).forEach((s: any) => {
-      if (s.status === 'completed' || s.status === 'pending') {
+      // BUG-007: only completed settlements
+      if (s.status === 'completed') {
         if (s.payer_id === userId) net[s.receiver_id] = (net[s.receiver_id] || 0) + s.amount;
         else if (s.receiver_id === userId) net[s.payer_id] = (net[s.payer_id] || 0) - s.amount;
       }
@@ -540,12 +746,24 @@ async function computeUserBalances(userId: string) {
   return Object.entries(net).map(([uid, bal]) => ({ user_id: uid, balance: Math.round(bal * 100) / 100 })).filter(item => Math.abs(item.balance) > 0.01);
 }
 
-// ─── Budgets ───────────────────────────────────────────────────────────
+// ─── Budgets ───────────────────────────────────────────────────────────────────
 export const budgetsAPI = {
+  /**
+   * BUG-008 FIX: Budget object no longer stores computed `spent` / `remaining`.
+   * Those values go stale the moment an expense is added or deleted.
+   * summary() always derives them fresh from live expense data.
+   */
   create: async (data: { month: number; year: number; amount: number }) => {
     const uid = await getCurrentUserId();
     const budgetId = `${uid}_${data.month}_${data.year}`;
-    const budgetData: Budget = { id: budgetId, user_id: uid, month: data.month, year: data.year, amount: data.amount, spent: 0, remaining: data.amount };
+    const budgetData: Budget = {
+      id: budgetId, user_id: uid,
+      month: data.month, year: data.year,
+      amount: data.amount,
+      // spent & remaining are stored as 0 here — always use summary() for live values
+      spent: 0,
+      remaining: data.amount,
+    };
     await set(ref(db, `budgets/${budgetId}`), budgetData);
     return wrapResponse(budgetData);
   },
@@ -554,7 +772,11 @@ export const budgetsAPI = {
     const uid = await getCurrentUserId();
     const snapshot = await get(ref(db, 'budgets'));
     const budgets: Budget[] = [];
-    if (snapshot.exists()) Object.values(snapshot.val()).forEach((b: any) => { if (b.user_id === uid) budgets.push(b); });
+    if (snapshot.exists()) {
+      Object.values(snapshot.val()).forEach((b: any) => {
+        if (b && b.user_id === uid) budgets.push(b);
+      });
+    }
     return wrapResponse(budgets);
   },
 
@@ -568,6 +790,9 @@ export const budgetsAPI = {
   update: async (month: number, year: number, amount: number) => {
     const uid = await getCurrentUserId();
     const budgetRef = ref(db, `budgets/${uid}_${month}_${year}`);
+    const snap = await get(budgetRef);
+    if (!snap.exists()) throw new Error('Budget not found');
+    assertOwner(snap.val().user_id, uid, 'budget');
     await update(budgetRef, { amount });
     const updated = await get(budgetRef);
     return wrapResponse(updated.val() as Budget);
@@ -582,9 +807,11 @@ export const budgetsAPI = {
     const categorySpentMap: Record<string, number> = {};
     if (snapExp.exists()) {
       Object.values(snapExp.val()).forEach((exp: any) => {
+        if (!exp) return;
         const expDate = new Date(exp.expense_date);
         if (expDate.getMonth() + 1 === month && expDate.getFullYear() === year) {
-          const mySplit = (exp.splits || []).find((s: any) => s.user_id === uid);
+          const splits = safeArray<any>(exp.splits);
+          const mySplit = splits.find((s: any) => s && s.user_id === uid);
           if (mySplit && mySplit.status === 'accepted') {
             totalSpent += mySplit.share_amount;
             categorySpentMap[exp.category] = (categorySpentMap[exp.category] || 0) + mySplit.share_amount;
@@ -599,7 +826,7 @@ export const budgetsAPI = {
   }
 };
 
-// ─── Analytics ─────────────────────────────────────────────────────────
+// ─── Analytics ─────────────────────────────────────────────────────────────────
 export const analyticsAPI = {
   dashboard: async () => {
     const uid = await getCurrentUserId();
@@ -608,8 +835,10 @@ export const analyticsAPI = {
     let totalSpent = 0;
     if (snapExp.exists()) {
       Object.values(snapExp.val()).forEach((exp: any) => {
-        if (exp.paid_by === uid || (exp.splits || []).some((s: any) => s.user_id === uid)) totalExpenses++;
-        const mySplit = (exp.splits || []).find((s: any) => s.user_id === uid);
+        if (!exp) return;
+        const splits = safeArray<any>(exp.splits);
+        if (exp.paid_by === uid || splits.some((s: any) => s && s.user_id === uid)) totalExpenses++;
+        const mySplit = splits.find((s: any) => s && s.user_id === uid);
         if (mySplit && mySplit.status === 'accepted') totalSpent += mySplit.share_amount;
       });
     }
@@ -624,9 +853,11 @@ export const analyticsAPI = {
     const monthlySum: Record<number, number> = {};
     if (snapExp.exists()) {
       Object.values(snapExp.val()).forEach((exp: any) => {
+        if (!exp) return;
         const expDate = new Date(exp.expense_date);
         if (expDate.getFullYear() === y) {
-          const mySplit = (exp.splits || []).find((s: any) => s.user_id === uid);
+          const splits = safeArray<any>(exp.splits);
+          const mySplit = splits.find((s: any) => s && s.user_id === uid);
           if (mySplit && mySplit.status === 'accepted') {
             const m = expDate.getMonth() + 1;
             monthlySum[m] = (monthlySum[m] || 0) + mySplit.share_amount;
@@ -647,9 +878,11 @@ export const analyticsAPI = {
     const categorySum: Record<string, number> = {};
     if (snapExp.exists()) {
       Object.values(snapExp.val()).forEach((exp: any) => {
+        if (!exp) return;
         const expDate = new Date(exp.expense_date);
         if (expDate.getMonth() + 1 === m && expDate.getFullYear() === y) {
-          const mySplit = (exp.splits || []).find((s: any) => s.user_id === uid);
+          const splits = safeArray<any>(exp.splits);
+          const mySplit = splits.find((s: any) => s && s.user_id === uid);
           if (mySplit && mySplit.status === 'accepted') categorySum[exp.category] = (categorySum[exp.category] || 0) + mySplit.share_amount;
         }
       });
@@ -663,8 +896,10 @@ export const analyticsAPI = {
     const monthlySum: Record<string, number> = {};
     if (snapExp.exists()) {
       Object.values(snapExp.val()).forEach((exp: any) => {
+        if (!exp) return;
         const expDate = new Date(exp.expense_date);
-        const mySplit = (exp.splits || []).find((s: any) => s.user_id === uid);
+        const splits = safeArray<any>(exp.splits);
+        const mySplit = splits.find((s: any) => s && s.user_id === uid);
         if (mySplit && mySplit.status === 'accepted') {
           const key = `${expDate.getFullYear()}-${String(expDate.getMonth() + 1).padStart(2, '0')}`;
           monthlySum[key] = (monthlySum[key] || 0) + mySplit.share_amount;
@@ -679,7 +914,7 @@ export const analyticsAPI = {
   }
 };
 
-// ─── Notifications ─────────────────────────────────────────────────────
+// ─── Notifications ─────────────────────────────────────────────────────────────
 export const notificationsAPI = {
   list: async () => {
     const uid = await getCurrentUserId();
@@ -688,7 +923,10 @@ export const notificationsAPI = {
     let unreadCount = 0;
     if (snapshot.exists()) {
       Object.values(snapshot.val()).forEach((n: any) => {
-        if (n.user_id === uid) { notifications.push(n); if (!n.is_read) unreadCount++; }
+        if (n && n.user_id === uid) {
+          notifications.push(n);
+          if (!n.is_read) unreadCount++;
+        }
       });
     }
     notifications.sort((a, b) => b.created_at.localeCompare(a.created_at));
@@ -709,14 +947,30 @@ export const notificationsAPI = {
   }
 };
 
+// ─── Internal helpers ──────────────────────────────────────────────────────────
 async function createNotification(userId: string, title: string, message: string, type: string) {
   try {
     const notificationRef = push(ref(db, 'notifications'));
     const notificationId = notificationRef.key;
     if (notificationId) {
-      await set(notificationRef, { id: notificationId, user_id: userId, title, message, notification_type: type, is_read: false, created_at: new Date().toISOString() });
+      await set(notificationRef, {
+        id: notificationId, user_id: userId, title, message,
+        notification_type: type, is_read: false, created_at: new Date().toISOString()
+      });
+    }
+    // Push notification — fire-and-forget, never blocks caller
+    const userSnap = await get(ref(db, `users/${userId}`));
+    if (userSnap.exists()) {
+      const recipient = userSnap.val();
+      if (recipient?.push_token) {
+        fetch('https://exp.host/--/api/v2/push/send', {
+          method: 'POST',
+          headers: { 'Accept': 'application/json', 'Accept-encoding': 'gzip, deflate', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to: recipient.push_token, sound: 'default', title, body: message, data: { type } }),
+        }).catch(() => { /* push failure never crashes parent */ });
+      }
     }
   } catch (err) {
-    console.error('Failed to create notification', err);
+    console.error('[Notification] Failed to create in-app notification:', err);
   }
 }

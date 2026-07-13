@@ -1,149 +1,504 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import React, { useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import { analyticsAPI, notificationsAPI } from '../api/services';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import Layout from '../components/layout/Layout';
+import Skeleton from '../components/Skeleton';
 import { useAuthStore } from '../store/auth';
-import Card from '../components/Card';
-import LoadingSpinner from '../components/LoadingSpinner';
-import { colors, fontSizes, fontWeights, spacing, radius } from '../theme';
-
-
-function StatCard({ label, value, color, icon }: { label: string; value: string; color: string; icon: string }) {
-  return (
-    <Card style={styles.statCard}>
-      <Text style={styles.statIcon}>{icon}</Text>
-      <Text style={[styles.statValue, { color }]}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </Card>
-  );
-}
+import { useRealtimeStore } from '../hooks/useRealtimeStore';
+import { colors, shadows } from '../theme';
+import { matchCategoryIcon } from '../utils/categoryHelpers';
 
 export default function DashboardScreen() {
-  const insets = useSafeAreaInsets();
   const nav = useNavigation<any>();
-  const store = useAuthStore();
-  const [data, setData] = useState<any>(null);
-  const [unread, setUnread] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const { user } = useAuthStore();
 
-  const load = async () => {
-    try {
-      const [dash, notif] = await Promise.all([analyticsAPI.dashboard(), notificationsAPI.list()]);
-      setData(dash.data);
-      setUnread(notif.data.unread_count);
-    } catch {}
-    setLoading(false);
-    setRefreshing(false);
-  };
+  // ── Real-time data from Firebase ──────────────────────────────────────────
+  const { ready, summary, myExpenses } = useRealtimeStore(user?.id);
 
-  useEffect(() => { load(); }, []);
+  // ── Derived values (memoized) ─────────────────────────────────────────────
+  const totalSpent = useMemo(() => {
+    if (!user?.id) return 0;
+    return myExpenses.reduce((sum, exp) => {
+      const mySplit = (exp.splits || []).find(s => s.user_id === user.id);
+      return sum + (mySplit ? mySplit.share_amount : 0);
+    }, 0);
+  }, [myExpenses, user?.id]);
 
-  if (loading) return <LoadingSpinner />;
+  const netBalance = summary?.net_balance ?? 0;
+  const youOwe = summary?.total_payable ?? 0;
+  const youAreOwed = summary?.total_receivable ?? 0;
 
-  const greet = () => {
-    const h = new Date().getHours();
-    if (h < 12) return 'Good morning';
-    if (h < 17) return 'Good afternoon';
-    return 'Good evening';
-  };
+  const recentTransactions = useMemo(() => {
+    return [...myExpenses]
+      .sort((a, b) => new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime())
+      .slice(0, 3);
+  }, [myExpenses]);
+
+  const fmt = (n: number) =>
+    n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  // ── Loading skeleton ──────────────────────────────────────────────────────
+  if (!ready) {
+    return (
+      <Layout title="Budget Buddy">
+        <View style={styles.skeletonContainer}>
+          <Skeleton height={144} borderRadius={16} />
+          <View style={styles.skeletonGrid}>
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} height={80} borderRadius={16} style={styles.skeletonCol} />
+            ))}
+          </View>
+          <Skeleton height={72} borderRadius={16} />
+        </View>
+      </Layout>
+    );
+  }
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top }]}>
-      {/* Top Bar */}
-      <View style={styles.topBar}>
-        <View>
-          <Text style={styles.greet}>{greet()},</Text>
-          <Text style={styles.userName}>{store.user?.name?.split(' ')[0] ?? 'User'} 👋</Text>
+    <Layout title="Budget Buddy">
+      <View style={styles.screenContainer}>
+        {/* ── Net Balance Card ──────────────────────────────────────────── */}
+        <View style={styles.netBalanceCard}>
+          {/* Decorative Blur Circle Top-Right */}
+          <View style={styles.decorativeCircle} />
+
+          <View style={styles.headerRow}>
+            <View style={styles.labelCol}>
+              <Text style={styles.cardLabel}>Total Expense</Text>
+              <Text style={styles.cardValue}>₹{fmt(totalSpent)}</Text>
+            </View>
+          </View>
+
+          {/* Divider */}
+          <View style={styles.divider} />
+
+          {/* You Owe / Owed / Net 3-col Grid */}
+          <View style={styles.balanceGrid}>
+            <View style={styles.balanceColLeft}>
+              <Text style={styles.miniLabel}>You owe</Text>
+              <Text style={styles.miniValueOwe}>₹{fmt(youOwe)}</Text>
+            </View>
+            <View style={styles.balanceColCenter}>
+              <Text style={styles.miniLabel}>Owed to you</Text>
+              <Text style={styles.miniValueOwed}>₹{fmt(youAreOwed)}</Text>
+            </View>
+            <View style={styles.balanceColRight}>
+              <Text style={styles.miniLabel}>Net</Text>
+              <Text style={[styles.miniValueNet, { color: netBalance >= 0 ? colors.secondary : colors.error }]}>
+                {netBalance >= 0 ? `+₹${fmt(netBalance)}` : `-₹${fmt(Math.abs(netBalance))}`}
+              </Text>
+            </View>
+          </View>
         </View>
-        <TouchableOpacity style={styles.notifBtn} onPress={() => { /* notifications panel */ }}>
-          <Ionicons name="notifications-outline" size={24} color={colors.textPrimary} />
-          {unread > 0 && <View style={styles.badge}><Text style={styles.badgeText}>{unread > 9 ? '9+' : unread}</Text></View>}
-        </TouchableOpacity>
-      </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={colors.primary} />}
-      >
-        {/* Net Balance */}
-        <Card style={styles.balanceCard}>
-          <Text style={styles.balanceLabel}>Net Balance</Text>
-          <Text style={[styles.balanceAmount, { color: (data?.net_balance ?? 0) >= 0 ? colors.success : colors.danger }]}>
-            ₹{Math.abs(data?.net_balance ?? 0).toFixed(2)}
-          </Text>
-          <Text style={styles.balanceSub}>{(data?.net_balance ?? 0) >= 0 ? 'You are owed overall' : 'You owe overall'}</Text>
-        </Card>
-
-        {/* Stats Row */}
-        <View style={styles.statsRow}>
-          <StatCard label="Total Spent" value={`₹${(data?.total_spent ?? 0).toFixed(0)}`} color={colors.textPrimary} icon="💸" />
-          <StatCard label="You Owe" value={`₹${(data?.total_payable ?? 0).toFixed(0)}`} color={colors.danger} icon="📤" />
-          <StatCard label="Owed to You" value={`₹${(data?.total_receivable ?? 0).toFixed(0)}`} color={colors.success} icon="📥" />
-        </View>
-
-        {/* Quick Actions */}
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <View style={styles.actions}>
+        {/* ── Quick Actions ─────────────────────────────────────────────── */}
+        <View style={styles.actionsGrid}>
           {[
-            { label: 'Groups', icon: 'people', screen: 'Groups' },
-            { label: 'Settle Up', icon: 'swap-horizontal', screen: 'Settlements' },
-            { label: 'Analytics', icon: 'bar-chart', screen: 'Analytics' },
-            { label: 'Budget', icon: 'wallet', screen: 'Budget' },
-          ].map(item => (
-            <TouchableOpacity key={item.label} style={styles.actionBtn} onPress={() => nav.navigate(item.screen)}>
-              <View style={styles.actionIcon}>
-                <Ionicons name={item.icon as any} size={22} color={colors.primary} />
+            {
+              label: 'Add',
+              icon: 'add',
+              screen: 'AddExpense',
+              bgClass: colors.primary,
+              textClass: colors.onPrimary,
+              border: false,
+            },
+            {
+              label: 'Budget',
+              icon: 'account-balance-wallet',
+              screen: 'Budget',
+              bgClass: colors.bgSurfaceContainer,
+              textClass: colors.primary,
+              border: true,
+            },
+            {
+              label: 'Groups',
+              icon: 'groups',
+              screen: 'Groups',
+              bgClass: colors.bgSurfaceContainer,
+              textClass: colors.primary,
+              border: true,
+            },
+            {
+              label: 'History',
+              icon: 'history',
+              screen: 'History',
+              bgClass: colors.bgSurfaceContainer,
+              textClass: colors.primary,
+              border: true,
+            },
+          ].map(({ label, icon, screen, bgClass, textClass, border }) => (
+            <TouchableOpacity
+              key={screen}
+              onPress={() => nav.navigate(screen)}
+              style={styles.actionBtn}
+              activeOpacity={0.7}
+            >
+              <View style={[
+                styles.actionIconContainer,
+                { backgroundColor: bgClass },
+                border && { borderWidth: 1, borderColor: colors.outlineVariant + '4c' }
+              ]}>
+                {icon === 'add' ? (
+                  <Ionicons name="add" size={24} color={textClass} />
+                ) : icon === 'account-balance-wallet' ? (
+                  <MaterialIcons name="account-balance-wallet" size={24} color={textClass} />
+                ) : icon === 'groups' ? (
+                  <MaterialIcons name="groups" size={24} color={textClass} />
+                ) : (
+                  <MaterialIcons name="history" size={24} color={textClass} />
+                )}
               </View>
-              <Text style={styles.actionLabel}>{item.label}</Text>
+              <Text style={styles.actionLabel} numberOfLines={1} adjustsFontSizeToFit>{label}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* Total Expenses */}
-        <Card style={styles.totalCard}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={styles.totalLabel}>Total Expenses</Text>
-            <Text style={styles.totalCount}>{data?.total_expenses ?? 0}</Text>
-          </View>
-          <TouchableOpacity onPress={() => nav.navigate('History')} style={styles.viewAll}>
-            <Text style={styles.viewAllText}>View All History →</Text>
+        {/* ── Recent Transactions ──────────────────────────────────────── */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Recent Transactions</Text>
+          <TouchableOpacity onPress={() => nav.navigate('History')} activeOpacity={0.7}>
+            <Text style={styles.viewAllText}>View All</Text>
           </TouchableOpacity>
-        </Card>
-      </ScrollView>
-    </View>
+        </View>
+
+        <View style={styles.transactionsCard}>
+          {recentTransactions.length === 0 ? (
+            <Text style={styles.emptyText}>No transactions yet.</Text>
+          ) : (
+            recentTransactions.map((exp, index) => {
+              const isPayer = exp.paid_by === 'you' || exp.paid_by === user?.id;
+              const mySplit = (exp.splits || []).find((s: any) => s.user_id === user?.id);
+              const displayAmt = mySplit ? mySplit.share_amount : exp.amount;
+
+              return (
+                <View key={exp.id} style={[
+                  styles.transactionRow,
+                  index > 0 && styles.transactionDivider
+                ]}>
+                  <View style={styles.categoryIconWrap}>
+                    <Text style={styles.categoryIconText}>{matchCategoryIcon(exp.category)}</Text>
+                  </View>
+                  <View style={styles.transactionMeta}>
+                    <Text style={styles.transactionTitle} numberOfLines={1}>{exp.title}</Text>
+                    <Text style={styles.transactionDate}>
+                      {new Date(exp.expense_date).toLocaleDateString('en-IN', {
+                        month: 'short', day: 'numeric'
+                      })} · {exp.category}
+                    </Text>
+                  </View>
+                  <View style={styles.transactionRight}>
+                    <Text style={styles.transactionAmt}>₹{displayAmt.toLocaleString('en-IN')}</Text>
+                    <Text style={[
+                      styles.transactionStatus,
+                      { color: isPayer ? colors.secondary : colors.error }
+                    ]}>
+                      {isPayer ? 'You paid' : 'You owe'}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })
+          )}
+        </View>
+
+        {/* ── Analytics Banner ──────────────────────────────────────────── */}
+        <TouchableOpacity
+          onPress={() => nav.navigate('Analytics')}
+          style={styles.analyticsBanner}
+          activeOpacity={0.7}
+        >
+          <View style={styles.analyticsLeft}>
+            <View style={styles.analyticsIconWrap}>
+              <Ionicons name="bar-chart" size={20} color="#4f46e5" />
+            </View>
+            <View style={styles.analyticsTextCol}>
+              <Text style={styles.analyticsTitle}>Monthly Analytics</Text>
+              <Text style={styles.analyticsSubtitle}>Charts · Trends · Insights</Text>
+            </View>
+          </View>
+          <View style={styles.analyticsRight}>
+            <Text style={styles.analyticsViewText}>View</Text>
+            <Ionicons name="chevron-forward" size={16} color="#4f46e5" />
+          </View>
+        </TouchableOpacity>
+      </View>
+    </Layout>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
-  topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.md, paddingBottom: spacing.md, paddingTop: spacing.sm },
-  greet: { color: colors.textSecondary, fontSize: fontSizes.sm },
-  userName: { color: colors.textPrimary, fontSize: fontSizes.xl, fontWeight: fontWeights.bold },
-  notifBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.bgCard, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
-  badge: { position: 'absolute', top: 6, right: 6, backgroundColor: colors.danger, borderRadius: 8, paddingHorizontal: 4, minWidth: 16, alignItems: 'center' },
-  badgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
-  scroll: { paddingHorizontal: spacing.md, paddingBottom: 100 },
-  balanceCard: { marginBottom: spacing.md, alignItems: 'center', backgroundColor: colors.bgSurface, borderColor: colors.primaryDark },
-  balanceLabel: { color: colors.textSecondary, fontSize: fontSizes.sm, marginBottom: spacing.xs },
-  balanceAmount: { fontSize: fontSizes.xxxl, fontWeight: fontWeights.bold },
-  balanceSub: { color: colors.textMuted, fontSize: fontSizes.xs, marginTop: spacing.xs },
-  statsRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
-  statCard: { flex: 1, alignItems: 'center', paddingVertical: spacing.md },
-  statIcon: { fontSize: 22, marginBottom: spacing.xs },
-  statValue: { fontSize: fontSizes.lg, fontWeight: fontWeights.bold },
-  statLabel: { color: colors.textMuted, fontSize: fontSizes.xs, textAlign: 'center', marginTop: 2 },
-  sectionTitle: { color: colors.textPrimary, fontSize: fontSizes.md, fontWeight: fontWeights.semibold, marginBottom: spacing.sm },
-  actions: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
-  actionBtn: { flex: 1, alignItems: 'center', backgroundColor: colors.bgCard, borderRadius: radius.md, paddingVertical: spacing.md, borderWidth: 1, borderColor: colors.border },
-  actionIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.bgSurface, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.xs },
-  actionLabel: { color: colors.textSecondary, fontSize: fontSizes.xs, fontWeight: '500' },
-  totalCard: { marginBottom: spacing.md },
-  totalLabel: { color: colors.textSecondary, fontSize: fontSizes.md },
-  totalCount: { color: colors.textPrimary, fontSize: fontSizes.xl, fontWeight: fontWeights.bold },
-  viewAll: { marginTop: spacing.sm },
-  viewAllText: { color: colors.primary, fontSize: fontSizes.sm, fontWeight: fontWeights.semibold },
+  skeletonContainer: {
+    gap: 24,
+  },
+  skeletonGrid: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  skeletonCol: {
+    flex: 1,
+  },
+  screenContainer: {
+    gap: 24,
+  },
+  // Net Balance Card
+  netBalanceCard: {
+    backgroundColor: Platform.OS === 'android' ? '#ffffff' : 'rgba(255, 255, 255, 0.75)',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(198, 198, 202, 0.4)',
+    position: 'relative',
+    overflow: 'hidden',
+    ...shadows.card,
+  },
+  decorativeCircle: {
+    position: 'absolute',
+    top: -40,
+    right: -40,
+    width: 128,
+    height: 128,
+    borderRadius: 64,
+    backgroundColor: colors.secondaryContainer,
+    opacity: 0.15,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  labelCol: {
+    flexDirection: 'column',
+  },
+  cardLabel: {
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: '500',
+    color: colors.onSurfaceVariant,
+  },
+  cardValue: {
+    fontSize: 40,
+    lineHeight: 48,
+    letterSpacing: -0.8,
+    fontWeight: '700',
+    color: colors.primary,
+    marginTop: 4,
+  },
+  divider: {
+    width: '100%',
+    height: 1,
+    backgroundColor: colors.outlineVariant + '4c',
+    marginVertical: 12,
+  },
+  balanceGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  balanceColLeft: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+  balanceColCenter: {
+    flex: 1,
+    alignItems: 'center',
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: colors.outlineVariant + '33',
+  },
+  balanceColRight: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  miniLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: colors.onSurfaceVariant,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  miniValueOwe: {
+    fontSize: 16,
+    lineHeight: 20,
+    fontWeight: '700',
+    color: colors.error,
+    marginTop: 2,
+  },
+  miniValueOwed: {
+    fontSize: 16,
+    lineHeight: 20,
+    fontWeight: '700',
+    color: colors.secondary,
+    marginTop: 2,
+  },
+  miniValueNet: {
+    fontSize: 16,
+    lineHeight: 20,
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  // Quick Actions Grid
+  actionsGrid: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  actionBtn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: Platform.select({ ios: 12, android: 4, default: 8 }),
+    backgroundColor: Platform.OS === 'android' ? '#ffffff' : 'rgba(255, 255, 255, 0.75)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(198, 198, 202, 0.4)',
+    ...shadows.card,
+  },
+  actionIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionLabel: {
+    fontSize: 12,
+    lineHeight: 16,
+    letterSpacing: 0.6,
+    fontWeight: '600',
+    color: colors.primary,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+  },
+  // Analytics Banner
+  analyticsBanner: {
+    backgroundColor: Platform.OS === 'android' ? '#ffffff' : 'rgba(255, 255, 255, 0.75)',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(198, 198, 202, 0.4)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    ...shadows.card,
+  },
+  analyticsLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  analyticsIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#f0f2ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  analyticsTextCol: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+  },
+  analyticsTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.onSurface,
+  },
+  analyticsSubtitle: {
+    fontSize: 12,
+    color: colors.onSurfaceVariant + 'b2',
+    marginTop: 2,
+  },
+  analyticsRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  analyticsViewText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4f46e5',
+  },
+  // Recent Transactions Section
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  viewAllText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.secondary,
+  },
+  transactionsCard: {
+    backgroundColor: Platform.OS === 'android' ? '#ffffff' : 'rgba(255, 255, 255, 0.75)',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(198, 198, 202, 0.40)',
+    ...shadows.card,
+  },
+  transactionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 8,
+  },
+  transactionDivider: {
+    borderTopWidth: 1,
+    borderTopColor: colors.outlineVariant + '22',
+    marginTop: 8,
+    paddingTop: 12,
+  },
+  categoryIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: colors.bgSurfaceContainer,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryIconText: {
+    fontSize: 18,
+  },
+  transactionMeta: {
+    flex: 1,
+  },
+  transactionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  transactionDate: {
+    fontSize: 12,
+    color: colors.onSurfaceVariant + 'b2',
+    marginTop: 2,
+  },
+  transactionRight: {
+    alignItems: 'flex-end',
+  },
+  transactionAmt: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  transactionStatus: {
+    fontSize: 11,
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  emptyText: {
+    textAlign: 'center',
+    fontSize: 13,
+    color: colors.onSurfaceVariant + '80',
+    fontStyle: 'italic',
+    paddingVertical: 12,
+  },
 });

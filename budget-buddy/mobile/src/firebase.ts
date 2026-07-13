@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyDH9vPPyuogloZkKvfmvPtQphKV6sB54I8',
+  apiKey: 'AIzaSyB7E7KDuox0SEVHpcPvEKwTqPk8LB6LIR8',
   authDomain: 'buddybuddy-23085.firebaseapp.com',
   databaseURL: 'https://buddybuddy-23085-default-rtdb.firebaseio.com',
   projectId: 'buddybuddy-23085',
@@ -31,7 +31,7 @@ export const db = getDatabase(app);
 
 // Configure Google Sign-In
 GoogleSignin.configure({
-  webClientId: '420901561899-edot1hm4db0pp3v7rgm8u87qnv3leurl.apps.googleusercontent.com',
+  webClientId: '115570661972-635rsnnjuuifq8qda4np37388e5i9m6q.apps.googleusercontent.com',
 });
 
 export default app;

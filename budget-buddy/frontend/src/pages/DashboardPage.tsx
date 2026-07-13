@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import { useRealtimeStore } from '../hooks/useRealtimeStore';
 import { useAuthStore } from '../store/auth';
+import { matchCategoryIcon } from '../utils/categoryHelpers';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ export default function DashboardPage() {
   const totalSpent = useMemo(() => {
     if (!user?.id) return 0;
     return myExpenses.reduce((sum, exp) => {
-      const mySplit = (exp.splits || []).find(s => s.user_id === user.id);
+      const mySplit = (exp.splits || []).find((s: any) => s.user_id === user.id);
       return sum + (mySplit ? mySplit.share_amount : 0);
     }, 0);
   }, [myExpenses, user?.id]);
@@ -23,6 +24,14 @@ export default function DashboardPage() {
   const netBalance  = summary?.net_balance     ?? 0;
   const youOwe      = summary?.total_payable   ?? 0;
   const youAreOwed  = summary?.total_receivable ?? 0;
+
+  const recentTransactions = useMemo(
+    () =>
+      [...myExpenses]
+        .sort((a, b) => new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime())
+        .slice(0, 3),
+    [myExpenses]
+  );
 
   // ── Loading skeleton ──────────────────────────────────────────────────────
   if (!ready) {
@@ -77,15 +86,13 @@ export default function DashboardPage() {
               </span>
             </div>
           </div>
-
-
         </section>
 
         {/* ── Quick Actions ─────────────────────────────────────────────── */}
         <section className="grid grid-cols-4 gap-3">
           {[
             { label: 'Add', icon: 'add', path: '/add-expense', color: 'bg-primary text-on-primary' },
-            { label: 'Settle', icon: 'payments', path: '/settlements', color: 'bg-surface-container text-primary border border-outline-variant/30' },
+            { label: 'Budget', icon: 'account_balance_wallet', path: '/budget', color: 'bg-surface-container text-primary border border-outline-variant/30' },
             { label: 'Groups', icon: 'groups', path: '/groups', color: 'bg-surface-container text-primary border border-outline-variant/30' },
             { label: 'History', icon: 'history', path: '/history', color: 'bg-surface-container text-primary border border-outline-variant/30' },
           ].map(({ label, icon, path, color }) => (
@@ -102,6 +109,58 @@ export default function DashboardPage() {
           ))}
         </section>
 
+        {/* ── Recent Transactions ───────────────────────────────────────── */}
+        <section>
+          <div className="flex items-center justify-between mb-3 mt-2 px-1">
+            <span className="text-base font-bold text-primary">Recent Transactions</span>
+            <button
+              onClick={() => navigate('/history')}
+              className="text-[13px] font-semibold text-secondary hover:opacity-80 active:scale-95 transition-all"
+            >
+              View All
+            </button>
+          </div>
+
+          <div className="glass-panel rounded-2xl p-4 flex flex-col divide-y divide-outline-variant/10">
+            {recentTransactions.length === 0 ? (
+              <p className="text-center text-sm text-on-surface-variant/50 italic py-3">
+                No transactions yet.
+              </p>
+            ) : (
+              recentTransactions.map((exp) => {
+                const isPayer = exp.paid_by === 'you' || exp.paid_by === user?.id;
+                const mySplit = (exp.splits || []).find((s: any) => s.user_id === user?.id);
+                const displayAmt = mySplit ? mySplit.share_amount : exp.amount;
+
+                return (
+                  <div key={exp.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                    <div className="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center flex-shrink-0 text-lg">
+                      {matchCategoryIcon(exp.category)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-primary truncate">{exp.title}</p>
+                      <p className="text-xs text-on-surface-variant/70 mt-0.5">
+                        {new Date(exp.expense_date).toLocaleDateString('en-IN', {
+                          month: 'short',
+                          day: 'numeric',
+                        })}{' '}
+                        · {exp.category}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end flex-shrink-0">
+                      <span className="text-sm font-bold text-primary">
+                        ₹{displayAmt.toLocaleString('en-IN')}
+                      </span>
+                      <span className={`text-[11px] font-medium mt-0.5 ${isPayer ? 'text-secondary' : 'text-error'}`}>
+                        {isPayer ? 'You paid' : 'You owe'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </section>
 
         {/* ── Analytics Banner ──────────────────────────────────────────── */}
         <button

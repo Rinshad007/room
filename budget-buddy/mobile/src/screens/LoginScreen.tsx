@@ -1,33 +1,57 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, Alert } from 'react-native';
+import {
+  View, Text, TextInput, TouchableOpacity, StyleSheet,
+  ScrollView, KeyboardAvoidingView, Platform, Alert,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import type { StackNavigationProp } from '@react-navigation/stack';
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
-import Input from '../components/Input';
-import Button from '../components/Button';
-import { authAPI } from '../api/services';
+import { Ionicons } from '@expo/vector-icons';
+import Svg, { Path } from 'react-native-svg';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithCredential, signInWithPopup } from 'firebase/auth';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { ref, get, set } from 'firebase/database';
+import Toast from 'react-native-toast-message';
+import { auth, db } from '../firebase';
 import { useAuthStore } from '../store/auth';
-import { colors, fontSizes, fontWeights, spacing } from '../theme';
-import type { AuthStackParamList } from '../navigation/AuthNavigator';
-
-type NavProp = StackNavigationProp<AuthStackParamList, 'Login'>;
+import type { User } from '../types';
+import { colors, shadows } from '../theme';
+import Card from '../components/Card';
 
 export default function LoginScreen() {
-  const nav = useNavigation<NavProp>();
+  const insets = useSafeAreaInsets();
+  const nav = useNavigation<any>();
+  const { setAuth } = useAuthStore();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const store = useAuthStore();
 
   const handleLogin = async () => {
-    if (!email || !password) { Alert.alert('Error', 'Please fill all fields'); return; }
+    if (!email.trim() || !password) {
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Please fill in all fields' });
+      return;
+    }
     setLoading(true);
     try {
-      const res = await authAPI.login({ email, password });
-      await store.setAuth(res.data.user, res.data.access_token, res.data.refresh_token);
-    } catch (e: any) {
-      Alert.alert('Login Failed', e.message || 'Invalid credentials');
+      const loginRes = await signInWithEmailAndPassword(auth, email.trim(), password);
+      const fbUser = loginRes.user;
+      
+      const snap = await get(ref(db, `users/${fbUser.uid}`));
+      const userData: User = snap.exists() ? snap.val() : {
+        id: fbUser.uid,
+        name: fbUser.displayName || 'User',
+        email: fbUser.email || email.trim(),
+        upi_id: null,
+        created_at: new Date().toISOString(),
+      };
+      
+      const token = await fbUser.getIdToken();
+      await setAuth(userData, token, '');
+      Toast.show({ type: 'success', text1: 'Welcome back!', autoHide: true, visibilityTime: 1500 });
+    } catch (err: any) {
+      Toast.show({ type: 'error', text1: 'Login Failed', text2: err.message || 'Invalid email or password' });
     } finally {
       setLoading(false);
     }
@@ -36,66 +60,186 @@ export default function LoginScreen() {
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
+      if (Platform.OS === 'web') {
+        const provider = new GoogleAuthProvider();
+        const userCredential = await signInWithPopup(auth, provider);
+        const fbUser = userCredential.user;
+
+        const snapshot = await get(ref(db, `users/${fbUser.uid}`));
+        const userData: User = snapshot.exists() ? snapshot.val() : {
+          id: fbUser.uid,
+          name: fbUser.displayName || fbUser.email || 'User',
+          email: fbUser.email || '',
+          upi_id: null,
+          created_at: new Date().toISOString(),
+        };
+
+        if (!snapshot.exists()) {
+          await set(ref(db, `users/${fbUser.uid}`), userData);
+        }
+
+        const token = await fbUser.getIdToken();
+        await setAuth(userData, token, '');
+        Toast.show({ type: 'success', text1: 'Welcome back!', autoHide: true, visibilityTime: 1500 });
+        return;
+      }
+
       await GoogleSignin.hasPlayServices();
-      const userInfo = await GoogleSignin.signIn();
-      const idToken = userInfo.data?.idToken;
-      if (idToken) {
-        const res = await authAPI.googleLogin(idToken);
-        await store.setAuth(res.data.user, res.data.access_token, res.data.refresh_token);
-      } else {
-        throw new Error('Google Sign-In failed: No ID Token found');
+      const signInResult = await GoogleSignin.signIn();
+      const idToken = (signInResult as any).idToken || (signInResult as any).data?.idToken;
+      if (!idToken) throw new Error('No ID token found');
+
+      const credential = GoogleAuthProvider.credential(idToken);
+      const userCredential = await signInWithCredential(auth, credential);
+      const fbUser = userCredential.user;
+
+      const snapshot = await get(ref(db, `users/${fbUser.uid}`));
+      const userData: User = snapshot.exists() ? snapshot.val() : {
+        id: fbUser.uid,
+        name: fbUser.displayName || fbUser.email || 'User',
+        email: fbUser.email || '',
+        upi_id: null,
+        created_at: new Date().toISOString(),
+      };
+
+      if (!snapshot.exists()) {
+        await set(ref(db, `users/${fbUser.uid}`), userData);
       }
-    } catch (e: any) {
-      if (e.code === statusCodes.SIGN_IN_CANCELLED) {
-        // User cancelled
-      } else if (e.code === statusCodes.IN_PROGRESS) {
-        Alert.alert('Status', 'Sign-in already in progress');
-      } else if (e.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        Alert.alert('Play Services', 'Google Play Services not available or outdated');
-      } else {
-        Alert.alert('Google Sign-In Failed', e.message || 'Something went wrong');
-      }
+
+      const token = await fbUser.getIdToken();
+      await setAuth(userData, token, '');
+      Toast.show({ type: 'success', text1: 'Welcome back!', autoHide: true, visibilityTime: 1500 });
+    } catch (err: any) {
+      Toast.show({ type: 'error', text1: 'Google Sign-In failed', text2: err.message });
     } finally {
       setLoading(false);
     }
   };
 
-  const insets = useSafeAreaInsets();
-
   return (
-    <KeyboardAvoidingView style={[styles.root, { paddingTop: insets.top }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.logo}>💸</Text>
-          <Text style={styles.title}>Budget Buddy</Text>
-          <Text style={styles.subtitle}>Sign in to your account</Text>
+    <KeyboardAvoidingView
+      style={styles.root}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 48, paddingBottom: insets.bottom + 24 }]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Logo area */}
+        <View style={styles.logoSection}>
+          <View style={styles.logoWrap}>
+            <Ionicons name="wallet" size={32} color={colors.onPrimary} />
+          </View>
+          <View style={styles.logoText}>
+            <Text style={styles.appName}>Budget Buddy</Text>
+            <Text style={styles.tagline}>Smart expense splitting</Text>
+          </View>
         </View>
 
-        <View style={styles.form}>
-          <Input label="Email" value={email} onChangeText={setEmail} placeholder="you@example.com" keyboardType="email-address" icon="mail-outline" />
-          <Input label="Password" value={password} onChangeText={setPassword} placeholder="••••••••" secureTextEntry icon="lock-closed-outline" />
-          <Button title="Sign In" onPress={handleLogin} loading={loading} fullWidth style={styles.btn} />
+        {/* Form Card */}
+        <Card glass style={styles.glassCard}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>Sign In</Text>
+          </View>
 
-          <View style={styles.dividerContainer}>
+          {/* Email field */}
+          <View style={styles.field}>
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="you@example.com"
+              placeholderTextColor={colors.onSurfaceVariant + '80'}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+            />
+          </View>
+
+          {/* Password field */}
+          <View style={styles.field}>
+            <Text style={styles.label}>Password</Text>
+            <View style={styles.passContainer}>
+              <TextInput
+                style={[styles.input, { paddingRight: 48 }]}
+                placeholder="Enter your password"
+                placeholderTextColor={colors.onSurfaceVariant + '80'}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                autoComplete="current-password"
+              />
+              <TouchableOpacity
+                style={styles.eyeBtn}
+                onPress={() => setShowPassword(!showPassword)}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color={colors.onSurfaceVariant + '99'}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Submit Button */}
+          <TouchableOpacity
+            style={[styles.submitBtn, loading && styles.btnDisabled]}
+            onPress={handleLogin}
+            disabled={loading}
+            activeOpacity={0.8}
+          >
+            {loading ? (
+              <Ionicons name="refresh" size={24} color={colors.onPrimary} style={styles.spinning} />
+            ) : (
+              <Text style={styles.submitBtnText}>Sign In</Text>
+            )}
+          </TouchableOpacity>
+
+          {/* Divider */}
+          <View style={styles.dividerRow}>
             <View style={styles.dividerLine} />
             <Text style={styles.dividerText}>or</Text>
             <View style={styles.dividerLine} />
           </View>
 
-          <Button 
-            title="Continue with Google" 
-            onPress={handleGoogleLogin} 
-            variant="outline" 
-            fullWidth 
-            style={styles.googleBtn} 
-            loading={loading}
-          />
-        </View>
+          {/* Google Login Button */}
+          <TouchableOpacity
+            style={[styles.googleBtn, loading && styles.btnDisabled]}
+            onPress={handleGoogleLogin}
+            disabled={loading}
+            activeOpacity={0.8}
+          >
+            <Svg width={20} height={20} viewBox="0 0 24 24">
+              <Path
+                fill="#EA4335"
+                d="M12 5.04c1.66 0 3.2.57 4.38 1.69l3.27-3.27C17.67 1.54 14.98 1 12 1 7.35 1 3.37 3.65 1.42 7.54l3.9 3.02C6.24 7.65 8.92 5.04 12 5.04z"
+              />
+              <Path
+                fill="#4285F4"
+                d="M23.49 12.27c0-.81-.07-1.59-.2-2.36H12v4.51h6.46c-.29 1.48-1.14 2.73-2.4 3.58l3.76 2.91c2.2-2.02 3.67-5 3.67-8.64z"
+              />
+              <Path
+                fill="#FBBC05"
+                d="M5.32 14.78c-.23-.69-.36-1.42-.36-2.18s.13-1.49.36-2.18L1.42 7.4C.51 9.21 0 11.24 0 13.35s.51 4.14 1.42 5.95l3.9-3.52z"
+              />
+              <Path
+                fill="#34A853"
+                d="M12 23c3.24 0 5.97-1.07 7.96-2.91l-3.76-2.91c-1.05.7-2.4 1.12-4.2 1.12-3.08 0-5.76-2.61-6.68-5.52l-3.9 3.02C3.37 20.35 7.35 23 12 23z"
+              />
+            </Svg>
+            <Text style={styles.googleBtnText}>Continue with Google</Text>
+          </TouchableOpacity>
+        </Card>
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Don't have an account? </Text>
-          <TouchableOpacity onPress={() => nav.navigate('Register')}>
-            <Text style={styles.link}>Sign Up</Text>
+        {/* Footer */}
+        <View style={styles.footerRow}>
+          <Text style={styles.footerText}>No account? </Text>
+          <TouchableOpacity onPress={() => nav.navigate('Register')} activeOpacity={0.7}>
+            <Text style={styles.footerLink}>Create one</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -104,19 +248,163 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
-  scroll: { flexGrow: 1, paddingHorizontal: spacing.lg, justifyContent: 'center', paddingBottom: spacing.xl },
-  header: { alignItems: 'center', marginBottom: spacing.xxl },
-  logo: { fontSize: 64, marginBottom: spacing.md },
-  title: { fontSize: fontSizes.xxxl, fontWeight: fontWeights.bold, color: colors.textPrimary, marginBottom: spacing.xs },
-  subtitle: { fontSize: fontSizes.md, color: colors.textSecondary },
-  form: { marginBottom: spacing.lg },
-  btn: { marginTop: spacing.sm },
-  dividerContainer: { flexDirection: 'row', alignItems: 'center', marginVertical: spacing.md },
-  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
-  dividerText: { marginHorizontal: spacing.md, color: colors.textMuted, fontSize: fontSizes.sm },
-  googleBtn: { borderColor: colors.border, marginTop: spacing.xs },
-  footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
-  footerText: { color: colors.textSecondary, fontSize: fontSizes.md },
-  link: { color: colors.primary, fontSize: fontSizes.md, fontWeight: fontWeights.semibold },
+  root: {
+    flex: 1,
+    backgroundColor: colors.bg,
+  },
+  scroll: {
+    flexGrow: 1,
+    paddingHorizontal: 20, // container padding
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  // Logo area
+  logoSection: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 16,
+    marginBottom: 32,
+  },
+  logoWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 16,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.float,
+  },
+  logoText: {
+    alignItems: 'center',
+  },
+  appName: {
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  tagline: {
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: '400',
+    color: colors.onSurfaceVariant,
+    marginTop: 4,
+  },
+  // Form Card
+  glassCard: {
+    width: '100%',
+    maxWidth: 384, // sm size
+    gap: 16,
+  },
+  cardHeader: {
+    borderBottomWidth: 1,
+    borderColor: colors.outlineVariant + '33',
+    paddingBottom: 8,
+  },
+  cardTitle: {
+    fontSize: 24,
+    lineHeight: 30,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  field: {
+    gap: 6,
+  },
+  label: {
+    fontSize: 12,
+    lineHeight: 16,
+    letterSpacing: 0.6,
+    fontWeight: '600',
+    color: colors.onSurfaceVariant,
+    textTransform: 'uppercase',
+  },
+  input: {
+    width: '100%',
+    height: 56,
+    backgroundColor: colors.bgSurfaceContainerLow,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    color: colors.onSurface,
+  },
+  passContainer: {
+    position: 'relative',
+    width: '100%',
+  },
+  eyeBtn: {
+    position: 'absolute',
+    right: 16,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+  },
+  submitBtn: {
+    height: 56,
+    borderRadius: 12,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+    ...shadows.float,
+  },
+  btnDisabled: {
+    opacity: 0.5,
+  },
+  submitBtnText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.onPrimary,
+  },
+  spinning: {
+    // animation can be simulated by simple loading icon
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginVertical: 8,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.outlineVariant + '66',
+  },
+  dividerText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.onSurfaceVariant + '99',
+    textTransform: 'uppercase',
+  },
+  googleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    borderWidth: 1,
+    borderColor: colors.outlineVariant + '99',
+    backgroundColor: colors.bgSurfaceContainerHigh,
+    borderRadius: 12,
+    height: 56,
+    width: '100%',
+  },
+  googleBtnText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.onSurface,
+  },
+  footerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 24,
+  },
+  footerText: {
+    fontSize: 16,
+    color: colors.onSurfaceVariant,
+  },
+  footerLink: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.primary,
+  },
 });
