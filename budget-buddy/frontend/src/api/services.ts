@@ -177,14 +177,20 @@ export const usersAPI = {
   },
 
   search: async (q: string) => {
-    const qLower = q.toLowerCase();
+    if (!q.trim()) return wrapResponse({ users: [], total: 0 });
+    const uid = getCurrentUserId();
+    const qLower = q.trim().toLowerCase();
     const snapshot = await get(ref(db, 'users'));
     const matchedUsers: User[] = [];
     if (snapshot.exists()) {
       const allUsers = snapshot.val();
       Object.values(allUsers).forEach((u: any) => {
-        if (u.name.toLowerCase().includes(qLower) || u.email.toLowerCase().includes(qLower)) {
-          matchedUsers.push(u as User);
+        if (!u || !u.id || u.id === uid) return;
+        const nameMatch = (u.name || '').toLowerCase().includes(qLower);
+        const emailMatch = (u.email || '').toLowerCase().includes(qLower);
+        if (nameMatch || emailMatch) {
+          // Strip private fields — never expose upi_id in search results
+          matchedUsers.push({ id: u.id, name: u.name, email: u.email, created_at: u.created_at } as User);
         }
       });
     }
