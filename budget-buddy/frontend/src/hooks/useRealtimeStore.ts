@@ -37,14 +37,47 @@ export interface BalanceSummary {
   net_balance: number;
 }
 
-// ─── Singleton raw data (shared across all hook instances) ────────────────────
-let _state: StoreState = {
-  expenses: [],
-  settlements: [],
-  users: {},
-  friendships: [],
-  ready: false,
+// ─── Load initial state from Cache (Stale-While-Revalidate) ───────────────────
+const getCachedState = (): StoreState => {
+  try {
+    const cached = localStorage.getItem('bb_realtime_cache');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      return {
+        expenses: parsed.expenses || [],
+        settlements: parsed.settlements || [],
+        users: parsed.users || {},
+        friendships: parsed.friendships || [],
+        ready: true, // instantly ready from cache!
+      };
+    }
+  } catch (e) {
+    console.error('Failed to parse cached store state:', e);
+  }
+  return {
+    expenses: [],
+    settlements: [],
+    users: {},
+    friendships: [],
+    ready: false,
+  };
 };
+
+const saveCache = (state: StoreState) => {
+  try {
+    localStorage.setItem('bb_realtime_cache', JSON.stringify({
+      expenses: state.expenses,
+      settlements: state.settlements,
+      users: state.users,
+      friendships: state.friendships,
+    }));
+  } catch (e) {
+    console.error('Failed to save store cache:', e);
+  }
+};
+
+// ─── Singleton raw data (shared across all hook instances) ────────────────────
+let _state: StoreState = getCachedState();
 let _listeners = new Set<() => void>();
 let _subscribed = false;
 
@@ -134,6 +167,9 @@ function startListeners() {
     if (loadedNodes.size >= 4 && !_state.ready) {
       _state = { ..._state, ready: true };
       notify();
+    }
+    if (_state.ready) {
+      saveCache(_state);
     }
   };
 
@@ -230,4 +266,19 @@ export function useRealtimeStore(userId?: string) {
     friends: derived?.friends ?? [],
     resolveName,
   };
+}
+
+// ─── Clear cache on logout ───────────────────────────────────────────────────
+export function resetRealtimeStore() {
+  try {
+    localStorage.removeItem('bb_realtime_cache');
+  } catch (e) {}
+  _state = {
+    expenses: [],
+    settlements: [],
+    users: {},
+    friendships: [],
+    ready: false,
+  };
+  notify();
 }
