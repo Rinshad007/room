@@ -43,7 +43,7 @@ function AnonymousRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const [authReady, setAuthReady] = useState(false);
-  const { setAuth, logout, isAuthenticated } = useAuthStore();
+  const { setAuth, logout } = useAuthStore();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
@@ -66,15 +66,13 @@ export default function App() {
           console.error('Failed to sync auth user from Firebase DB:', err);
         }
       } else {
-        if (isAuthenticated) {
-          logout();
-        }
+        logout();
       }
       setAuthReady(true);
     });
 
     return unsubscribe;
-  }, [isAuthenticated, setAuth, logout]);
+  }, [setAuth, logout]);
 
   if (!authReady) {
     return (

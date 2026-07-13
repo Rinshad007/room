@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 import { resetRealtimeStore } from '../hooks/useRealtimeStore';
@@ -35,42 +35,45 @@ export const useAuthStore = () => {
 
   const token = localStorage.getItem('access_token');
 
+  const setAuth = useCallback((user: User, accessToken: string, refreshToken: string) => {
+    _user = user;
+    // Store minimal session info; Firebase SDK handles its own token in IndexedDB
+    localStorage.setItem('access_token', accessToken);
+    localStorage.setItem('refresh_token', refreshToken);
+    localStorage.setItem('user', JSON.stringify(user));
+    notify();
+  }, []);
+
+  const setUser = useCallback((user: User) => {
+    _user = user;
+    localStorage.setItem('user', JSON.stringify(user));
+    notify();
+  }, []);
+
+  // SEC-003/SEC-005 fix: only remove our own keys, and sign out of Firebase Auth
+  const logout = useCallback(() => {
+    _user = null;
+    OWN_STORAGE_KEYS.forEach(key => localStorage.removeItem(key));
+    try {
+      signOut(auth);
+    } catch (e) {
+      console.error('Firebase signOut failed', e);
+    }
+    try {
+      resetRealtimeStore();
+    } catch (e) {
+      console.error('resetRealtimeStore failed', e);
+    }
+    notify();
+  }, []);
+
   return {
     user: _user,
     accessToken: token,
     isAuthenticated: !!token && !!_user,
-
-    setAuth: (user: User, accessToken: string, refreshToken: string) => {
-      _user = user;
-      // Store minimal session info; Firebase SDK handles its own token in IndexedDB
-      localStorage.setItem('access_token', accessToken);
-      localStorage.setItem('refresh_token', refreshToken);
-      localStorage.setItem('user', JSON.stringify(user));
-      notify();
-    },
-
-    setUser: (user: User) => {
-      _user = user;
-      localStorage.setItem('user', JSON.stringify(user));
-      notify();
-    },
-
-    // SEC-003/SEC-005 fix: only remove our own keys, and sign out of Firebase Auth
-    logout: () => {
-      _user = null;
-      OWN_STORAGE_KEYS.forEach(key => localStorage.removeItem(key));
-      try {
-        signOut(auth);
-      } catch (e) {
-        console.error('Firebase signOut failed', e);
-      }
-      try {
-        resetRealtimeStore();
-      } catch (e) {
-        console.error('resetRealtimeStore failed', e);
-      }
-      notify();
-    },
+    setAuth,
+    setUser,
+    logout,
   };
 };
 
