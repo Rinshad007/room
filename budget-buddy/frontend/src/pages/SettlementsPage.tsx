@@ -118,7 +118,7 @@ export default function SettlementsPage() {
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <Layout title="Settle Up">
+    <Layout showBack title="Settle Up" hideBottomNav>
       <div className="page-container page-enter pb-24 space-y-6">
 
 
