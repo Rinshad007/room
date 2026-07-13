@@ -1,12 +1,7 @@
 import axios from 'axios';
 
-const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-
-const BASE_URL = isProduction
-  ? 'https://room-4-biqo.onrender.com/api/v1/'
-  : (import.meta.env.VITE_API_URL 
-      ? (import.meta.env.VITE_API_URL.endsWith('/') ? import.meta.env.VITE_API_URL : import.meta.env.VITE_API_URL + '/')
-      : 'http://localhost:8000/api/v1/');
+const rawApiUrl = import.meta.env.VITE_API_URL || 'https://room-4-biqo.onrender.com/api/v1/';
+const BASE_URL = rawApiUrl.endsWith('/') ? rawApiUrl : rawApiUrl + '/';
 
 export const api = axios.create({
   baseURL: BASE_URL,
