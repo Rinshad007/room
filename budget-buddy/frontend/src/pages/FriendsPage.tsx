@@ -103,7 +103,7 @@ export default function FriendsPage() {
 
   if (loading) {
     return (
-      <Layout hideBottomNav>
+      <Layout showBack title="Friends" hideBottomNav>
         <div className="page-container space-y-6">
           <div className="skeleton h-12 w-full" />
           <div className="skeleton h-32 w-full" />
@@ -114,7 +114,7 @@ export default function FriendsPage() {
   }
 
   return (
-    <Layout hideBottomNav>
+    <Layout showBack title="Friends" hideBottomNav>
       <div className="page-container page-enter">
         {/* Tabs */}
         <div className="flex border-b border-outline-variant/30 mb-5">

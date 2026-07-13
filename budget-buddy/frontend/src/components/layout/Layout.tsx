@@ -8,13 +8,14 @@ interface LayoutProps {
   showBack?: boolean;
   rightSlot?: ReactNode;
   hideBottomNav?: boolean;
+  onBack?: () => void;
 }
 
-export default function Layout({ children, title, showBack, rightSlot, hideBottomNav = false }: LayoutProps) {
+export default function Layout({ children, title, showBack, rightSlot, hideBottomNav = false, onBack }: LayoutProps) {
   return (
     /* min-h-dvh: collapses correctly when iOS Safari shows/hides address bar */
     <div className="min-h-[100dvh] bg-background">
-      <TopBar title={title} showBack={showBack} right={rightSlot} />
+      <TopBar title={title} showBack={showBack} right={rightSlot} onBack={onBack} />
       {/* Dynamic paddingTop accounts for TopBar + notch; pb clears floating pill nav + home indicator */}
       <main
         style={{ 

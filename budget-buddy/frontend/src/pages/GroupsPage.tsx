@@ -117,7 +117,7 @@ export default function GroupsPage() {
 
   if (loading) {
     return (
-      <Layout hideBottomNav>
+      <Layout showBack title="Groups" hideBottomNav>
         <div className="page-container space-y-6">
           <div className="skeleton h-12 w-full" />
           <div className="skeleton h-32 w-full" />
@@ -128,29 +128,27 @@ export default function GroupsPage() {
   }
 
   return (
-    <Layout hideBottomNav>
+    <Layout
+      showBack
+      title={selectedGroup ? selectedGroup.name : "Groups"}
+      onBack={selectedGroup ? () => setSelectedGroup(null) : undefined}
+      hideBottomNav
+    >
       <div className="page-container page-enter">
         {selectedGroup ? (
           /* Group Detail View */
           <div className="flex flex-col gap-6">
             {/* Header info */}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setSelectedGroup(null)}
-                className="text-on-surface-variant hover:bg-surface-container-high/50 p-2 -ml-2 rounded-full flex items-center justify-center transition-colors"
-              >
-                <span className="material-symbols-outlined">arrow_back</span>
-              </button>
-              <div className="flex-1 min-w-0">
-                <h1 className="font-bold text-headline-lg-mobile text-primary truncate">{selectedGroup.name}</h1>
-                <p className="text-xs text-on-surface-variant truncate">{selectedGroup.description || 'No description'}</p>
-              </div>
+            <div className="flex justify-between items-center gap-3 bg-surface-container/30 px-3 py-2 rounded-xl">
+              <span className="text-xs text-on-surface-variant truncate flex-1 min-w-0 font-medium">
+                {selectedGroup.description || 'No description'}
+              </span>
               <button
                 onClick={() => handleDeleteGroup(selectedGroup.id)}
-                className="text-error hover:bg-error/5 p-2 rounded-lg transition-colors"
+                className="text-error hover:bg-error/5 p-1.5 rounded-lg transition-colors flex-shrink-0"
                 title="Delete Group"
               >
-                <span className="material-symbols-outlined">delete</span>
+                <span className="material-symbols-outlined text-[20px]">delete</span>
               </button>
             </div>
 

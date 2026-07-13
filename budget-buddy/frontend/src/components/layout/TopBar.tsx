@@ -9,9 +9,10 @@ interface TopBarProps {
   showBack?: boolean;
   showNotifications?: boolean;
   right?: React.ReactNode;
+  onBack?: () => void;
 }
 
-export default function TopBar({ title = 'Budget Buddy', showBack, showNotifications = true, right }: TopBarProps) {
+export default function TopBar({ title = 'Budget Buddy', showBack, showNotifications = true, right, onBack }: TopBarProps) {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -44,7 +45,7 @@ export default function TopBar({ title = 'Budget Buddy', showBack, showNotificat
           <div className="flex items-center gap-3">
             {showBack ? (
               <button
-                onClick={() => navigate(-1)}
+                onClick={onBack || (() => navigate(-1))}
                 className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high/50 transition-colors active:scale-95"
               >
                 <span className="material-symbols-outlined text-on-surface-variant">arrow_back</span>

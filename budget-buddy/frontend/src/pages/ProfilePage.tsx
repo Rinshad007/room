@@ -46,7 +46,7 @@ export default function ProfilePage() {
   if (!user) return null;
 
   return (
-    <Layout hideBottomNav>
+    <Layout showBack title="Profile" hideBottomNav>
       <div className="page-container page-enter">
         <h1 className="text-headline-lg font-bold text-primary px-1">Profile</h1>
 
