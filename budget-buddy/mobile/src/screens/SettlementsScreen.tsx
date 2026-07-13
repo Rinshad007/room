@@ -11,7 +11,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Modal, Pressable, Linking, Image, Alert,
+  Modal, Pressable, Linking, Image, Alert, Clipboard,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -279,7 +279,6 @@ export default function SettlementsScreen() {
                 <Ionicons name="close" size={22} color={colors.onSurfaceVariant} />
               </TouchableOpacity>
             </View>
-
             {activeSettlement && (
               <>
                 {/* Person + Amount */}
@@ -294,7 +293,27 @@ export default function SettlementsScreen() {
 
                 {activeSettlement.upiId ? (
                   <View style={styles.upiSection}>
-                    <Text style={styles.stepLabel}>Step 1 — Pay via GPay</Text>
+                    <Text style={styles.stepLabel}>UPI ID Information</Text>
+                    
+                    {/* Copy UPI Option */}
+                    <View style={styles.copyUpiRow}>
+                      <Text style={styles.upiIdText} numberOfLines={1}>
+                        {activeSettlement.upiId}
+                      </Text>
+                      <TouchableOpacity
+                        style={styles.copyBtn}
+                        onPress={() => {
+                          Clipboard.setString(activeSettlement.upiId || '');
+                          Alert.alert('Copied', 'UPI ID copied to clipboard! Paste it inside GPay to pay.');
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="copy-outline" size={14} color={colors.primary} />
+                        <Text style={styles.copyBtnText}>Copy UPI</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    <Text style={styles.stepLabel}>Step 1 — Pay via GPay / UPI</Text>
                     <TouchableOpacity
                       style={styles.gpayBtn}
                       onPress={() => {
@@ -475,4 +494,38 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   secondaryBtnText: { fontSize: fontSizes.xs, color: colors.primary, fontWeight: fontWeights.semibold },
+  
+  copyUpiRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.bgSurfaceContainerLow,
+    borderWidth: 1,
+    borderColor: colors.outlineVariant + '30',
+    borderRadius: radius.lg,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 8,
+  },
+  upiIdText: {
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.semibold,
+    color: colors.primary,
+    flex: 1,
+    marginRight: 10,
+  },
+  copyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.primaryContainer,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  copyBtnText: {
+    fontSize: 11,
+    fontWeight: fontWeights.bold,
+    color: colors.primary,
+  },
 });
