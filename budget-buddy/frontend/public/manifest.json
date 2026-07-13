@@ -1,0 +1,17 @@
+{
+  "name": "Budget Buddy",
+  "short_name": "BudgetBuddy",
+  "description": "Split expenses, stay friends",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8f9fa",
+  "theme_color": "#f8f9fa",
+  "icons": [
+    {
+      "src": "/src/assets/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

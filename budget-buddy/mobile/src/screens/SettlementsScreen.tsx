@@ -201,8 +201,8 @@ export default function SettlementsScreen() {
               const otherName = isPayer ? resolveName(s.receiver_id) : resolveName(s.payer_id);
               return (
                 <View key={s.id} style={styles.pendingRow}>
-                  <View style={styles.pendingIcon}>
-                    <Ionicons name="time-outline" size={18} color="#d97706" />
+                  <View style={[styles.avatarSmall, { backgroundColor: '#fef3c7', width: 36, height: 36, borderRadius: 18 }]}>
+                    <Text style={[styles.avatarText, { color: '#b45309', fontSize: 13 }]}>{otherName[0]?.toUpperCase()}</Text>
                   </View>
                   <View style={styles.balanceInfo}>
                     <Text style={styles.balanceName}>
@@ -244,7 +244,7 @@ export default function SettlementsScreen() {
               return (
                 <View key={s.id} style={styles.balanceRow}>
                   <View style={[styles.avatarSmall, { backgroundColor: colors.bgSurfaceContainer }]}>
-                    <Ionicons name="cash-outline" size={16} color={colors.primary} />
+                    <Text style={[styles.avatarText, { color: colors.primary }]}>{otherName[0]?.toUpperCase()}</Text>
                   </View>
                   <View style={styles.balanceInfo}>
                     <Text style={styles.balanceName}>

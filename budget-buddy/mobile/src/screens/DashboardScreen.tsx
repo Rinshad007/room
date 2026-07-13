@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
@@ -6,6 +6,7 @@ import Layout from '../components/layout/Layout';
 import Skeleton from '../components/Skeleton';
 import { useAuthStore } from '../store/auth';
 import { useRealtimeStore } from '../hooks/useRealtimeStore';
+import { budgetsAPI } from '../api/services';
 import { colors, shadows } from '../theme';
 import { matchCategoryIcon } from '../utils/categoryHelpers';
 
@@ -34,6 +35,16 @@ export default function DashboardScreen() {
       .sort((a, b) => new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime())
       .slice(0, 3);
   }, [myExpenses]);
+
+  const [budget, setBudget] = useState<{ total_budget: number; total_spent: number; percentage_used: number; remaining?: number; is_over_budget?: boolean } | null>(null);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const now = new Date();
+    budgetsAPI.summary(now.getMonth() + 1, now.getFullYear())
+      .then(res => setBudget(res.data))
+      .catch(() => setBudget(null));
+  }, [myExpenses, user?.id]);
 
   const fmt = (n: number) =>
     n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -202,26 +213,56 @@ export default function DashboardScreen() {
           )}
         </View>
 
-        {/* ── Analytics Banner ──────────────────────────────────────────── */}
-        <TouchableOpacity
-          onPress={() => nav.navigate('Analytics')}
-          style={styles.analyticsBanner}
-          activeOpacity={0.7}
-        >
-          <View style={styles.analyticsLeft}>
-            <View style={styles.analyticsIconWrap}>
-              <Ionicons name="bar-chart" size={20} color="#4f46e5" />
+        {/* ── Budget Used Indicator ──────────────────────────────────── */}
+        {budget && budget.total_budget > 0 ? (
+          <TouchableOpacity
+            onPress={() => nav.navigate('Budget')}
+            style={styles.budgetCard}
+            activeOpacity={0.75}
+          >
+            <View style={styles.budgetHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Ionicons name="wallet-outline" size={18} color={colors.secondary} />
+                <Text style={styles.budgetTitle}>Monthly Budget</Text>
+              </View>
+              <Text style={styles.budgetValue}>
+                ₹{Math.round(budget.total_spent).toLocaleString('en-IN')} / ₹{Math.round(budget.total_budget).toLocaleString('en-IN')}
+              </Text>
             </View>
-            <View style={styles.analyticsTextCol}>
-              <Text style={styles.analyticsTitle}>Monthly Analytics</Text>
-              <Text style={styles.analyticsSubtitle}>Charts · Trends · Insights</Text>
+            <View style={styles.progressBarBg}>
+              <View 
+                style={[
+                  styles.progressBarFill, 
+                  { 
+                    width: `${Math.min(100, budget.percentage_used)}%`,
+                    backgroundColor: budget.is_over_budget ? colors.error : colors.secondary 
+                  }
+                ]} 
+              />
             </View>
-          </View>
-          <View style={styles.analyticsRight}>
-            <Text style={styles.analyticsViewText}>View</Text>
-            <Ionicons name="chevron-forward" size={16} color="#4f46e5" />
-          </View>
-        </TouchableOpacity>
+            <View style={styles.budgetFooter}>
+              <Text style={styles.budgetFooterText}>
+                {budget.is_over_budget 
+                  ? 'Over budget! ⚠️' 
+                  : `${Math.round(budget.percentage_used)}% used · ₹${Math.max(0, Math.round(budget.remaining || 0)).toLocaleString('en-IN')} remaining`}
+              </Text>
+              <Ionicons name="chevron-forward" size={14} color={colors.onSurfaceVariant} />
+            </View>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            onPress={() => nav.navigate('Budget')}
+            style={styles.budgetCardEmpty}
+            activeOpacity={0.75}
+          >
+            <Ionicons name="wallet-outline" size={20} color={colors.onSurfaceVariant + '80'} />
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <Text style={styles.budgetEmptyTitle}>Set Monthly Budget</Text>
+              <Text style={styles.budgetEmptySub}>Track spending & stay on budget</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={colors.onSurfaceVariant + '80'} />
+          </TouchableOpacity>
+        )}
       </View>
     </Layout>
   );
@@ -371,8 +412,52 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     textAlign: 'center',
   },
-  // Analytics Banner
-  analyticsBanner: {
+  // Budget Card Styles
+  budgetCard: {
+    backgroundColor: Platform.OS === 'android' ? '#ffffff' : 'rgba(255, 255, 255, 0.75)',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(198, 198, 202, 0.4)',
+    gap: 10,
+    ...shadows.card,
+  },
+  budgetHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  budgetTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  budgetValue: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.onSurfaceVariant,
+  },
+  progressBarBg: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.bgSurfaceContainer,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  budgetFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  budgetFooterText: {
+    fontSize: 12,
+    color: colors.onSurfaceVariant + 'cc',
+    fontWeight: '500',
+  },
+  budgetCardEmpty: {
     backgroundColor: Platform.OS === 'android' ? '#ffffff' : 'rgba(255, 255, 255, 0.75)',
     borderRadius: 16,
     padding: 16,
@@ -380,45 +465,17 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(198, 198, 202, 0.4)',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     ...shadows.card,
   },
-  analyticsLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  analyticsIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#f0f2ff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  analyticsTextCol: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-  },
-  analyticsTitle: {
+  budgetEmptyTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: colors.onSurface,
+    color: colors.primary,
   },
-  analyticsSubtitle: {
+  budgetEmptySub: {
     fontSize: 12,
     color: colors.onSurfaceVariant + 'b2',
     marginTop: 2,
-  },
-  analyticsRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  analyticsViewText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#4f46e5',
   },
   // Recent Transactions Section
   sectionHeader: {

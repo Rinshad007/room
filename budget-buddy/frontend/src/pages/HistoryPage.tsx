@@ -8,6 +8,11 @@ import toast from 'react-hot-toast';
 
 import { matchCategoryIcon } from '../utils/categoryHelpers';
 
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface EditState {
@@ -133,6 +138,29 @@ export default function HistoryPage() {
     return merged.sort((a, b) => b.date.getTime() - a.date.getTime());
   }, [myExpenses, mySettlements]);
 
+  const now = new Date();
+  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [year, setYear] = useState(now.getFullYear());
+
+  const prevMonth = () => {
+    if (month === 1) { setMonth(12); setYear(y => y - 1); }
+    else setMonth(m => m - 1);
+  };
+  const nextMonth = () => {
+    if (month === 12) { setMonth(1); setYear(y => y + 1); }
+    else setMonth(m => m + 1);
+  };
+
+  const filteredHistoryItems = useMemo(() => {
+    return historyItems.filter(item => {
+      const itemDate = item.date;
+      if (itemDate.getFullYear() !== year || (itemDate.getMonth() + 1) !== month) {
+        return false;
+      }
+      return true;
+    });
+  }, [historyItems, month, year]);
+
   // Edit modal
   const [editState, setEditState] = useState<EditState | null>(null);
   const [saving, setSaving] = useState(false);
@@ -216,139 +244,174 @@ export default function HistoryPage() {
             No transactions recorded yet.
           </p>
         ) : (
-          <div className="flex flex-col gap-3">
-            {historyItems.map((item) => {
-              if (item.type === 'expense') {
-                const exp = item.data;
-                const myUserId = user?.id;
-                const isPaidUser = exp.paid_by === 'you' || exp.paid_by === myUserId;
-                const mySplit = exp.splits?.find((s: any) => s.user_id === myUserId);
-                const displayAmt = mySplit ? mySplit.share_amount : exp.amount;
-                const isFullExpense = !mySplit || mySplit.share_amount === exp.amount;
+          <>
+            {/* Month Navigator */}
+            <div className="flex items-center justify-between p-3 rounded-2xl bg-surface-container-low border border-outline-variant/10 mb-4 px-4">
+              <button 
+                onClick={prevMonth} 
+                className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-outline-variant/30 hover:bg-surface-variant/10 shadow-sm transition-all"
+              >
+                <span className="material-symbols-outlined text-sm text-primary">chevron_left</span>
+              </button>
+              <span className="font-bold text-sm text-primary">
+                {MONTH_NAMES[month - 1]} {year}
+              </span>
+              <button 
+                onClick={nextMonth} 
+                className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-outline-variant/30 hover:bg-surface-variant/10 shadow-sm transition-all"
+              >
+                <span className="material-symbols-outlined text-sm text-primary">chevron_right</span>
+              </button>
+            </div>
 
-                // Determine if any split is "paid" — i.e. all non-payer splits are
-                // covered by a completed settlement. In Firebase model, once the
-                // payer created the expense every split status starts as 'accepted'.
-                // We consider an expense "settled" if the current user is NOT the
-                // payer AND their split amount is effectively covered (best effort).
-                // Simple rule: hide edit/delete for non-payer users (they can't edit).
-                // For payer: always show edit/delete (they own the expense).
-                const canEditDelete = isPaidUser;
+            {filteredHistoryItems.length === 0 ? (
+              <div className="py-12 text-center text-body-md text-on-surface-variant/60 italic glass-panel rounded-xl flex flex-col items-center gap-2">
+                <p>No transactions found for this month.</p>
+                <button
+                  onClick={() => {
+                    const n = new Date();
+                    setMonth(n.getMonth() + 1);
+                    setYear(n.getFullYear());
+                  }}
+                  className="mt-2 px-4 py-2 bg-primary/10 text-primary border border-primary/20 rounded-full text-xs font-bold hover:bg-primary/20 transition-all"
+                >
+                  Reset to Current Month
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {filteredHistoryItems.map((item) => {
+                  if (item.type === 'expense') {
+                    const exp = item.data;
+                    const myUserId = user?.id;
+                    const isPaidUser = exp.paid_by === 'you' || exp.paid_by === myUserId;
+                    const mySplit = exp.splits?.find((s: any) => s.user_id === myUserId);
+                    const displayAmt = mySplit ? mySplit.share_amount : exp.amount;
+                    const isFullExpense = !mySplit || mySplit.share_amount === exp.amount;
 
-                return (
-                  <SwipeRow
-                    key={exp.id}
-                    onDelete={() => confirmDelete(exp.id)}
-                    disabled={!canEditDelete}
-                  >
-                    <div className="bg-white rounded-xl p-4 border border-outline-variant/20 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex items-center justify-between hover:shadow-md transition-shadow">
-                      {/* Left: icon + info */}
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="icon-circle bg-surface-variant text-xl" style={{ width: 40, height: 40 }}>
-                          {getCategoryIcon(exp.category)}
-                        </div>
-                        <div className="min-w-0">
-                          <h3 className="font-semibold text-body-md text-primary truncate max-w-[140px] sm:max-w-[200px]">
-                            {exp.title}
-                          </h3>
-                          <p className="text-xs text-on-surface-variant/80 truncate">
-                            {new Date(exp.expense_date).toLocaleDateString('en-IN', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                            })}{' '}
-                            • {exp.category}
-                          </p>
-                        </div>
-                      </div>
+                    // Determine if any split is "paid" — i.e. all non-payer splits are
+                    // covered by a completed settlement. In Firebase model, once the
+                    // payer created the expense every split status starts as 'accepted'.
+                    // We consider an expense "settled" if the current user is NOT the
+                    // payer AND their split amount is effectively covered (best effort).
+                    // Simple rule: hide edit/delete for non-payer users (they can't edit).
+                    // For payer: always show edit/delete (they own the expense).
+                    const canEditDelete = isPaidUser;
 
-                      {/* Right: amount + actions */}
-                      <div className="flex items-center gap-2 shrink-0 ml-2">
-                        <div className="text-right">
-                          <p className="font-bold text-monetary-md text-primary">
-                            ₹{displayAmt.toLocaleString('en-IN')}
-                          </p>
-                          {!isFullExpense && (
-                            <p className="text-[10px] text-on-surface-variant/60">
-                              of ₹{exp.amount.toLocaleString('en-IN')}
-                            </p>
-                          )}
-                          <p className="text-[10px]">
-                            {isPaidUser ? (
-                              <span className="text-secondary font-medium">You paid</span>
-                            ) : (
-                              <span className="text-error font-medium">You owe</span>
+                    return (
+                      <SwipeRow
+                        key={exp.id}
+                        onDelete={() => confirmDelete(exp.id)}
+                        disabled={!canEditDelete}
+                      >
+                        <div className="bg-white rounded-xl p-4 border border-outline-variant/20 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex items-center justify-between hover:shadow-md transition-shadow">
+                          {/* Left: icon + info */}
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="icon-circle bg-surface-variant text-xl" style={{ width: 40, height: 40 }}>
+                              {getCategoryIcon(exp.category)}
+                            </div>
+                            <div className="min-w-0">
+                              <h3 className="font-semibold text-body-md text-primary truncate max-w-[140px] sm:max-w-[200px]">
+                                {exp.title}
+                              </h3>
+                              <p className="text-xs text-on-surface-variant/80 truncate">
+                                {new Date(exp.expense_date).toLocaleDateString('en-IN', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                })}{' '}
+                                • {exp.category}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Right: amount + actions */}
+                          <div className="flex items-center gap-2 shrink-0 ml-2">
+                            <div className="text-right">
+                              <p className="font-bold text-monetary-md text-primary">
+                                ₹{displayAmt.toLocaleString('en-IN')}
+                              </p>
+                              {!isFullExpense && (
+                                <p className="text-[10px] text-on-surface-variant/60">
+                                  of ₹{exp.amount.toLocaleString('en-IN')}
+                                </p>
+                              )}
+                              <p className="text-[10px]">
+                                {isPaidUser ? (
+                                  <span className="text-secondary font-medium">You paid</span>
+                                ) : (
+                                  <span className="text-error font-medium">You owe</span>
+                                )}
+                              </p>
+                            </div>
+
+                            {/* Edit button — only for payer (the expense owner) */}
+                            {canEditDelete && (
+                              <button
+                                onClick={() => openEdit(exp)}
+                                className="p-2 rounded-lg text-on-surface-variant/40 hover:text-primary hover:bg-primary/5 transition-colors"
+                                title="Edit"
+                              >
+                                <span className="material-symbols-outlined text-[18px]">edit</span>
+                              </button>
                             )}
-                          </p>
+                          </div>
+                        </div>
+                      </SwipeRow>
+                    );
+                  } else {
+                    // Settlement row
+                    const s = item.data;
+                    const isPayer = s.payer_id === 'you' || s.payer_id === user?.id;
+                    const otherPartyName = isPayer
+                      ? resolveName(s.receiver_id)
+                      : resolveName(s.payer_id);
+
+                    const isCompleted = s.status === 'completed';
+
+                    return (
+                      // Settlements: no swipe/edit (they represent confirmed payments)
+                      <div
+                        key={s.id}
+                        className="bg-white rounded-xl p-4 border border-outline-variant/20 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex items-center justify-between hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center font-bold text-lg ${isCompleted ? 'bg-secondary-container text-secondary' : 'bg-amber-100 text-amber-600'}`}>
+                            ₹
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="font-semibold text-body-md text-primary truncate max-w-[140px] sm:max-w-[200px]">
+                              {isPayer ? `Settled to ${otherPartyName}` : `Received from ${otherPartyName}`}
+                            </h3>
+                            <p className="text-xs text-on-surface-variant/80 flex items-center gap-1 flex-wrap">
+                              {item.date.toLocaleDateString('en-IN', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              })}{' '}
+                              • {s.payment_method}
+                              {!isCompleted && (
+                                <span className="text-[10px] text-amber-700 font-semibold bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
+                                  Pending
+                                </span>
+                              )}
+                            </p>
+                          </div>
                         </div>
 
-                        {/* Edit button — only for payer (the expense owner) */}
-                        {canEditDelete && (
-                          <button
-                            onClick={() => openEdit(exp)}
-                            className="p-2 rounded-lg text-on-surface-variant/40 hover:text-primary hover:bg-primary/5 transition-colors"
-                            title="Edit"
-                          >
-                            <span className="material-symbols-outlined text-[18px]">edit</span>
-                          </button>
-                        )}
+                        <div className="text-right shrink-0 ml-2">
+                          <p className={`font-bold text-monetary-md ${isPayer ? 'text-error' : 'text-secondary'}`}>
+                            {isPayer ? '-' : '+'}₹{s.amount.toLocaleString('en-IN')}
+                          </p>
+                          <p className="text-[10px] text-on-surface-variant/60">Settlement</p>
+                        </div>
                       </div>
-                    </div>
-                  </SwipeRow>
-                );
-              } else {
-                // Settlement row
-                const s = item.data;
-                const isPayer = s.payer_id === 'you' || s.payer_id === user?.id;
-                const otherPartyName = isPayer
-                  ? resolveName(s.receiver_id)
-                  : resolveName(s.payer_id);
-
-                const isCompleted = s.status === 'completed';
-
-                return (
-                  // Settlements: no swipe/edit (they represent confirmed payments)
-                  <div
-                    key={s.id}
-                    className="bg-white rounded-xl p-4 border border-outline-variant/20 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex items-center justify-between hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center ${isCompleted ? 'bg-secondary-container text-secondary' : 'bg-amber-100 text-amber-600'}`}>
-                        <span className="material-symbols-outlined">
-                          {isCompleted ? 'handshake' : 'pending_actions'}
-                        </span>
-                      </div>
-                      <div className="min-w-0">
-                        <h3 className="font-semibold text-body-md text-primary truncate max-w-[140px] sm:max-w-[200px]">
-                          {isPayer ? `Settled to ${otherPartyName}` : `Received from ${otherPartyName}`}
-                        </h3>
-                        <p className="text-xs text-on-surface-variant/80 flex items-center gap-1 flex-wrap">
-                          {item.date.toLocaleDateString('en-IN', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                          })}{' '}
-                          • {s.payment_method}
-                          {!isCompleted && (
-                            <span className="text-[10px] text-amber-700 font-semibold bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
-                              Pending
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="text-right shrink-0 ml-2">
-                      <p className={`font-bold text-monetary-md ${isPayer ? 'text-error' : 'text-secondary'}`}>
-                        {isPayer ? '-' : '+'}₹{s.amount.toLocaleString('en-IN')}
-                      </p>
-                      <p className="text-[10px] text-on-surface-variant/60">Settlement</p>
-                    </div>
-                  </div>
-                );
-              }
-            })}
-          </div>
+                    );
+                  }
+                })}
+              </div>
+            )}
+          </>
         )}
       </div>
 

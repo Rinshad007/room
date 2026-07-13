@@ -5,7 +5,17 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyB7E7KDuox0SEVHpcPvEKwTqPk8LB6LIR8",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "buddybuddy-23085.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_DATABASE_URL": "https://buddybuddy-23085-default-rtdb.firebaseio.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "buddybuddy-23085",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "buddybuddy-23085.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "115570661972",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:115570661972:web:caf93395e3b72d300dabc1",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "115570661972-635rsnnjuuifq8qda4np37388e5i9m6q.apps.googleusercontent.com"
+      }
     },
     "preview": {
       "distribution": "internal",
@@ -14,9 +24,30 @@
       },
       "ios": {
         "simulator": true
+      },
+      "env": {
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyB7E7KDuox0SEVHpcPvEKwTqPk8LB6LIR8",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "buddybuddy-23085.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_DATABASE_URL": "https://buddybuddy-23085-default-rtdb.firebaseio.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "buddybuddy-23085",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "buddybuddy-23085.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "115570661972",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:115570661972:web:caf93395e3b72d300dabc1",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "115570661972-635rsnnjuuifq8qda4np37388e5i9m6q.apps.googleusercontent.com"
       }
     },
-    "production": {}
+    "production": {
+      "env": {
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyB7E7KDuox0SEVHpcPvEKwTqPk8LB6LIR8",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "buddybuddy-23085.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_DATABASE_URL": "https://buddybuddy-23085-default-rtdb.firebaseio.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "buddybuddy-23085",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "buddybuddy-23085.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "115570661972",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:115570661972:web:caf93395e3b72d300dabc1",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "115570661972-635rsnnjuuifq8qda4np37388e5i9m6q.apps.googleusercontent.com"
+      }
+    }
   },
   "submit": {
     "production": {}

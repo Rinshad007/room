@@ -183,6 +183,13 @@ export default function LoginScreen() {
                 />
               </TouchableOpacity>
             </View>
+            <TouchableOpacity
+              onPress={() => nav.navigate('ForgotPassword')}
+              activeOpacity={0.7}
+              style={styles.forgotPassContainer}
+            >
+              <Text style={styles.forgotPassText}>Forgot password?</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Submit Button */}
@@ -404,6 +411,15 @@ const styles = StyleSheet.create({
   },
   footerLink: {
     fontSize: 16,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  forgotPassContainer: {
+    alignSelf: 'flex-end',
+    marginTop: 4,
+  },
+  forgotPassText: {
+    fontSize: 13,
     fontWeight: '600',
     color: colors.primary,
   },

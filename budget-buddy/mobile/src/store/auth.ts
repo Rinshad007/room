@@ -10,6 +10,7 @@ let _user: User | null = null;
 let _accessToken: string | null = null;
 const _listeners: Set<() => void> = new Set();
 let _initialized = false;
+let _hydrated = false;
 
 // Initialize from AsyncStorage on module load
 async function init() {
@@ -22,8 +23,9 @@ async function init() {
     ]);
     if (storedUser) _user = JSON.parse(storedUser);
     if (storedToken) _accessToken = storedToken;
-    _listeners.forEach(l => l());
   } catch {}
+  _hydrated = true;
+  _listeners.forEach(l => l());
 }
 
 init();
@@ -48,6 +50,7 @@ export const useAuthStore = () => {
     user: _user,
     accessToken: _accessToken,
     isAuthenticated: !!_accessToken && !!_user,
+    isHydrated: _hydrated,
 
     setAuth: async (user: User, accessToken: string, refreshToken: string) => {
       _user = user;

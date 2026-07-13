@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { updateEmail, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
+import { auth } from '../firebase';
 import Layout from '../components/layout/Layout';
 import { usersAPI } from '../api/services';
 import { useAuthStore } from '../store/auth';
@@ -13,6 +15,11 @@ export default function ProfilePage() {
   const [upiId, setUpiId] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // BUG-006: Reauthentication state for email change security gate
+  const [showReauthModal, setShowReauthModal] = useState(false);
+  const [password, setPassword] = useState('');
+  const [reauthenticating, setReauthenticating] = useState(false);
+
   useEffect(() => {
     if (user) {
       setName(user.name);
@@ -21,19 +28,38 @@ export default function ProfilePage() {
     }
   }, [user]);
 
-  const handleUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim() || !email.trim()) return;
+  const handleUpdate = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!user || !name.trim() || !email.trim()) return;
 
+    setSaving(true);
     try {
-      setSaving(true);
-      const res = await usersAPI.update({ name, email, upi_id: upiId });
+      if (email.trim().toLowerCase() !== user.email.toLowerCase()) {
+        if (!showReauthModal) {
+          setShowReauthModal(true);
+          setSaving(false);
+          return;
+        }
+
+        setReauthenticating(true);
+        const credential = EmailAuthProvider.credential(user.email, password);
+        if (auth.currentUser) {
+          await reauthenticateWithCredential(auth.currentUser, credential);
+          await updateEmail(auth.currentUser, email.trim());
+        }
+      }
+
+      const res = await usersAPI.update({ name, email: email.trim(), upi_id: upiId });
       setUser(res.data);
       toast.success('Profile updated successfully!');
+      setShowReauthModal(false);
+      setPassword('');
     } catch (err: any) {
-      toast.error(err.response?.data?.detail || 'Failed to update profile');
+      console.error(err);
+      toast.error(err.message || 'Failed to update profile');
     } finally {
       setSaving(false);
+      setReauthenticating(false);
     }
   };
 
@@ -128,6 +154,69 @@ export default function ProfilePage() {
           </button>
         </div>
 
+        {/* Reauthentication Modal */}
+        {showReauthModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-sm flex flex-col gap-4 shadow-xl border border-outline-variant/30">
+              <div className="flex justify-between items-center">
+                <h3 className="font-bold text-headline-lg-mobile text-primary">Confirm Password</h3>
+                <button
+                  onClick={() => {
+                    setShowReauthModal(false);
+                    setPassword('');
+                  }}
+                  className="text-on-surface-variant"
+                >
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+
+              <p className="text-xs text-on-surface-variant">
+                To update your email address, you must verify your identity by entering your current password.
+              </p>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleUpdate();
+                }}
+                className="flex flex-col gap-4"
+              >
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-label-caps text-on-surface-variant uppercase">Password</label>
+                  <input
+                    type="password"
+                    required
+                    placeholder="Enter current password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="input-field h-12 text-sm"
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowReauthModal(false);
+                      setPassword('');
+                    }}
+                    className="flex-1 h-12 border border-outline-variant/40 rounded-xl text-sm font-semibold text-on-surface-variant"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={reauthenticating}
+                    className="flex-1 btn-primary h-12 text-sm shadow-none"
+                  >
+                    {reauthenticating ? 'Verifying...' : 'Confirm'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </Layout>
   );

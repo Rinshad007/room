@@ -1,0 +1,46 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "expenses": {
+      "$expenseId": {
+        ".read": "auth != null",
+        ".write": "auth != null && (newData.child('paid_by').val() === auth.uid || !data.exists())"
+      }
+    },
+    "groups": {
+      "$groupId": {
+        ".read": "auth != null",
+        ".write": "auth != null && (newData.child('created_by').val() === auth.uid || !data.exists() || data.child('created_by').val() === auth.uid)"
+      }
+    },
+    "settlements": {
+      "$settlementId": {
+        ".read": "auth != null",
+        ".write": "auth != null && (newData.child('payer_id').val() === auth.uid || !data.exists() || data.child('receiver_id').val() === auth.uid)"
+      }
+    },
+    "friendships": {
+      "$friendshipId": {
+        ".read": "auth != null",
+        ".write": "auth != null && (newData.child('sender_id').val() === auth.uid || !data.exists() || data.child('receiver_id').val() === auth.uid)"
+      }
+    },
+    "notifications": {
+      "$notifId": {
+        ".read": "auth != null && data.child('user_id').val() === auth.uid",
+        ".write": "auth != null"
+      }
+    },
+    "budgets": {
+      "$budgetId": {
+        ".read": "auth != null && data.child('user_id').val() === auth.uid",
+        ".write": "auth != null && newData.child('user_id').val() === auth.uid"
+      }
+    }
+  }
+}

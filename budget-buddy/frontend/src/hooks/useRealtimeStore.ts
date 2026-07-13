@@ -9,10 +9,15 @@
  *   • One onValue listener per node (expenses, settlements, friendships, users)
  *   • Computed balances recalculate whenever raw data changes
  *   • All components read from this shared store — zero redundant fetches
+ *
+ * BUG-001/BUG-007 fixes:
+ *   • Firebase off() unsubscribe functions are stored and called on logout
+ *   • _subscribed is reset to false in resetRealtimeStore() so the next
+ *     user gets a clean listener set (prevents stale data cross-contamination)
  */
 
 import { useEffect, useState } from 'react';
-import { ref, onValue } from 'firebase/database';
+import { ref, onValue, off } from 'firebase/database';
 import { db } from '../firebase';
 import type { Expense, Settlement, User, FriendWithRequest } from '../types';
 
@@ -80,6 +85,9 @@ const saveCache = (state: StoreState) => {
 let _state: StoreState = getCachedState();
 let _listeners = new Set<() => void>();
 let _subscribed = false;
+
+// BUG-001 fix: Track Firebase database refs so we can call off() on logout
+const _dbRefs: Array<ReturnType<typeof ref>> = [];
 
 function notify() {
   _listeners.forEach(l => l());
@@ -173,8 +181,15 @@ function startListeners() {
     }
   };
 
+  // BUG-001 fix: store refs so we can call off() when logging out
+  const expensesRef = ref(db, 'expenses');
+  const settlementsRef = ref(db, 'settlements');
+  const usersRef = ref(db, 'users');
+  const friendshipsRef = ref(db, 'friendships');
+  _dbRefs.push(expensesRef, settlementsRef, usersRef, friendshipsRef);
+
   // Expenses
-  onValue(ref(db, 'expenses'), snap => {
+  onValue(expensesRef, snap => {
     _state = {
       ..._state,
       expenses: snap.exists() ? Object.values(snap.val()) as Expense[] : [],
@@ -184,7 +199,7 @@ function startListeners() {
   });
 
   // Settlements
-  onValue(ref(db, 'settlements'), snap => {
+  onValue(settlementsRef, snap => {
     _state = {
       ..._state,
       settlements: snap.exists() ? Object.values(snap.val()) as Settlement[] : [],
@@ -194,7 +209,7 @@ function startListeners() {
   });
 
   // Users
-  onValue(ref(db, 'users'), snap => {
+  onValue(usersRef, snap => {
     _state = {
       ..._state,
       users: snap.exists() ? (snap.val() as Record<string, User>) : {},
@@ -204,7 +219,7 @@ function startListeners() {
   });
 
   // Friendships
-  onValue(ref(db, 'friendships'), snap => {
+  onValue(friendshipsRef, snap => {
     _state = {
       ..._state,
       friendships: snap.exists() ? Object.values(snap.val()) : [],
@@ -268,11 +283,20 @@ export function useRealtimeStore(userId?: string) {
   };
 }
 
-// ─── Clear cache on logout ───────────────────────────────────────────────────
+// ─── Clear cache and unsubscribe all listeners on logout ─────────────────────
 export function resetRealtimeStore() {
+  // BUG-001 fix: detach all Firebase onValue listeners to prevent memory leaks
+  _dbRefs.forEach(dbRef => { try { off(dbRef); } catch {} });
+  _dbRefs.length = 0;
+
+  // BUG-007 fix: reset _subscribed so startListeners() runs fresh for the next
+  // user and they don't see the previous user's stale cached data
+  _subscribed = false;
+
   try {
     localStorage.removeItem('bb_realtime_cache');
-  } catch (e) {}
+  } catch {}
+
   _state = {
     expenses: [],
     settlements: [],

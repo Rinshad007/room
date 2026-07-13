@@ -21,6 +21,10 @@ export default function GroupsPage() {
   
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   
+  // Custom delete modal state
+  const [deleteGroupTarget, setDeleteGroupTarget] = useState<string | null>(null);
+  const [deletingGroup, setDeletingGroup] = useState(false);
+  
   const [loading, setLoading] = useState(true);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
@@ -92,15 +96,19 @@ export default function GroupsPage() {
     }
   };
 
-  const handleDeleteGroup = async (groupId: string) => {
-    if (!confirm('Are you sure you want to delete this group?')) return;
+  const handleDeleteGroup = async () => {
+    if (!deleteGroupTarget) return;
+    setDeletingGroup(true);
     try {
-      await groupsAPI.delete(groupId);
+      await groupsAPI.delete(deleteGroupTarget);
       toast.success('Group deleted');
       setSelectedGroup(null);
+      setDeleteGroupTarget(null);
       loadGroups();
     } catch (err) {
       toast.error('Failed to delete group');
+    } finally {
+      setDeletingGroup(false);
     }
   };
 
@@ -144,7 +152,7 @@ export default function GroupsPage() {
                 {selectedGroup.description || 'No description'}
               </span>
               <button
-                onClick={() => handleDeleteGroup(selectedGroup.id)}
+                onClick={() => setDeleteGroupTarget(selectedGroup.id)}
                 className="text-error hover:bg-error/5 p-1.5 rounded-lg transition-colors flex-shrink-0"
                 title="Delete Group"
               >
@@ -340,6 +348,42 @@ export default function GroupsPage() {
                       </div>
                     ))
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+        {/* Delete Confirmation Modal */}
+        {deleteGroupTarget && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div className="w-full max-w-xs bg-white rounded-3xl shadow-2xl p-6 space-y-5 text-center">
+              <div className="w-14 h-14 rounded-full bg-error/10 flex items-center justify-center mx-auto">
+                <span className="material-symbols-outlined text-error text-2xl">delete_forever</span>
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-primary">Delete Group?</h3>
+                <p className="text-sm text-on-surface-variant/70 mt-1">
+                  This action cannot be undone and will delete the group.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeleteGroupTarget(null)}
+                  disabled={deletingGroup}
+                  className="flex-1 h-11 rounded-xl border border-outline-variant/40 text-sm font-semibold text-on-surface-variant hover:bg-surface-container transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteGroup}
+                  disabled={deletingGroup}
+                  className="flex-1 h-11 rounded-xl bg-error text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.98] transition-all"
+                >
+                  {deletingGroup ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    'Delete'
+                  )}
+                </button>
               </div>
             </div>
           </div>

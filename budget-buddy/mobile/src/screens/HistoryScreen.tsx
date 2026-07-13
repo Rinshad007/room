@@ -26,6 +26,10 @@ import type { Expense, Settlement, Category } from '../types';
 import { colors, fontSizes, fontWeights, radius, spacing, shadows } from '../theme';
 
 const CATEGORIES: Category[] = ['Food', 'Travel', 'Shopping', 'Rent', 'Entertainment', 'Others'];
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
 
 interface EditState {
   id: string;
@@ -41,17 +45,41 @@ export default function HistoryScreen() {
   const { user } = useAuthStore();
   const { ready, myExpenses, mySettlements, resolveName } = useRealtimeStore(user?.id);
 
-  // Only include expenses (no settlements) sorted newest-first
+  // Merge + sort newest-first (latest on top)
   const historyItems = useMemo(() => {
-    type HItem = { type: 'expense'; date: Date; data: Expense };
+    type HItem =
+      | { type: 'expense'; date: Date; data: Expense }
+      | { type: 'settlement'; date: Date; data: Settlement };
 
-    const items: HItem[] = myExpenses.map(exp => ({
-      type: 'expense' as const,
-      date: new Date(exp.expense_date),
-      data: exp
-    }));
-    return items.sort((a, b) => b.date.getTime() - a.date.getTime());
-  }, [myExpenses]);
+    const merged: HItem[] = [
+      ...myExpenses.map(exp => ({ type: 'expense' as const, date: new Date(exp.expense_date), data: exp })),
+      ...mySettlements.map(s => ({ type: 'settlement' as const, date: new Date(s.created_at), data: s })),
+    ];
+    return merged.sort((a, b) => b.date.getTime() - a.date.getTime());
+  }, [myExpenses, mySettlements]);
+
+  const now = new Date();
+  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [year, setYear] = useState(now.getFullYear());
+
+  const prevMonth = () => {
+    if (month === 1) { setMonth(12); setYear(y => y - 1); }
+    else setMonth(m => m - 1);
+  };
+  const nextMonth = () => {
+    if (month === 12) { setMonth(1); setYear(y => y + 1); }
+    else setMonth(m => m + 1);
+  };
+
+  const usedCategories = useMemo(() => {
+    const categories = new Set<string>();
+    historyItems.forEach(item => {
+      if (item.type === 'expense' && item.data.category) {
+        categories.add(item.data.category);
+      }
+    });
+    return Array.from(categories).sort();
+  }, [historyItems]);
 
   const [editState, setEditState] = useState<EditState | null>(null);
   const [saving, setSaving] = useState(false);
@@ -59,22 +87,33 @@ export default function HistoryScreen() {
   const [deleting, setDeleting] = useState(false);
 
   // Search & Filter state
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedRole, setSelectedRole] = useState<'all' | 'paid' | 'owe'>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   // Filtered list
   const filteredHistoryItems = useMemo(() => {
     return historyItems.filter(item => {
-      const exp = item.data;
-
-      // 1. Search filter
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
-        const matchesTitle = exp.title.toLowerCase().includes(query);
-        const matchesDesc = exp.description?.toLowerCase().includes(query);
-        if (!matchesTitle && !matchesDesc) return false;
+      // Month & Year filter
+      const itemDate = item.date;
+      if (itemDate.getFullYear() !== year || (itemDate.getMonth() + 1) !== month) {
+        return false;
       }
+
+      if (item.type === 'settlement') {
+        const s = item.data;
+
+        // Role filter
+        const isPayer = s.payer_id === 'you' || s.payer_id === user?.id;
+        if (selectedRole === 'paid' && !isPayer) return false;
+        if (selectedRole === 'owe' && isPayer) return false;
+
+        // Category filter: settlements don't have categories, hide if a specific category filter is active
+        if (selectedCategory !== 'all') return false;
+
+        return true;
+      }
+
+      const exp = item.data;
 
       // 2. Role filter (You paid / You owe)
       const isPayer = exp.paid_by === 'you' || exp.paid_by === user?.id;
@@ -86,7 +125,7 @@ export default function HistoryScreen() {
 
       return true;
     });
-  }, [historyItems, searchQuery, selectedRole, selectedCategory, user?.id]);
+  }, [historyItems, selectedRole, selectedCategory, month, year, user?.id]);
 
   const openEdit = (exp: Expense) => {
     setEditState({
@@ -159,23 +198,6 @@ export default function HistoryScreen() {
       
       {/* ── Search & Filters Section ─────────────────────────────────── */}
       <View style={styles.filterSection}>
-        {/* Search Input */}
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={16} color={colors.onSurfaceVariant + '70'} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search transactions..."
-            placeholderTextColor={colors.onSurfaceVariant + '80'}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery ? (
-            <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearSearchBtn}>
-              <Ionicons name="close-circle" size={16} color={colors.onSurfaceVariant + '90'} />
-            </TouchableOpacity>
-          ) : null}
-        </View>
-
         {/* Role Segment Selector */}
         <View style={styles.roleToggle}>
           {([
@@ -196,6 +218,17 @@ export default function HistoryScreen() {
           ))}
         </View>
 
+        {/* Month Navigator */}
+        <View style={styles.monthNav}>
+          <TouchableOpacity onPress={prevMonth} style={styles.navBtn} activeOpacity={0.7}>
+            <Ionicons name="chevron-back" size={20} color={colors.onSurfaceVariant} />
+          </TouchableOpacity>
+          <Text style={styles.monthLabel}>{MONTH_NAMES[month - 1]} {year}</Text>
+          <TouchableOpacity onPress={nextMonth} style={styles.navBtn} activeOpacity={0.7}>
+            <Ionicons name="chevron-forward" size={20} color={colors.onSurfaceVariant} />
+          </TouchableOpacity>
+        </View>
+
         {/* Category Pills List */}
         <View style={styles.catFilterContainer}>
           <ScrollView
@@ -212,7 +245,7 @@ export default function HistoryScreen() {
                 All Categories
               </Text>
             </TouchableOpacity>
-            {CATEGORIES.map(cat => (
+            {usedCategories.map(cat => (
               <TouchableOpacity
                 key={cat}
                 style={[styles.catFilterBtn, selectedCategory === cat && styles.catFilterBtnActive]}
@@ -245,7 +278,13 @@ export default function HistoryScreen() {
             <Text style={styles.emptyFilterText}>Try adjusting your search query or role filters.</Text>
             <TouchableOpacity 
               style={styles.resetFilterBtn} 
-              onPress={() => { setSearchQuery(''); setSelectedRole('all'); setSelectedCategory('all'); }}
+              onPress={() => {
+                setSelectedRole('all');
+                setSelectedCategory('all');
+                const resetDate = new Date();
+                setMonth(resetDate.getMonth() + 1);
+                setYear(resetDate.getFullYear());
+              }}
             >
               <Text style={styles.resetFilterText}>Clear Filters</Text>
             </TouchableOpacity>
@@ -253,49 +292,90 @@ export default function HistoryScreen() {
         ) : (
           <View style={styles.list}>
             {filteredHistoryItems.map(item => {
-              const exp = item.data;
-              const isPayer = exp.paid_by === 'you' || exp.paid_by === user?.id;
-              const mySplit = (exp.splits || []).find((s: any) => s.user_id === user?.id);
-              const displayAmt = mySplit ? mySplit.share_amount : exp.amount;
-              const isFullExpense = !mySplit || mySplit.share_amount === exp.amount;
-              const canEditDelete = isPayer;
+              if (item.type === 'expense') {
+                const exp = item.data;
+                const isPayer = exp.paid_by === 'you' || exp.paid_by === user?.id;
+                const mySplit = (exp.splits || []).find((s: any) => s.user_id === user?.id);
+                const displayAmt = mySplit ? mySplit.share_amount : exp.amount;
+                const isFullExpense = !mySplit || mySplit.share_amount === exp.amount;
+                const canEditDelete = isPayer;
 
-              return (
-                <ReanimatedSwipeable
-                  key={exp.id}
-                  enabled={canEditDelete}
-                  renderRightActions={() => renderRightActions(exp.id)}
-                  overshootRight={false}
-                >
-                  <View style={styles.expenseRow}>
-                    <View style={styles.expenseIcon}>
-                      <Text style={{ fontSize: 18 }}>{matchCategoryIcon(exp.category)}</Text>
+                return (
+                  <ReanimatedSwipeable
+                    key={exp.id}
+                    enabled={canEditDelete}
+                    renderRightActions={() => renderRightActions(exp.id)}
+                    overshootRight={false}
+                  >
+                    <View style={styles.expenseRow}>
+                      <View style={styles.expenseIcon}>
+                        <Text style={{ fontSize: 18 }}>{matchCategoryIcon(exp.category)}</Text>
+                      </View>
+                      <View style={styles.expenseInfo}>
+                        <Text style={styles.expenseTitle} numberOfLines={1}>{exp.title}</Text>
+                        <Text style={styles.expenseMeta}>
+                          {new Date(exp.expense_date).toLocaleDateString('en-IN', {
+                            month: 'short', day: 'numeric', year: 'numeric'
+                          })} · {exp.category}
+                        </Text>
+                      </View>
+                      <View style={styles.expenseRight}>
+                        <Text style={styles.expenseAmount}>₹{displayAmt.toLocaleString('en-IN')}</Text>
+                        {!isFullExpense && (
+                          <Text style={styles.expenseTotal}>of ₹{exp.amount.toLocaleString('en-IN')}</Text>
+                        )}
+                        <Text style={[styles.expensePaid, { color: isPayer ? colors.secondary : colors.error }]}>
+                          {isPayer ? 'You paid' : 'You owe'}
+                        </Text>
+                      </View>
+                      {canEditDelete && (
+                        <TouchableOpacity onPress={() => openEdit(exp)} style={styles.editBtn}>
+                          <Ionicons name="pencil-outline" size={16} color={colors.onSurfaceVariant + '88'} />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </ReanimatedSwipeable>
+                );
+              } else {
+                const s = item.data;
+                const isPayer = s.payer_id === 'you' || s.payer_id === user?.id;
+                const otherPartyName = isPayer ? resolveName(s.receiver_id) : resolveName(s.payer_id);
+                const isCompleted = s.status === 'completed';
+
+                return (
+                  <View key={s.id} style={styles.settlementRow}>
+                    <View style={[styles.settlementIcon, isCompleted ? styles.settlIconCompleted : styles.settlIconPending]}>
+                      <Text style={[
+                        styles.settlRupeeText,
+                        { color: isCompleted ? colors.secondary : '#b45309' }
+                      ]}>₹</Text>
                     </View>
                     <View style={styles.expenseInfo}>
-                      <Text style={styles.expenseTitle} numberOfLines={1}>{exp.title}</Text>
-                      <Text style={styles.expenseMeta}>
-                        {new Date(exp.expense_date).toLocaleDateString('en-IN', {
-                          month: 'short', day: 'numeric', year: 'numeric'
-                        })} · {exp.category}
+                      <Text style={styles.expenseTitle} numberOfLines={1}>
+                        {isPayer ? `Settled to ${otherPartyName}` : `Received from ${otherPartyName}`}
                       </Text>
+                      <View style={styles.settlMeta}>
+                        <Text style={styles.expenseMeta}>
+                          {new Date(s.created_at).toLocaleDateString('en-IN', {
+                            month: 'short', day: 'numeric', year: 'numeric'
+                          })} · {s.payment_method}
+                        </Text>
+                        {!isCompleted && (
+                          <View style={styles.pendingChip}>
+                            <Text style={styles.pendingChipText}>Pending</Text>
+                          </View>
+                        )}
+                      </View>
                     </View>
                     <View style={styles.expenseRight}>
-                      <Text style={styles.expenseAmount}>₹{displayAmt.toLocaleString('en-IN')}</Text>
-                      {!isFullExpense && (
-                        <Text style={styles.expenseTotal}>of ₹{exp.amount.toLocaleString('en-IN')}</Text>
-                      )}
-                      <Text style={[styles.expensePaid, { color: isPayer ? colors.secondary : colors.error }]}>
-                        {isPayer ? 'You paid' : 'You owe'}
+                      <Text style={[styles.settlAmount, { color: isPayer ? colors.error : colors.secondary }]}>
+                        {isPayer ? '-' : '+'}₹{s.amount.toLocaleString('en-IN')}
                       </Text>
+                      <Text style={styles.expenseTotal}>Settlement</Text>
                     </View>
-                    {canEditDelete && (
-                      <TouchableOpacity onPress={() => openEdit(exp)} style={styles.editBtn}>
-                        <Ionicons name="pencil-outline" size={16} color={colors.onSurfaceVariant + '88'} />
-                      </TouchableOpacity>
-                    )}
                   </View>
-                </ReanimatedSwipeable>
-              );
+                );
+              }
             })}
           </View>
         )}
@@ -505,6 +585,10 @@ const styles = StyleSheet.create({
   },
   settlIconCompleted: { backgroundColor: colors.secondaryContainer },
   settlIconPending: { backgroundColor: '#fef3c7' },
+  settlRupeeText: {
+    fontSize: 18,
+    fontWeight: fontWeights.bold,
+  },
   settlMeta: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2, flexWrap: 'wrap' },
   pendingChip: {
     backgroundColor: '#fef3c7',
@@ -626,25 +710,31 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: colors.outlineVariant + '1A',
   },
-  searchBar: {
+  monthNav: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: radius.xl,
     backgroundColor: colors.bgSurfaceContainerLow,
-    borderRadius: radius.lg,
-    paddingHorizontal: 12,
-    height: 40,
-    gap: 8,
     borderWidth: 1,
-    borderColor: colors.outlineVariant + '20',
+    borderColor: colors.outlineVariant + '15',
+    marginVertical: 4,
   },
-  searchInput: {
-    flex: 1,
+  navBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.bgCard,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.card,
+  },
+  monthLabel: {
     fontSize: fontSizes.sm,
-    color: colors.onSurface,
-    paddingVertical: 0,
-  },
-  clearSearchBtn: {
-    padding: 2,
+    fontWeight: fontWeights.bold,
+    color: colors.primary,
   },
   roleToggle: {
     flexDirection: 'row',

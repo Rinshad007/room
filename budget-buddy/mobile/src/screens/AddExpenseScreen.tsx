@@ -39,6 +39,27 @@ const DEFAULT_CATEGORIES = [
   { name: 'Others', icon: '📦' },
 ];
 
+const AVATAR_COLORS = [
+  { bg: '#dcf8c6', text: '#075e54' }, // WhatsApp Green
+  { bg: '#e0f2fe', text: '#0369a1' }, // Sky Blue
+  { bg: '#fef3c7', text: '#b45309' }, // Amber
+  { bg: '#fee2e2', text: '#b91c1c' }, // Crimson
+  { bg: '#f3e8ff', text: '#6b21a8' }, // Purple
+  { bg: '#fce7f3', text: '#be185d' }, // Rose/Pink
+  { bg: '#e0e7ff', text: '#4338ca' }, // Indigo
+  { bg: '#ccfbf1', text: '#0f766e' }, // Teal
+  { bg: '#ffedd5', text: '#c2410c' }, // Orange
+];
+
+const getFriendAvatarColor = (id: string) => {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % AVATAR_COLORS.length;
+  return AVATAR_COLORS[index];
+};
+
 export default function AddExpenseScreen() {
   const insets = useSafeAreaInsets();
   const nav = useNavigation<any>();
@@ -69,6 +90,7 @@ export default function AddExpenseScreen() {
   const [splitType, setSplitType] = useState<SplitType>('equal');
   const [customShares, setCustomShares] = useState<Record<string, number>>({});
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [amountFocused, setAmountFocused] = useState(false);
 
   const [saving, setSaving] = useState(false);
 
@@ -299,18 +321,35 @@ export default function AddExpenseScreen() {
           keyboardShouldPersistTaps="handled"
         >
           {/* ── Amount Input ──────────────────────────────────────────── */}
-          <Card glass style={styles.amountCard}>
-            <Text style={styles.amountLabel}>Amount</Text>
+          <Card 
+            glass 
+            style={[
+              styles.amountCard,
+              amountFocused && styles.amountCardFocused
+            ]}
+          >
+            <Text style={[
+              styles.amountLabel,
+              amountFocused && { color: colors.secondary }
+            ]}>Amount</Text>
             <View style={styles.amountRow}>
-              <Text style={styles.currencySymbol}>₹</Text>
+              <Text style={[
+                styles.currencySymbol,
+                amountFocused && { color: colors.secondary }
+              ]}>₹</Text>
               <TextInput
-                style={styles.amountInput}
+                style={[
+                  styles.amountInput,
+                  amountFocused && { color: colors.primary }
+                ]}
                 placeholder="0.00"
-                placeholderTextColor={colors.onSurfaceVariant + '50'}
+                placeholderTextColor={colors.onSurfaceVariant + '40'}
                 value={amount}
                 onChangeText={setAmount}
                 keyboardType="decimal-pad"
                 returnKeyType="done"
+                onFocus={() => setAmountFocused(true)}
+                onBlur={() => setAmountFocused(false)}
               />
             </View>
           </Card>
@@ -460,8 +499,25 @@ export default function AddExpenseScreen() {
                             style={[styles.checkbox, isChecked && styles.checkboxChecked]}
                             activeOpacity={0.8}
                           >
-                            {isChecked && <Ionicons name="checkmark" size={14} color="#fff" />}
+                            {isChecked && <Ionicons name="checkmark" size={12} color="#fff" />}
                           </TouchableOpacity>
+                          
+                          {/* Stylish Initial Avatar with unique colors */}
+                          <View style={[
+                            styles.friendAvatar,
+                            {
+                              backgroundColor: isChecked ? getFriendAvatarColor(p.id).text : getFriendAvatarColor(p.id).bg,
+                              borderColor: isChecked ? getFriendAvatarColor(p.id).text : getFriendAvatarColor(p.id).bg,
+                            }
+                          ]}>
+                            <Text style={[
+                              styles.friendAvatarText,
+                              { color: isChecked ? '#ffffff' : getFriendAvatarColor(p.id).text }
+                            ]}>
+                              {p.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                            </Text>
+                          </View>
+
                           <Text style={styles.participantName}>{p.name}</Text>
                         </View>
                         {shareLabel ? (
@@ -602,7 +658,21 @@ const styles = StyleSheet.create({
   },
 
   // Amount
-  amountCard: { alignItems: 'center', paddingVertical: 20 },
+  amountCard: {
+    alignItems: 'center',
+    paddingVertical: 36,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  amountCardFocused: {
+    borderColor: colors.secondary + '50',
+    backgroundColor: colors.bgCard,
+    shadowColor: colors.secondary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
+  },
   amountLabel: {
     fontSize: fontSizes.xs,
     fontWeight: fontWeights.semibold,
@@ -722,6 +792,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkboxChecked: { backgroundColor: colors.primary, borderColor: colors.primary },
+  friendAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.secondary + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.secondary + '30',
+  },
+  friendAvatarActive: {
+    backgroundColor: colors.secondary,
+    borderColor: colors.secondary,
+  },
+  friendAvatarText: {
+    color: colors.secondary,
+    fontSize: 12,
+    fontWeight: fontWeights.bold,
+  },
+  friendAvatarTextActive: {
+    color: '#ffffff',
+  },
   participantName: {
     fontSize: fontSizes.sm,
     fontWeight: fontWeights.semibold,

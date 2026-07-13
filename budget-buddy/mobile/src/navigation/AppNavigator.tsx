@@ -35,7 +35,7 @@ const LightTheme = {
 export default function AppNavigator() {
   const [firebaseReady, setFirebaseReady] = useState(false);
   const [hasFirebaseUser, setHasFirebaseUser] = useState(false);
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, isHydrated, user } = useAuthStore();
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (firebaseUser) => {
@@ -59,7 +59,8 @@ export default function AppNavigator() {
     }
   }, [isLoggedIn, user?.id]);
 
-  if (!firebaseReady) return <LoadingSpinner />;
+  // Wait for BOTH AsyncStorage hydration AND Firebase auth state before deciding route
+  if (!firebaseReady || !isHydrated) return <LoadingSpinner />;
 
   return (
     <NavigationContainer theme={LightTheme}>

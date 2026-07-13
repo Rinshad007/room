@@ -966,7 +966,15 @@ async function createNotification(userId: string, title: string, message: string
         fetch('https://exp.host/--/api/v2/push/send', {
           method: 'POST',
           headers: { 'Accept': 'application/json', 'Accept-encoding': 'gzip, deflate', 'Content-Type': 'application/json' },
-          body: JSON.stringify({ to: recipient.push_token, sound: 'default', title, body: message, data: { type } }),
+          body: JSON.stringify({
+            to: recipient.push_token,
+            sound: 'default',
+            title,
+            body: message,
+            data: { type },
+            channelId: 'default',
+            priority: 'high'
+          }),
         }).catch(() => { /* push failure never crashes parent */ });
       }
     }
