@@ -1,8 +1,0 @@
-{
-  "name": "room-root",
-  "private": true,
-  "scripts": {
-    "build": "cd budget-buddy/frontend && npm run build",
-    "install": "cd budget-buddy/frontend && npm install"
-  }
-}
