@@ -96,29 +96,42 @@ export default function SettlementsPage() {
   };
 
   // ── UPI helpers ───────────────────────────────────────────────────────────
-  const getUpiParams = (a: ActiveSettlement, overrideUpiId?: string) => {
-    const upiId = overrideUpiId || a.mobileNumber || a.upiId;
-    if (!upiId) return '';
-    return `pa=${encodeURIComponent(upiId.trim())}&pn=${encodeURIComponent(a.name.trim())}`;
+  const formatUpiId = (id: string, app: 'gpay' | 'phonepe' | 'paytm' | 'generic') => {
+    const trimmed = id.trim();
+    const isRawMobile = /^\d{10}$/.test(trimmed);
+    if (isRawMobile) {
+      if (app === 'gpay' || app === 'generic') return `${trimmed}@okaxis`;
+      if (app === 'phonepe') return `${trimmed}@ybl`;
+      if (app === 'paytm') return `${trimmed}@paytm`;
+    }
+    return trimmed;
   };
+
+  const getUpiParams = (a: ActiveSettlement, overrideUpiId: string | undefined, app: 'gpay' | 'phonepe' | 'paytm' | 'generic') => {
+    const rawId = overrideUpiId || a.mobileNumber || a.upiId;
+    if (!rawId) return '';
+    const formattedId = formatUpiId(rawId, app);
+    return `pa=${encodeURIComponent(formattedId)}&pn=${encodeURIComponent(a.name.trim())}`;
+  };
+
   const getUpiLink    = (a: ActiveSettlement, overrideUpiId?: string) => {
-    const params = getUpiParams(a, overrideUpiId);
+    const params = getUpiParams(a, overrideUpiId, 'generic');
     return params ? `upi://pay?${params}` : '';
   };
   const getGpayLink   = (a: ActiveSettlement, overrideUpiId?: string) => {
-    const params = getUpiParams(a, overrideUpiId);
+    const params = getUpiParams(a, overrideUpiId, 'gpay');
     return params ? `tez://upi/pay?${params}` : '';
   };
   const getPhonePeLink= (a: ActiveSettlement, overrideUpiId?: string) => {
-    const params = getUpiParams(a, overrideUpiId);
+    const params = getUpiParams(a, overrideUpiId, 'phonepe');
     return params ? `phonepe://pay?${params}` : '';
   };
   const getPaytmLink  = (a: ActiveSettlement, overrideUpiId?: string) => {
-    const params = getUpiParams(a, overrideUpiId);
+    const params = getUpiParams(a, overrideUpiId, 'paytm');
     return params ? `paytmmp://pay?${params}` : '';
   };
   const getGpayMobileLink = (a: ActiveSettlement, overrideUpiId?: string) => {
-    const params = getUpiParams(a, overrideUpiId);
+    const params = getUpiParams(a, overrideUpiId, 'gpay');
     return params ? `https://pay.google.com/gp/p/ui/pay?${params}` : '';
   };
   const getQrUrl = (a: ActiveSettlement, overrideUpiId?: string) => {
