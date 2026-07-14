@@ -6,6 +6,7 @@ export interface User {
   email: string;
   avatar_url?: string;
   upi_id?: string;
+  mobile_number?: string;
   created_at: string;
 }
 

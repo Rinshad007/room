@@ -13,6 +13,7 @@ export default function ProfilePage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [upiId, setUpiId] = useState('');
+  const [mobileNumber, setMobileNumber] = useState('');
   const [saving, setSaving] = useState(false);
 
   // BUG-006: Reauthentication state for email change security gate
@@ -25,6 +26,7 @@ export default function ProfilePage() {
       setName(user.name);
       setEmail(user.email);
       setUpiId(user.upi_id || '');
+      setMobileNumber(user.mobile_number || '');
     }
   }, [user]);
 
@@ -49,7 +51,7 @@ export default function ProfilePage() {
         }
       }
 
-      const res = await usersAPI.update({ name, email: email.trim(), upi_id: upiId });
+      const res = await usersAPI.update({ name, email: email.trim(), upi_id: upiId, mobile_number: mobileNumber });
       setUser(res.data);
       toast.success('Profile updated successfully!');
       setShowReauthModal(false);
@@ -121,6 +123,17 @@ export default function ProfilePage() {
                 value={upiId}
                 onChange={(e) => setUpiId(e.target.value)}
                 placeholder="e.g. username@bank"
+                className="input-field h-12 text-sm bg-surface-container-low"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-label-caps text-on-surface-variant uppercase ml-1">Mobile Number</label>
+              <input
+                type="text"
+                value={mobileNumber}
+                onChange={(e) => setMobileNumber(e.target.value)}
+                placeholder="e.g. 9876543210"
                 className="input-field h-12 text-sm bg-surface-container-low"
               />
             </div>
