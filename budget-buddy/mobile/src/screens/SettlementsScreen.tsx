@@ -90,8 +90,8 @@ export default function SettlementsScreen() {
 
   const getUpiLink = (a: ActiveSettlement) => {
     if (!a.upiId) return '';
-    const formattedAmount = Number(a.amount).toFixed(2);
-    const params = `?pa=${encodeURIComponent(a.upiId.trim())}&pn=${encodeURIComponent(a.name.trim())}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent('BudgetBuddy Settlement')}`;
+    // Omit 'am' (amount) parameter for P2P deep-link transfers to bypass unverified merchant security blocks (such as Paytm Protect or GPay bank limits).
+    const params = `?pa=${encodeURIComponent(a.upiId.trim())}&pn=${encodeURIComponent(a.name.trim())}&cu=INR&tn=${encodeURIComponent('BudgetBuddy Settlement')}`;
     return `upi://pay${params}`;
   };
 
