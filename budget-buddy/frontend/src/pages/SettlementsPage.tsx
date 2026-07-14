@@ -373,15 +373,22 @@ function SettlementModal({ settlement, submitting, gpayOpened, onGpayOpen, onCon
             </div>
 
             <div className="space-y-1">
-              <p className="text-xs font-semibold text-on-surface-variant/60 uppercase tracking-wide">Step 1 — Pay via GPay</p>
+              <p className="text-xs font-semibold text-on-surface-variant/60 uppercase tracking-wide">Step 1 — Pay via UPI App</p>
               <a
                 href={upiLink}
-                onClick={onGpayOpen}
+                rel="noreferrer noopener"
+                referrerPolicy="no-referrer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onGpayOpen();
+                  // Use location.href to avoid sending referrer header (fixes Paytm privacy block)
+                  setTimeout(() => { window.location.href = upiLink; }, 50);
+                }}
                 className="btn-primary w-full h-12 flex items-center justify-center gap-2 shadow-none rounded-xl"
                 style={{ textDecoration: 'none' }}
               >
                 <span className="material-symbols-outlined">qr_code_scanner</span>
-                Open Google Pay / UPI App
+                Open GPay / Paytm / PhonePe
               </a>
             </div>
 
