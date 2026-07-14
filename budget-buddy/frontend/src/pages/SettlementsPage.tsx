@@ -154,7 +154,7 @@ export default function SettlementsPage() {
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <Layout showBack title="Settle Up" hideBottomNav>
+    <Layout title="Settle Up" hideBottomNav={!!activeSettlement}>
       <div className="page-container page-enter pb-24 space-y-6">
 
 
