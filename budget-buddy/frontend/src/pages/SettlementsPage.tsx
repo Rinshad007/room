@@ -98,12 +98,11 @@ export default function SettlementsPage() {
   };
   const getUpiAppIntentLink = (a: ActiveSettlement) => {
     if (!a.upiId) return '';
-    const formattedAmount = Number(a.amount).toFixed(2);
-    const params = `pa=${encodeURIComponent(a.upiId.trim())}&pn=${encodeURIComponent(a.name.trim())}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent('BudgetBuddy Settlement')}`;
-    // Use Chrome's intent:// scheme instead of upi:// — this fires a native Android Intent
-    // WITHOUT including the browser's HTTP Referer header, bypassing GPay/Paytm's
-    // web-origin P2P security block ("exceeded bank limit" / "privacy problem").
-    return `intent://pay?${params}#Intent;scheme=upi;end`;
+    // NOTE: Google Pay intentionally blocks pre-filled 'am' (amount) in any P2P deep link
+    // initiated from a browser/non-NPCI-registered app — this is a platform-level policy
+    // enforced by GPay regardless of URL scheme. Omitting 'am' lets GPay open so the user
+    // types the amount manually. The QR code above is the recommended zero-friction path.
+    return `upi://pay?pa=${encodeURIComponent(a.upiId.trim())}&pn=${encodeURIComponent(a.name.trim())}&cu=INR&tn=${encodeURIComponent('BudgetBuddy Settlement')}`;
   };
   const getQrUrl = (a: ActiveSettlement) =>
     a.upiId
@@ -389,17 +388,21 @@ function SettlementModal({ settlement, submitting, onConfirm, onClose, getQrUrl,
             </div>
 
             {/* ── Option to launch UPI App (for mobile browsers) ── */}
-            <div className="space-y-1">
+            <div className="space-y-1.5">
+              <p className="text-xs font-semibold text-on-surface-variant/60 uppercase tracking-wide">Or open UPI app directly</p>
               <a
                 href={upiLink}
                 rel="noreferrer noopener"
                 referrerPolicy="no-referrer"
-                className="w-full h-10 flex items-center justify-center gap-2 rounded-xl border border-outline-variant/30 text-on-surface-variant text-xs font-semibold hover:bg-surface-variant/10 active:scale-95 transition-all cursor-pointer"
+                className="w-full h-11 flex items-center justify-center gap-2 rounded-xl border border-outline-variant/30 text-on-surface-variant text-sm font-semibold hover:bg-surface-variant/10 active:scale-95 transition-all cursor-pointer"
                 style={{ textDecoration: 'none' }}
               >
-                <span className="material-symbols-outlined text-[16px]">open_in_new</span>
-                Open UPI App directly
+                <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+                Open UPI App
               </a>
+              <p className="text-[10px] text-center text-on-surface-variant/50">
+                Enter amount <span className="font-bold text-error">₹{settlement.amount.toLocaleString('en-IN')}</span> manually inside the UPI app
+              </p>
             </div>
 
             {/* ── Confirm ── */}
