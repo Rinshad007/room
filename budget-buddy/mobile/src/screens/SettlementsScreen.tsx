@@ -11,7 +11,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Modal, Pressable, Linking, Image, Alert, Clipboard,
+  Modal, Pressable, Linking, Image, Alert, Clipboard, TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -28,6 +28,7 @@ interface ActiveSettlement {
   name: string;
   amount: number;
   upiId?: string;
+  mobileNumber?: string;
 }
 
 export default function SettlementsScreen() {
@@ -38,6 +39,9 @@ export default function SettlementsScreen() {
   const [activeSettlement, setActiveSettlement] = useState<ActiveSettlement | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [gpayOpened, setGpayOpened] = useState(false);
+
+  const [customUpiInput, setCustomUpiInput] = useState('');
+  const [customUpiSuffix, setCustomUpiSuffix] = useState('@okaxis');
 
   const pendingSettlements = mySettlements.filter(s => s.status === 'pending');
   const completedSettlements = mySettlements.filter(s => s.status === 'completed');
@@ -56,7 +60,10 @@ export default function SettlementsScreen() {
 
   const openModal = (friendId: string, name: string, amount: number) => {
     const upiId = (users as any)[friendId]?.upi_id || undefined;
-    setActiveSettlement({ friendId, name, amount, upiId });
+    const mobileNumber = (users as any)[friendId]?.mobile_number || undefined;
+    setActiveSettlement({ friendId, name, amount, upiId, mobileNumber });
+    setCustomUpiInput('');
+    setCustomUpiSuffix('@okaxis');
     setGpayOpened(false);
     setSubmitting(false);
   };
@@ -88,28 +95,56 @@ export default function SettlementsScreen() {
     }
   };
 
-  const getUpiLink = (a: ActiveSettlement) => {
-    if (!a.upiId) return '';
-    // Omit 'am' (amount) parameter for P2P deep-link transfers to bypass unverified merchant security blocks (such as Paytm Protect or GPay bank limits).
-    const params = `?pa=${encodeURIComponent(a.upiId.trim())}&pn=${encodeURIComponent(a.name.trim())}&cu=INR&tn=${encodeURIComponent('BudgetBuddy Settlement')}`;
-    return `upi://pay${params}`;
+  const formatUpiId = (id: string, app: 'gpay' | 'phonepe' | 'paytm' | 'generic') => {
+    const trimmed = id.trim();
+    const isRawMobile = /^\d{10}$/.test(trimmed);
+    if (isRawMobile) {
+      if (app === 'gpay' || app === 'generic') return `${trimmed}@okaxis`;
+      if (app === 'phonepe') return `${trimmed}@ybl`;
+      if (app === 'paytm') return `${trimmed}@paytm`;
+    }
+    return trimmed;
   };
 
-  const getQrUrl = (a: ActiveSettlement) => {
-    const link = getUpiLink(a);
+  const getUpiParams = (a: ActiveSettlement, overrideUpiId: string | undefined, app: 'gpay' | 'phonepe' | 'paytm' | 'generic') => {
+    const rawId = overrideUpiId || a.mobileNumber || a.upiId;
+    if (!rawId) return '';
+    const formattedId = formatUpiId(rawId, app);
+    return `pa=${encodeURIComponent(formattedId)}&pn=${encodeURIComponent(a.name.trim())}&cu=INR&tn=${encodeURIComponent('BudgetBuddy Settlement')}`;
+  };
+
+  const getUpiLink = (a: ActiveSettlement, overrideUpiId?: string) => {
+    const params = getUpiParams(a, overrideUpiId, 'generic');
+    return params ? `upi://pay?${params}` : '';
+  };
+
+  const getQrUrl = (a: ActiveSettlement, overrideUpiId?: string) => {
+    const link = getUpiLink(a, overrideUpiId);
     return link ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(link)}` : '';
   };
 
-  const launchUpiApp = async (a: ActiveSettlement) => {
-    const link = getUpiLink(a);
-    if (!link) {
-      Alert.alert('Error', 'Invalid VPA details');
+  const launchUpiApp = async (a: ActiveSettlement, app: 'gpay' | 'phonepe' | 'paytm' | 'generic', overrideUpiId?: string) => {
+    const rawId = overrideUpiId || a.mobileNumber || a.upiId;
+    if (!rawId) {
+      Alert.alert('Error', 'Invalid payee details');
       return;
     }
-    console.log('[UPI INTENT] Initiating Launch Sequence');
-    console.log('[UPI INTENT] Target VPA:', a.upiId);
+
+    const formattedId = formatUpiId(rawId, app);
+    const params = `pa=${encodeURIComponent(formattedId)}&pn=${encodeURIComponent(a.name.trim())}&cu=INR&tn=${encodeURIComponent('BudgetBuddy Settlement')}`;
+
+    let link = `upi://pay?${params}`;
+    if (app === 'gpay') {
+      link = `tez://upi/pay?${params}`;
+    } else if (app === 'phonepe') {
+      link = `phonepe://pay?${params}`;
+    } else if (app === 'paytm') {
+      link = `paytmmp://pay?${params}`;
+    }
+
+    console.log('[UPI INTENT] Initiating Launch Sequence for:', app);
+    console.log('[UPI INTENT] Target VPA:', formattedId);
     console.log('[UPI INTENT] Raw Deep Link:', link);
-    console.log('[UPI INTENT] Decoded Link:', decodeURIComponent(link));
 
     try {
       const canOpen = await Linking.canOpenURL(link);
@@ -117,12 +152,19 @@ export default function SettlementsScreen() {
         await Linking.openURL(link);
         setGpayOpened(true);
       } else {
-        console.warn('[UPI INTENT] No supporting UPI app found on device.');
-        Alert.alert('No UPI App', 'Could not find a supporting UPI app. Please pay manually or scan the QR Code.');
-        setGpayOpened(true);
+        // Fallback to generic upi:// scheme
+        const fallbackLink = `upi://pay?${params}`;
+        const canOpenFallback = await Linking.canOpenURL(fallbackLink);
+        if (canOpenFallback) {
+          await Linking.openURL(fallbackLink);
+          setGpayOpened(true);
+        } else {
+          Alert.alert('No UPI App', 'Could not find a supporting UPI app. Please pay manually or scan the QR Code.');
+          setGpayOpened(true);
+        }
       }
     } catch (err) {
-      console.error('[UPI INTENT] Exception thrown during intent launch:', err);
+      console.error('[UPI INTENT] Exception:', err);
       Alert.alert('Launch Failed', 'Failed to launch the UPI app. Please pay manually or scan the QR Code.');
       setGpayOpened(true);
     }
@@ -308,107 +350,195 @@ export default function SettlementsScreen() {
                 <Ionicons name="close" size={22} color={colors.onSurfaceVariant} />
               </TouchableOpacity>
             </View>
-            {activeSettlement && (
-              <>
-                {/* Person + Amount */}
-                <View style={styles.modalPerson}>
-                  <View style={styles.modalAvatar}>
-                    <Text style={styles.modalAvatarText}>{activeSettlement.name[0]?.toUpperCase()}</Text>
+            {activeSettlement && (() => {
+              const isMobileNumber = /^\d{10}$/.test(customUpiInput.trim());
+              const effectiveUpiId = activeSettlement.mobileNumber || activeSettlement.upiId || (customUpiInput.trim() ? (isMobileNumber ? `${customUpiInput.trim()}${customUpiSuffix}` : customUpiInput.trim()) : undefined);
+              return (
+                <>
+                  {/* Person + Amount */}
+                  <View style={styles.modalPerson}>
+                    <View style={styles.modalAvatar}>
+                      <Text style={styles.modalAvatarText}>{activeSettlement.name[0]?.toUpperCase()}</Text>
+                    </View>
+                    <Text style={styles.modalName}>{activeSettlement.name}</Text>
+                    <Text style={styles.modalSub}>Outstanding balance settlement</Text>
+                    <Text style={styles.modalAmount}>₹{activeSettlement.amount.toLocaleString('en-IN')}</Text>
                   </View>
-                  <Text style={styles.modalName}>{activeSettlement.name}</Text>
-                  <Text style={styles.modalSub}>Outstanding balance settlement</Text>
-                  <Text style={styles.modalAmount}>₹{activeSettlement.amount.toLocaleString('en-IN')}</Text>
-                </View>
 
-                {activeSettlement.upiId ? (
-                  <View style={styles.upiSection}>
-                    <Text style={styles.stepLabel}>UPI ID Information</Text>
-                    
-                    {/* Copy UPI Option */}
-                    <View style={styles.copyUpiRow}>
-                      <Text style={styles.upiIdText} numberOfLines={1}>
-                        {activeSettlement.upiId}
+                  {/* If the friend has no UPI and no mobile number, show the custom input field at the top */}
+                  {!activeSettlement.upiId && !activeSettlement.mobileNumber && (
+                    <View style={styles.customInputSection}>
+                      <Text style={styles.customInputLabel}>
+                        {activeSettlement.name} hasn't added payment details
                       </Text>
-                      <TouchableOpacity
-                        style={styles.copyBtn}
-                        onPress={() => {
-                          Clipboard.setString(activeSettlement.upiId || '');
-                          Alert.alert('Copied', 'UPI ID copied to clipboard! Paste it inside GPay to pay.');
-                        }}
-                        activeOpacity={0.7}
-                      >
-                        <Ionicons name="copy-outline" size={14} color={colors.primary} />
-                        <Text style={styles.copyBtnText}>Copy UPI</Text>
-                      </TouchableOpacity>
-                    </View>
-
-                    <Text style={styles.stepLabel}>Step 1 — Pay via GPay / UPI</Text>
-                    <TouchableOpacity
-                      style={styles.gpayBtn}
-                      onPress={() => launchUpiApp(activeSettlement)}
-                      activeOpacity={0.85}
-                    >
-                      <Ionicons name="qr-code-outline" size={20} color={colors.onPrimary} />
-                      <Text style={styles.gpayBtnText}>Open Google Pay / UPI App</Text>
-                    </TouchableOpacity>
-
-                    {/* QR Code */}
-                    <View style={styles.qrBox}>
-                      <Image
-                        source={{ uri: getQrUrl(activeSettlement) }}
-                        style={styles.qrImg}
-                        resizeMode="contain"
+                      <Text style={styles.customInputSub}>
+                        Enter their UPI ID or Mobile Number to enable GPay / UPI payments:
+                      </Text>
+                      <TextInput
+                        style={styles.textInput}
+                        placeholder="e.g. 9876543210 or name@okaxis"
+                        value={customUpiInput}
+                        onChangeText={setCustomUpiInput}
+                        placeholderTextColor={colors.onSurfaceVariant + '70'}
+                        autoCapitalize="none"
+                        autoCorrect={false}
                       />
-                      <Text style={styles.qrLabel}>Scan with GPay · PhonePe · Paytm</Text>
-                    </View>
 
-                    <Text style={styles.stepLabel}>Step 2 — Confirm after paying</Text>
-                    {gpayOpened ? (
+                      {/* If they typed a 10-digit number, show the app (suffix) selector */}
+                      {isMobileNumber && (
+                        <View style={styles.suffixSelectorContainer}>
+                          <Text style={styles.suffixSelectorLabel}>Select their UPI application:</Text>
+                          <View style={styles.suffixBtnRow}>
+                            <TouchableOpacity
+                              style={[styles.suffixBtn, customUpiSuffix === '@okaxis' && styles.suffixBtnActive]}
+                              onPress={() => setCustomUpiSuffix('@okaxis')}
+                            >
+                              <Text style={[styles.suffixBtnText, customUpiSuffix === '@okaxis' && styles.suffixBtnTextActive]}>GPay (@okaxis)</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              style={[styles.suffixBtn, customUpiSuffix === '@ybl' && styles.suffixBtnActive]}
+                              onPress={() => setCustomUpiSuffix('@ybl')}
+                            >
+                              <Text style={[styles.suffixBtnText, customUpiSuffix === '@ybl' && styles.suffixBtnTextActive]}>PhonePe (@ybl)</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              style={[styles.suffixBtn, customUpiSuffix === '@paytm' && styles.suffixBtnActive]}
+                              onPress={() => setCustomUpiSuffix('@paytm')}
+                            >
+                              <Text style={[styles.suffixBtnText, customUpiSuffix === '@paytm' && styles.suffixBtnTextActive]}>Paytm (@paytm)</Text>
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                      )}
+                    </View>
+                  )}
+
+                  {effectiveUpiId ? (
+                    <View style={styles.upiSection}>
+                      <Text style={styles.stepLabel}>
+                        {/^\d{10}$/.test(effectiveUpiId) ? 'Mobile Number' : 'UPI ID'}
+                      </Text>
+                      
+                      {/* Copy UPI Option */}
+                      <View style={styles.copyUpiRow}>
+                        <Text style={styles.upiIdText} numberOfLines={1}>
+                          {effectiveUpiId}
+                        </Text>
+                        <TouchableOpacity
+                          style={styles.copyBtn}
+                          onPress={() => {
+                            Clipboard.setString(effectiveUpiId || '');
+                            Alert.alert('Copied', `${/^\d{10}$/.test(effectiveUpiId) ? 'Mobile Number' : 'UPI ID'} copied to clipboard!`);
+                          }}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="copy-outline" size={14} color={colors.primary} />
+                          <Text style={styles.copyBtnText}>Copy</Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      <Text style={styles.stepLabel}>Step 1 — Choose your UPI app</Text>
+                      <View style={styles.appBtnRow}>
+                        {/* Google Pay */}
+                        <TouchableOpacity
+                          style={[styles.appBtn, { borderColor: '#1a73e830', backgroundColor: '#1a73e808' }]}
+                          onPress={() => launchUpiApp(activeSettlement, 'gpay', effectiveUpiId)}
+                          activeOpacity={0.8}
+                        >
+                          <Ionicons name="logo-google" size={18} color="#1a73e8" />
+                          <Text style={[styles.appBtnText, { color: '#1a73e8' }]}>GPay</Text>
+                        </TouchableOpacity>
+                        
+                        {/* PhonePe */}
+                        <TouchableOpacity
+                          style={[styles.appBtn, { borderColor: '#5f259f30', backgroundColor: '#5f259f08' }]}
+                          onPress={() => launchUpiApp(activeSettlement, 'phonepe', effectiveUpiId)}
+                          activeOpacity={0.8}
+                        >
+                          <Ionicons name="wallet-outline" size={18} color="#5f259f" />
+                          <Text style={[styles.appBtnText, { color: '#5f259f' }]}>PhonePe</Text>
+                        </TouchableOpacity>
+
+                        {/* Paytm */}
+                        <TouchableOpacity
+                          style={[styles.appBtn, { borderColor: '#00BAF230', backgroundColor: '#00BAF208' }]}
+                          onPress={() => launchUpiApp(activeSettlement, 'paytm', effectiveUpiId)}
+                          activeOpacity={0.8}
+                        >
+                          <Ionicons name="cash-outline" size={18} color="#00BAF2" />
+                          <Text style={[styles.appBtnText, { color: '#00BAF2' }]}>Paytm</Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      {/* Generic Fallback */}
                       <TouchableOpacity
-                        style={[styles.confirmGpayBtn, submitting && { opacity: 0.65 }]}
+                        style={styles.genericUpiBtn}
+                        onPress={() => launchUpiApp(activeSettlement, 'generic', effectiveUpiId)}
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons name="card-outline" size={16} color={colors.primary} />
+                        <Text style={styles.genericUpiBtnText}>Other UPI App</Text>
+                      </TouchableOpacity>
+
+                      {/* QR Code */}
+                      <TouchableOpacity 
+                        style={styles.qrBox}
+                        onPress={() => launchUpiApp(activeSettlement, 'generic', effectiveUpiId)}
+                        activeOpacity={0.9}
+                      >
+                        <Image
+                          source={{ uri: getQrUrl(activeSettlement, effectiveUpiId) }}
+                          style={styles.qrImg}
+                          resizeMode="contain"
+                        />
+                        <Text style={styles.qrLabel}>Scan QR or tap it to open payment app</Text>
+                      </TouchableOpacity>
+
+                      <Text style={styles.stepLabel}>Step 2 — Confirm after paying</Text>
+                      {gpayOpened ? (
+                        <TouchableOpacity
+                          style={[styles.confirmGpayBtn, submitting && { opacity: 0.65 }]}
+                          onPress={() => handleSettleUp('GPay', 'pending')}
+                          disabled={submitting}
+                          activeOpacity={0.85}
+                        >
+                          <Ionicons name="checkmark-circle-outline" size={18} color={colors.onSecondary} />
+                          <Text style={styles.confirmGpayText}>
+                            {submitting ? 'Recording…' : "I've Paid — Confirm"}
+                          </Text>
+                        </TouchableOpacity>
+                      ) : (
+                        <Text style={styles.gpayHint}>Tap a payment option first, then confirm here.</Text>
+                      )}
+
+                      <View style={styles.cashRow}>
+                        <Text style={styles.cashLabel}>Paying cash instead?</Text>
+                        <TouchableOpacity onPress={() => handleSettleUp('Cash', 'pending')} disabled={submitting}>
+                          <Text style={styles.cashLink}>Record Cash</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ) : (
+                    <View style={styles.noUpiSection}>
+                      <TouchableOpacity
+                        style={[styles.gpayBtn, submitting && { opacity: 0.65 }]}
+                        onPress={() => handleSettleUp('Cash', 'pending')}
+                        disabled={submitting}
+                      >
+                        <Text style={styles.gpayBtnText}>{submitting ? 'Recording…' : 'Record as Cash Payment'}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.secondaryBtn}
                         onPress={() => handleSettleUp('GPay', 'pending')}
                         disabled={submitting}
-                        activeOpacity={0.85}
                       >
-                        <Ionicons name="checkmark-circle-outline" size={18} color={colors.onSecondary} />
-                        <Text style={styles.confirmGpayText}>
-                          {submitting ? 'Recording…' : "I've Paid — Confirm"}
-                        </Text>
-                      </TouchableOpacity>
-                    ) : (
-                      <Text style={styles.gpayHint}>Tap "Open Google Pay" first, then confirm here.</Text>
-                    )}
-
-                    <View style={styles.cashRow}>
-                      <Text style={styles.cashLabel}>Paying cash instead?</Text>
-                      <TouchableOpacity onPress={() => handleSettleUp('Cash', 'pending')} disabled={submitting}>
-                        <Text style={styles.cashLink}>Record Cash</Text>
+                        <Text style={styles.secondaryBtnText}>Record pending GPay request</Text>
                       </TouchableOpacity>
                     </View>
-                  </View>
-                ) : (
-                  <View style={styles.noUpiSection}>
-                    <View style={styles.noUpiAlert}>
-                      <Text style={styles.noUpiText}>{activeSettlement.name} hasn't added a UPI ID yet.</Text>
-                    </View>
-                    <TouchableOpacity
-                      style={[styles.gpayBtn, submitting && { opacity: 0.65 }]}
-                      onPress={() => handleSettleUp('Cash', 'pending')}
-                      disabled={submitting}
-                    >
-                      <Text style={styles.gpayBtnText}>{submitting ? 'Recording…' : 'Record as Cash Payment'}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.secondaryBtn}
-                      onPress={() => handleSettleUp('GPay', 'pending')}
-                      disabled={submitting}
-                    >
-                      <Text style={styles.secondaryBtnText}>Record pending GPay request</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </>
-            )}
+                  )}
+                </>
+              );
+            })()}
           </View>
         </Pressable>
       </Modal>
@@ -550,5 +680,106 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: fontWeights.bold,
     color: colors.primary,
+  },
+  customInputSection: {
+    padding: 12,
+    borderRadius: radius.xl,
+    backgroundColor: colors.bgSurfaceContainerLow,
+    borderWidth: 1,
+    borderColor: colors.outlineVariant + '30',
+    gap: 8,
+  },
+  customInputLabel: {
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.bold,
+    color: colors.onSurfaceVariant,
+    textTransform: 'uppercase',
+  },
+  customInputSub: {
+    fontSize: fontSizes.xs,
+    color: colors.onSurfaceVariant + 'cc',
+  },
+  textInput: {
+    height: 44,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.outlineVariant + '30',
+    paddingHorizontal: 12,
+    backgroundColor: colors.bgSurfaceContainer,
+    color: colors.primary,
+    fontSize: fontSizes.sm,
+  },
+  suffixSelectorContainer: {
+    marginTop: 4,
+    borderTopWidth: 1,
+    borderTopColor: colors.outlineVariant + '20',
+    paddingTop: 8,
+    gap: 6,
+  },
+  suffixSelectorLabel: {
+    fontSize: 10,
+    fontWeight: fontWeights.bold,
+    color: colors.onSurfaceVariant + '80',
+    textTransform: 'uppercase',
+  },
+  suffixBtnRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  suffixBtn: {
+    flex: 1,
+    height: 32,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.outlineVariant + '30',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  suffixBtnActive: {
+    backgroundColor: colors.primaryContainer,
+    borderColor: colors.primary,
+  },
+  suffixBtnText: {
+    fontSize: 9,
+    fontWeight: fontWeights.bold,
+    color: colors.onSurfaceVariant,
+  },
+  suffixBtnTextActive: {
+    color: colors.primary,
+  },
+  appBtnRow: {
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'space-between',
+    marginVertical: 4,
+  },
+  appBtn: {
+    flex: 1,
+    height: 52,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  appBtnText: {
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.bold,
+  },
+  genericUpiBtn: {
+    height: 38,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.outlineVariant + '30',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginVertical: 2,
+  },
+  genericUpiBtnText: {
+    color: colors.primary,
+    fontSize: 12,
+    fontWeight: fontWeights.semibold,
   },
 });
