@@ -98,7 +98,12 @@ export default function SettlementsPage() {
   };
   const getUpiAppIntentLink = (a: ActiveSettlement) => {
     if (!a.upiId) return '';
-    return `upi://pay?pa=${encodeURIComponent(a.upiId.trim())}&pn=${encodeURIComponent(a.name.trim())}&cu=INR&tn=${encodeURIComponent('BudgetBuddy Settlement')}`;
+    const formattedAmount = Number(a.amount).toFixed(2);
+    const params = `pa=${encodeURIComponent(a.upiId.trim())}&pn=${encodeURIComponent(a.name.trim())}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent('BudgetBuddy Settlement')}`;
+    // Use Chrome's intent:// scheme instead of upi:// — this fires a native Android Intent
+    // WITHOUT including the browser's HTTP Referer header, bypassing GPay/Paytm's
+    // web-origin P2P security block ("exceeded bank limit" / "privacy problem").
+    return `intent://pay?${params}#Intent;scheme=upi;end`;
   };
   const getQrUrl = (a: ActiveSettlement) =>
     a.upiId
