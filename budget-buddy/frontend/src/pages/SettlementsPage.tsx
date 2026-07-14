@@ -96,6 +96,10 @@ export default function SettlementsPage() {
     const formattedAmount = Number(a.amount).toFixed(2);
     return `upi://pay?pa=${encodeURIComponent(a.upiId.trim())}&pn=${encodeURIComponent(a.name.trim())}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent('BudgetBuddy Settlement')}`;
   };
+  const getUpiAppIntentLink = (a: ActiveSettlement) => {
+    if (!a.upiId) return '';
+    return `upi://pay?pa=${encodeURIComponent(a.upiId.trim())}&pn=${encodeURIComponent(a.name.trim())}&cu=INR&tn=${encodeURIComponent('BudgetBuddy Settlement')}`;
+  };
   const getQrUrl = (a: ActiveSettlement) =>
     a.upiId
       ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(getUpiLink(a))}`
@@ -302,6 +306,7 @@ export default function SettlementsPage() {
           onConfirm={method => handleSettleUp(activeSettlement.friendId, activeSettlement.amount, method, 'pending')}
           onClose={() => { setActiveSettlement(null); setSubmitting(false); }}
           getQrUrl={getQrUrl}
+          getUpiLink={getUpiAppIntentLink}
         />
       )}
     </Layout>
@@ -320,8 +325,9 @@ interface ModalProps {
   getQrUrl: (a: ActiveSettlement) => string;
 }
 
-function SettlementModal({ settlement, submitting, onConfirm, onClose, getQrUrl }: Omit<ModalProps, 'gpayOpened' | 'onGpayOpen' | 'getUpiLink'> & Pick<ModalProps, 'getQrUrl'>) {
+function SettlementModal({ settlement, submitting, onConfirm, onClose, getQrUrl, getUpiLink }: Omit<ModalProps, 'gpayOpened' | 'onGpayOpen'>) {
   const qrCodeUrl = getQrUrl(settlement);
+  const upiLink = getUpiLink(settlement);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -375,6 +381,20 @@ function SettlementModal({ settlement, submitting, onConfirm, onClose, getQrUrl 
                   Copy
                 </button>
               </div>
+            </div>
+
+            {/* ── Option to launch UPI App (for mobile browsers) ── */}
+            <div className="space-y-1">
+              <a
+                href={upiLink}
+                rel="noreferrer noopener"
+                referrerPolicy="no-referrer"
+                className="w-full h-10 flex items-center justify-center gap-2 rounded-xl border border-outline-variant/30 text-on-surface-variant text-xs font-semibold hover:bg-surface-variant/10 active:scale-95 transition-all cursor-pointer"
+                style={{ textDecoration: 'none' }}
+              >
+                <span className="material-symbols-outlined text-[16px]">open_in_new</span>
+                Open UPI App directly
+              </a>
             </div>
 
             {/* ── Confirm ── */}
