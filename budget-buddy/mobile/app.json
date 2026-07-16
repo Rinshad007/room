@@ -34,7 +34,12 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "queries": {
+        "schemes": [
+          "upi"
+        ]
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"

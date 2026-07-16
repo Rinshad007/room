@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { updateEmail, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
-import { auth } from '../firebase';
+import { auth, db } from '../firebase';
+import { ref, onValue } from 'firebase/database';
 import Layout from '../components/layout/Layout';
-import { usersAPI } from '../api/services';
+import { usersAPI, telegramAPI } from '../api/services';
 import { useAuthStore } from '../store/auth';
 import toast from 'react-hot-toast';
 
@@ -19,6 +20,75 @@ export default function ProfilePage() {
   const [showReauthModal, setShowReauthModal] = useState(false);
   const [password, setPassword] = useState('');
   const [reauthenticating, setReauthenticating] = useState(false);
+
+  // Telegram Integration State
+  const [telegramLinked, setTelegramLinked] = useState(false);
+  const [telegramUsername, setTelegramUsername] = useState('');
+  const [linkingCode, setLinkingCode] = useState('');
+  const [expiresIn, setExpiresIn] = useState(0);
+  const [generatingCode, setGeneratingCode] = useState(false);
+  const [unlinkingTelegram, setUnlinkingTelegram] = useState(false);
+
+  // Sync Telegram connection status in real-time
+  useEffect(() => {
+    if (!user) return;
+    const dbRef = ref(db, `users/${user.id}/telegramLink`);
+    const unsubscribe = onValue(dbRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        setTelegramLinked(true);
+        setTelegramUsername(data.username || '');
+      } else {
+        setTelegramLinked(false);
+        setTelegramUsername('');
+      }
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  // Countdown timer for one-time linking code
+  useEffect(() => {
+    if (expiresIn <= 0) return;
+    const timer = setInterval(() => {
+      setExpiresIn((prev) => {
+        if (prev <= 1) {
+          setLinkingCode('');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [expiresIn]);
+
+  const handleConnectTelegram = async () => {
+    setGeneratingCode(true);
+    try {
+      const res = await telegramAPI.generateCode();
+      setLinkingCode(res.code);
+      setExpiresIn(res.expires_in_seconds || 600);
+      toast.success('Linking code generated successfully!');
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || 'Failed to generate linking code');
+    } finally {
+      setGeneratingCode(false);
+    }
+  };
+
+  const handleUnlinkTelegram = async () => {
+    if (!window.confirm('Are you sure you want to disconnect your Telegram account?')) return;
+    setUnlinkingTelegram(true);
+    try {
+      await telegramAPI.unlink();
+      toast.success('Telegram disconnected successfully!');
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || 'Failed to disconnect Telegram');
+    } finally {
+      setUnlinkingTelegram(false);
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -133,6 +203,70 @@ export default function ProfilePage() {
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </form>
+        </section>
+
+        {/* Telegram Integration Card */}
+        <section className="glass-panel rounded-2xl p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">telegram</span>
+            <h3 className="font-semibold text-monetary-md text-primary">Telegram Integration</h3>
+          </div>
+
+          {telegramLinked ? (
+            <div className="space-y-3">
+              <div className="bg-success/5 border border-success/20 rounded-xl p-3 flex items-center justify-between">
+                <div className="text-left">
+                  <p className="text-xs text-on-surface-variant font-medium">Status</p>
+                  <p className="text-sm font-bold text-success flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-success inline-block"></span>
+                    Connected
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-on-surface-variant font-medium">Telegram User</p>
+                  <p className="text-sm font-semibold text-primary">@{telegramUsername || 'Connected'}</p>
+                </div>
+              </div>
+              <button
+                onClick={handleUnlinkTelegram}
+                disabled={unlinkingTelegram}
+                className="btn-secondary w-full h-12 text-sm text-error border-error/20 hover:bg-error/5 flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined text-[18px]">link_off</span>
+                {unlinkingTelegram ? 'Disconnecting...' : 'Disconnect Telegram'}
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-xs text-on-surface-variant leading-relaxed text-left">
+                Connect your Telegram account to log expenses, check budgets, and receive instant alerts via Telegram.
+              </p>
+              
+              {linkingCode ? (
+                <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-center space-y-2">
+                  <p className="text-xs text-on-surface-variant font-semibold uppercase tracking-wider">Your One-Time Linking Code</p>
+                  <p className="text-2xl font-mono font-bold text-primary tracking-widest">{linkingCode}</p>
+                  <p className="text-[10px] text-on-surface-variant">
+                    Expires in {Math.floor(expiresIn / 60)}m {expiresIn % 60}s
+                  </p>
+                  <div className="text-xs text-on-surface-variant text-left pt-2 border-t border-outline-variant/30 space-y-1">
+                    <p className="font-semibold">Steps to link:</p>
+                    <p>1. Open our bot <a href={`https://t.me/BudgetBuddyAIBot?start=${linkingCode}`} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold">@BudgetBuddyAIBot</a></p>
+                    <p>2. Send the command: <code className="font-bold bg-surface-container-low px-1 rounded">/link {linkingCode}</code></p>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={handleConnectTelegram}
+                  disabled={generatingCode}
+                  className="btn-primary w-full h-12 text-sm flex items-center justify-center gap-2 shadow-none"
+                >
+                  <span className="material-symbols-outlined text-[18px]">telegram</span>
+                  {generatingCode ? 'Generating Code...' : 'Connect Telegram'}
+                </button>
+              )}
+            </div>
+          )}
         </section>
 
         {/* Action Buttons */}

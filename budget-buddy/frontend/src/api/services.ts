@@ -1178,3 +1178,53 @@ async function createNotification(userId: string, title: string, message: string
     console.error('Failed to create notification', err);
   }
 }
+
+export const telegramAPI = {
+  generateCode: async () => {
+    const uid = getCurrentUserId();
+    const token = localStorage.getItem('access_token') || '';
+    const userSnap = await get(ref(db, `users/${uid}`));
+    const user = userSnap.val();
+    const userEmail = user?.email || '';
+    const userName = user?.name || '';
+
+    const botUrl = import.meta.env.VITE_BOT_API_URL || 'http://localhost:8080';
+    const response = await fetch(`${botUrl}/api/linking/telegram/generate-code`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        user_id: uid,
+        access_token: token,
+        refresh_token: token,
+        user_email: userEmail,
+        user_name: userName
+      }),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.detail || 'Failed to generate linking code');
+    }
+    return response.json();
+  },
+
+  unlink: async () => {
+    const uid = getCurrentUserId();
+    const botUrl = import.meta.env.VITE_BOT_API_URL || 'http://localhost:8080';
+    const response = await fetch(`${botUrl}/api/linking/telegram/unlink`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        user_id: uid
+      }),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.detail || 'Failed to unlink Telegram');
+    }
+    return response.json();
+  }
+};

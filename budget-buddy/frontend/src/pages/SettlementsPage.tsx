@@ -373,7 +373,7 @@ function SettlementModal({ settlement, submitting, gpayOpened, onGpayOpen, onCon
             </div>
 
             <div className="space-y-1">
-              <p className="text-xs font-semibold text-on-surface-variant/60 uppercase tracking-wide">Step 1 — Pay via GPay</p>
+              <p className="text-xs font-semibold text-on-surface-variant/60 uppercase tracking-wide">Step 1 — Pay via UPI App</p>
               <a
                 href={upiLink}
                 onClick={onGpayOpen}
@@ -381,13 +381,13 @@ function SettlementModal({ settlement, submitting, gpayOpened, onGpayOpen, onCon
                 style={{ textDecoration: 'none' }}
               >
                 <span className="material-symbols-outlined">qr_code_scanner</span>
-                Open Google Pay / UPI App
+                Pay via UPI App
               </a>
             </div>
 
             <div className="flex flex-col items-center p-3 bg-white rounded-2xl border border-outline-variant/10 shadow-inner">
               <img src={qrCodeUrl} alt="UPI QR Code" className="w-36 h-36" />
-              <p className="text-[10px] text-zinc-500 font-semibold mt-1">Scan with GPay · PhonePe · Paytm</p>
+              <p className="text-[10px] text-zinc-500 font-semibold mt-1">Scan with any UPI App</p>
             </div>
 
             <div className="space-y-1">
@@ -406,7 +406,7 @@ function SettlementModal({ settlement, submitting, gpayOpened, onGpayOpen, onCon
                 </button>
               ) : (
                 <p className="text-xs text-center text-on-surface-variant/50 italic py-2">
-                  Tap "Open Google Pay" first, then confirm here.
+                  Tap "Pay via UPI App" first, then confirm here.
                 </p>
               )}
             </div>
@@ -431,7 +431,7 @@ function SettlementModal({ settlement, submitting, gpayOpened, onGpayOpen, onCon
               {submitting ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Recording…</> : 'Record as Cash Payment'}
             </button>
             <button onClick={() => onConfirm('GPay')} disabled={submitting} className="btn-secondary w-full h-10 text-xs text-primary border-primary/20 disabled:opacity-50">
-              Record pending GPay request
+              Record pending UPI request
             </button>
           </div>
         )}
