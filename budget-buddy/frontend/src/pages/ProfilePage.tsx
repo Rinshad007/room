@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { updateEmail, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { auth, db } from '../firebase';
 import { ref, onValue } from 'firebase/database';
@@ -139,7 +139,7 @@ export default function ProfilePage() {
     navigate('/login');
   };
 
-  if (!user) return null;
+  if (!user) return <Navigate to="/login" replace />;
 
   return (
     <Layout showBack title="Profile" hideBottomNav>

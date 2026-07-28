@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { onAuthStateChanged } from 'firebase/auth';
 import { get, ref } from 'firebase/database';
 import { auth, db } from './firebase';
 import { useAuthStore } from './store/auth';
+import { authAPI } from './api/services';
 
 // Pages
 import LoginPage from './pages/LoginPage';
@@ -14,6 +15,7 @@ import DashboardPage from './pages/DashboardPage';
 import FriendsPage from './pages/FriendsPage';
 import GroupsPage from './pages/GroupsPage';
 import AddExpensePage from './pages/AddExpensePage';
+import EditExpensePage from './pages/EditExpensePage';
 import HistoryPage from './pages/HistoryPage';
 import SettlementsPage from './pages/SettlementsPage';
 import BudgetPage from './pages/BudgetPage';
@@ -30,6 +32,20 @@ const queryClient = new QueryClient({
   },
 });
 
+function AppShell() {
+  const { isAuthenticated, logout } = useAuthStore();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      authAPI.me().catch(() => {
+        logout();
+      });
+    }
+  }, [isAuthenticated, logout]);
+
+  return <Outlet />;
+}
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
@@ -37,8 +53,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function AnonymousRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
-  // UX-003: redirect authenticated users to Dashboard, not Add Expense
-  return !isAuthenticated ? <>{children}</> : <Navigate to="/dashboard" replace />;
+  return !isAuthenticated ? <>{children}</> : <Navigate to="/add-expense" replace />;
 }
 
 export default function App() {
@@ -86,108 +101,118 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          {/* Public Auth Routes */}
-          <Route
-            path="/login"
-            element={
-              <AnonymousRoute>
-                <LoginPage />
-              </AnonymousRoute>
-            }
-          />
-          <Route
-            path="/register"
-            element={
-              <AnonymousRoute>
-                <RegisterPage />
-              </AnonymousRoute>
-            }
-          />
-          <Route
-            path="/forgot-password"
-            element={
-              <AnonymousRoute>
-                <ForgotPasswordPage />
-              </AnonymousRoute>
-            }
-          />
+          <Route element={<AppShell />}>
+            {/* Public Auth Routes */}
+            <Route
+              path="/login"
+              element={
+                <AnonymousRoute>
+                  <LoginPage />
+                </AnonymousRoute>
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                <AnonymousRoute>
+                  <RegisterPage />
+                </AnonymousRoute>
+              }
+            />
+            <Route
+              path="/forgot-password"
+              element={
+                <AnonymousRoute>
+                  <ForgotPasswordPage />
+                </AnonymousRoute>
+              }
+            />
 
-          {/* Protected Main Routes */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <DashboardPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/friends"
-            element={
-              <ProtectedRoute>
-                <FriendsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/groups"
-            element={
-              <ProtectedRoute>
-                <GroupsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/add-expense"
-            element={
-              <ProtectedRoute>
-                <AddExpensePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/history"
-            element={
-              <ProtectedRoute>
-                <HistoryPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/settlements"
-            element={
-              <ProtectedRoute>
-                <SettlementsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/budget"
-            element={
-              <ProtectedRoute>
-                <BudgetPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/analytics"
-            element={
-              <ProtectedRoute>
-                <AnalyticsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            }
-          />
+            {/* Protected Main Routes */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/friends"
+              element={
+                <ProtectedRoute>
+                  <FriendsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/groups"
+              element={
+                <ProtectedRoute>
+                  <GroupsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/add-expense"
+              element={
+                <ProtectedRoute>
+                  <AddExpensePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/edit-expense/:id"
+              element={
+                <ProtectedRoute>
+                  <EditExpensePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/history"
+              element={
+                <ProtectedRoute>
+                  <HistoryPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settlements"
+              element={
+                <ProtectedRoute>
+                  <SettlementsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/budget"
+              element={
+                <ProtectedRoute>
+                  <BudgetPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/analytics"
+              element={
+                <ProtectedRoute>
+                  <AnalyticsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/add-expense" replace />} />
+          </Route>
         </Routes>
       </BrowserRouter>
       <Toaster

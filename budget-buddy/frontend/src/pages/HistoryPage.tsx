@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import { expensesAPI } from '../api/services';
 import { useRealtimeStore } from '../hooks/useRealtimeStore';
@@ -120,6 +121,7 @@ function SwipeRow({ onDelete, children, disabled }: SwipeRowProps) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function HistoryPage() {
+  const navigate = useNavigate();
   const { user } = useAuthStore();
 
   // ── Real-time data ────────────────────────────────────────────────────────
@@ -169,16 +171,6 @@ export default function HistoryPage() {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const openEdit = (exp: Expense) => {
-    setEditState({
-      id: exp.id,
-      title: exp.title,
-      description: exp.description || '',
-      category: exp.category,
-      amount: exp.amount,
-      expense_date: exp.expense_date.split('T')[0],
-    });
-  };
 
   const handleSaveEdit = async () => {
     if (!editState) return;
@@ -348,7 +340,7 @@ export default function HistoryPage() {
                             {/* Edit button — only for payer (the expense owner) */}
                             {canEditDelete && (
                               <button
-                                onClick={() => openEdit(exp)}
+                                onClick={() => navigate(`/edit-expense/${exp.id}`)}
                                 className="p-2 rounded-lg text-on-surface-variant/40 hover:text-primary hover:bg-primary/5 transition-colors"
                                 title="Edit"
                               >

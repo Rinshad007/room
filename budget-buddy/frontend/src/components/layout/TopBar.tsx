@@ -4,6 +4,10 @@ import { useState, useEffect } from 'react';
 import { notificationsAPI } from '../../api/services';
 import type { Notification } from '../../types';
 
+const NOTIF_TTL_MS = 2 * 60 * 1000;
+let notifCache: Notification[] | null = null;
+let lastFetchTime = 0;
+
 interface TopBarProps {
   title?: string;
   showBack?: boolean;
@@ -15,12 +19,24 @@ interface TopBarProps {
 export default function TopBar({ title = 'Budget Buddy', showBack, showNotifications = true, right, onBack }: TopBarProps) {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>(notifCache || []);
   const [showPanel, setShowPanel] = useState(false);
 
   useEffect(() => {
     if (showNotifications) {
-      notificationsAPI.list().then(r => setNotifications(r.data.notifications)).catch(() => {});
+      const now = Date.now();
+      if (notifCache && now - lastFetchTime < NOTIF_TTL_MS) {
+        setNotifications(notifCache);
+      } else {
+        notificationsAPI
+          .list()
+          .then((r) => {
+            notifCache = r.data.notifications;
+            lastFetchTime = Date.now();
+            setNotifications(r.data.notifications);
+          })
+          .catch(() => {});
+      }
     }
   }, [showNotifications]);
 
@@ -28,7 +44,11 @@ export default function TopBar({ title = 'Budget Buddy', showBack, showNotificat
 
   const handleMarkAll = () => {
     notificationsAPI.readAll().then(() => {
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      setNotifications(prev => {
+        const updated = prev.map(n => ({ ...n, is_read: true }));
+        notifCache = updated;
+        return updated;
+      });
     });
   };
 

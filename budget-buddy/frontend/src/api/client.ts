@@ -35,9 +35,13 @@ api.interceptors.response.use(
           original.headers.Authorization = `Bearer ${access_token}`;
           return api(original);
         } catch {
-          localStorage.clear();
+          ['access_token', 'refresh_token', 'user'].forEach((key) => localStorage.removeItem(key));
+          window.dispatchEvent(new Event('storage'));
           window.location.href = '/login';
         }
+      } else {
+        ['access_token', 'refresh_token', 'user'].forEach((key) => localStorage.removeItem(key));
+        window.dispatchEvent(new Event('storage'));
       }
     }
     return Promise.reject(error);

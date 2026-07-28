@@ -29,7 +29,7 @@ export default function BottomNav() {
         }}
       >
         {navItems.map(({ to, icon, label }) => {
-          const active = pathname === to || (to !== '/dashboard' && pathname.startsWith(to));
+          const active = pathname === to;
 
           return (
             <NavLink

@@ -7,7 +7,7 @@ import {
   updateProfile, getIdToken, GoogleAuthProvider, signInWithPopup, PhoneAuthProvider, signInWithCredential
 } from 'firebase/auth';
 import type {
-  User, Group, Expense, ExpenseCreate,
+  User, Group, Expense, ExpenseCreate, ExpenseUpdate,
   Settlement, Budget, Category, ExpenseSplit, GroupMember, Notification, PaymentMethod, SplitType
 } from '../types';
 
@@ -609,7 +609,7 @@ export const expensesAPI = {
     return wrapResponse({ success: true });
   },
 
-  update: async (id: string, data: { title?: string; description?: string; category?: string; amount?: number; expense_date?: string }) => {
+  update: async (id: string, data: Partial<ExpenseUpdate>) => {
     const expenseRef = ref(db, `expenses/${id}`);
     const snap = await get(expenseRef);
     if (!snap.exists()) throw new Error('Expense not found');

@@ -9,6 +9,7 @@ from app.api.expenses.schemas import (
     ExpenseListResponse,
     ExpensePublic,
     ExpenseSplitPublic,
+    ExpenseUpdate,
     UpdateSplitStatus,
 )
 from app.api.expenses.service import ExpenseService
@@ -81,3 +82,16 @@ async def update_split_status(
     """Accept or dispute your share of an expense."""
     service = ExpenseService(db)
     return await service.update_split_status(current_user, split_id, data)
+
+
+@router.patch("/{expense_id}", response_model=ExpensePublic)
+async def update_expense(
+    expense_id: str,
+    data: ExpenseUpdate,
+    current_user: CurrentUser,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    """Update an expense (payer only)."""
+    service = ExpenseService(db)
+    return await service.update_expense(current_user, expense_id, data)
+
