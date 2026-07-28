@@ -6,6 +6,7 @@ export interface User {
   email: string;
   avatar_url?: string;
   upi_id?: string;
+  mobile_number?: string;
   created_at: string;
 }
 
@@ -46,7 +47,7 @@ export interface GroupMember {
 }
 
 export type SplitType = 'equal' | 'percentage' | 'custom';
-export type Category = 'Food' | 'Travel' | 'Shopping' | 'Rent' | 'Entertainment' | 'Others';
+export type Category = string;
 export type PaymentMethod = 'GPay' | 'Cash';
 export type SplitStatus = 'pending' | 'accepted' | 'disputed';
 
@@ -67,6 +68,16 @@ export interface ExpenseCreate {
   participants: string[];
   split_details?: SplitEntry[];
 }
+
+export interface ExpenseUpdate {
+  title?: string;
+  description?: string;
+  amount?: number;
+  payment_method?: PaymentMethod;
+  category?: Category;
+  expense_date?: string;
+}
+
 
 export interface ExpenseSplit {
   id: string;

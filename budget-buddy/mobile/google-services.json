@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "115570661972",
+    "firebase_url": "https://buddybuddy-23085-default-rtdb.firebaseio.com",
+    "project_id": "buddybuddy-23085",
+    "storage_bucket": "buddybuddy-23085.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:115570661972:android:8297b4792e6646100dabc1",
+        "android_client_info": {
+          "package_name": "com.budgetbuddy.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "115570661972-635rsnnjuuifq8qda4np37388e5i9m6q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB7E7KDuox0SEVHpcPvEKwTqPk8LB6LIR8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "115570661972-635rsnnjuuifq8qda4np37388e5i9m6q.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -4,10 +4,10 @@ import {
 } from 'firebase/database';
 import { 
   createUserWithEmailAndPassword, signInWithEmailAndPassword, 
-  updateProfile, getIdToken 
+  updateProfile, getIdToken, GoogleAuthProvider, signInWithPopup, PhoneAuthProvider, signInWithCredential
 } from 'firebase/auth';
 import type {
-  User, Group, Expense, ExpenseCreate,
+  User, Group, Expense, ExpenseCreate, ExpenseUpdate,
   Settlement, Budget, Category, ExpenseSplit, GroupMember, Notification, PaymentMethod, SplitType
 } from '../types';
 
@@ -81,6 +81,58 @@ export const authAPI = {
     });
   },
 
+  googleLogin: async () => {
+    const provider = new GoogleAuthProvider();
+    const userCredential = await signInWithPopup(auth, provider);
+    const fbUser = userCredential.user;
+
+    const snapshot = await get(ref(db, `users/${fbUser.uid}`));
+    const userData: User = snapshot.exists() ? (snapshot.val() as User) : {
+      id: fbUser.uid,
+      name: fbUser.displayName || fbUser.email || 'User',
+      email: fbUser.email || '',
+      created_at: new Date().toISOString()
+    };
+
+    if (!snapshot.exists()) {
+      await set(ref(db, `users/${fbUser.uid}`), userData);
+    }
+
+    const idToken = await getIdToken(fbUser);
+
+    return wrapResponse({
+      access_token: idToken,
+      refresh_token: idToken,
+      user: userData
+    });
+  },
+
+  phoneLogin: async (data: { verificationId: string; code: string; name?: string }) => {
+    const credential = PhoneAuthProvider.credential(data.verificationId, data.code);
+    const userCredential = await signInWithCredential(auth, credential);
+    const fbUser = userCredential.user;
+
+    const snapshot = await get(ref(db, `users/${fbUser.uid}`));
+    const userData: User = snapshot.exists() ? (snapshot.val() as User) : {
+      id: fbUser.uid,
+      name: data.name || fbUser.displayName || fbUser.phoneNumber || 'User',
+      email: fbUser.email || '',
+      created_at: new Date().toISOString()
+    };
+
+    if (!snapshot.exists()) {
+      await set(ref(db, `users/${fbUser.uid}`), userData);
+    }
+
+    const idToken = await getIdToken(fbUser);
+
+    return wrapResponse({
+      access_token: idToken,
+      refresh_token: idToken,
+      user: userData
+    });
+  },
+
   me: async () => {
     try {
       const uid = getCurrentUserId();
@@ -125,14 +177,20 @@ export const usersAPI = {
   },
 
   search: async (q: string) => {
-    const qLower = q.toLowerCase();
+    if (!q.trim()) return wrapResponse({ users: [], total: 0 });
+    const uid = getCurrentUserId();
+    const qLower = q.trim().toLowerCase();
     const snapshot = await get(ref(db, 'users'));
     const matchedUsers: User[] = [];
     if (snapshot.exists()) {
       const allUsers = snapshot.val();
       Object.values(allUsers).forEach((u: any) => {
-        if (u.name.toLowerCase().includes(qLower) || u.email.toLowerCase().includes(qLower)) {
-          matchedUsers.push(u as User);
+        if (!u || !u.id || u.id === uid) return;
+        const nameMatch = (u.name || '').toLowerCase().includes(qLower);
+        const emailMatch = (u.email || '').toLowerCase().includes(qLower);
+        if (nameMatch || emailMatch) {
+          // Strip private fields — never expose upi_id in search results
+          matchedUsers.push({ id: u.id, name: u.name, email: u.email, created_at: u.created_at } as User);
         }
       });
     }
@@ -143,6 +201,47 @@ export const usersAPI = {
     const snapshot = await get(ref(db, `users/${id}`));
     if (!snapshot.exists()) throw new Error('User not found');
     return wrapResponse(snapshot.val() as User);
+  },
+
+  getCustomCategories: async () => {
+    const uid = getCurrentUserId();
+    const snap = await get(ref(db, `users/${uid}/custom_categories`));
+    if (snap.exists()) {
+      return wrapResponse(Object.values(snap.val()) as { name: string; icon: string }[]);
+    }
+    return wrapResponse([] as { name: string; icon: string }[]);
+  },
+
+  addCustomCategory: async (name: string, icon: string) => {
+    const uid = getCurrentUserId();
+    const categoriesRef = ref(db, `users/${uid}/custom_categories`);
+    const snap = await get(categoriesRef);
+    if (snap.exists()) {
+      const existing = Object.values(snap.val()) as { name: string; icon: string }[];
+      if (existing.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+        throw new Error('Category already exists');
+      }
+    }
+    const newRef = push(categoriesRef);
+    const catData = { name, icon };
+    await set(newRef, catData);
+    return wrapResponse(catData);
+  },
+
+  deleteCustomCategory: async (name: string) => {
+    const uid = getCurrentUserId();
+    const categoriesRef = ref(db, `users/${uid}/custom_categories`);
+    const snap = await get(categoriesRef);
+    if (snap.exists()) {
+      const data = snap.val();
+      for (const [key, val] of Object.entries(data)) {
+        if ((val as any).name.toLowerCase() === name.toLowerCase()) {
+          await remove(ref(db, `users/${uid}/custom_categories/${key}`));
+          break;
+        }
+      }
+    }
+    return wrapResponse({ success: true });
   }
 };
 
@@ -510,7 +609,7 @@ export const expensesAPI = {
     return wrapResponse({ success: true });
   },
 
-  update: async (id: string, data: { title?: string; description?: string; category?: string; amount?: number; expense_date?: string }) => {
+  update: async (id: string, data: Partial<ExpenseUpdate>) => {
     const expenseRef = ref(db, `expenses/${id}`);
     const snap = await get(expenseRef);
     if (!snap.exists()) throw new Error('Expense not found');
@@ -1079,3 +1178,53 @@ async function createNotification(userId: string, title: string, message: string
     console.error('Failed to create notification', err);
   }
 }
+
+export const telegramAPI = {
+  generateCode: async () => {
+    const uid = getCurrentUserId();
+    const token = localStorage.getItem('access_token') || '';
+    const userSnap = await get(ref(db, `users/${uid}`));
+    const user = userSnap.val();
+    const userEmail = user?.email || '';
+    const userName = user?.name || '';
+
+    const botUrl = import.meta.env.VITE_BOT_API_URL || 'http://localhost:8080';
+    const response = await fetch(`${botUrl}/api/linking/telegram/generate-code`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        user_id: uid,
+        access_token: token,
+        refresh_token: token,
+        user_email: userEmail,
+        user_name: userName
+      }),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.detail || 'Failed to generate linking code');
+    }
+    return response.json();
+  },
+
+  unlink: async () => {
+    const uid = getCurrentUserId();
+    const botUrl = import.meta.env.VITE_BOT_API_URL || 'http://localhost:8080';
+    const response = await fetch(`${botUrl}/api/linking/telegram/unlink`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        user_id: uid
+      }),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.detail || 'Failed to unlink Telegram');
+    }
+    return response.json();
+  }
+};
