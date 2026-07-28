@@ -80,7 +80,7 @@ export default function RegisterPage() {
       </div>
 
       <div className="glass-panel rounded-2xl p-6 w-full max-w-sm flex flex-col gap-4">
-        <h2 className="font-headline-lg-mobile text-headline-lg-mobile text-primary border-b border-border/40 pb-2">Create Account</h2>
+        <h2 className="font-headline-lg-mobile text-headline-lg-mobile text-primary border-b border-outline-variant/40 pb-2">Create Account</h2>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           {/* Full Name */}
@@ -168,24 +168,20 @@ export default function RegisterPage() {
             disabled={loading}
             className="btn-primary w-full mt-2 h-14 disabled:opacity-50 cursor-pointer"
           >
-            {loading ? (
-              <span className="material-symbols-outlined animate-spin">refresh</span>
-            ) : (
-              'Create Account'
-            )}
+            {loading ? <span className="spinner" /> : 'Create Account'}
           </button>
         </form>
 
         <div className="flex items-center gap-3 my-2">
-          <div className="flex-1 h-[1px] bg-border/40" />
+          <div className="flex-1 h-[1px] bg-outline-variant/40" />
           <span className="text-xs text-on-surface-variant/60 font-semibold uppercase">or</span>
-          <div className="flex-1 h-[1px] bg-border/40" />
+          <div className="flex-1 h-[1px] bg-outline-variant/40" />
         </div>
 
         <button
           onClick={handleGoogleLogin}
           disabled={loading}
-          className="flex items-center justify-center gap-3 border border-border/60 hover:border-primary/80 bg-surface-container-high rounded-xl h-14 w-full cursor-pointer hover:bg-surface-container-highest transition-all active:scale-[0.98]"
+          className="flex items-center justify-center gap-3 border border-outline-variant/60 hover:border-primary/80 bg-surface-container-high rounded-xl h-14 w-full cursor-pointer hover:bg-surface-container-highest transition-all active:scale-[0.98]"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path

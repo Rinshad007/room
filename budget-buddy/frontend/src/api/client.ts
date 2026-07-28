@@ -1,12 +1,7 @@
 import axios from 'axios';
 
-const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-
-const BASE_URL = isProduction
-  ? 'https://room-4-biqo.onrender.com/api/v1/'
-  : (import.meta.env.VITE_API_URL 
-      ? (import.meta.env.VITE_API_URL.endsWith('/') ? import.meta.env.VITE_API_URL : import.meta.env.VITE_API_URL + '/')
-      : 'http://localhost:8000/api/v1/');
+const rawApiUrl = import.meta.env.VITE_API_URL || 'https://room-4-biqo.onrender.com/api/v1/';
+const BASE_URL = rawApiUrl.endsWith('/') ? rawApiUrl : rawApiUrl + '/';
 
 export const api = axios.create({
   baseURL: BASE_URL,
@@ -40,9 +35,13 @@ api.interceptors.response.use(
           original.headers.Authorization = `Bearer ${access_token}`;
           return api(original);
         } catch {
-          localStorage.clear();
+          ['access_token', 'refresh_token', 'user'].forEach((key) => localStorage.removeItem(key));
+          window.dispatchEvent(new Event('storage'));
           window.location.href = '/login';
         }
+      } else {
+        ['access_token', 'refresh_token', 'user'].forEach((key) => localStorage.removeItem(key));
+        window.dispatchEvent(new Event('storage'));
       }
     }
     return Promise.reject(error);

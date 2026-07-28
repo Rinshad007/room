@@ -6,6 +6,7 @@ from app.api.expenses.schemas import (
     ExpenseListResponse,
     ExpensePublic,
     ExpenseSplitPublic,
+    ExpenseUpdate,
     UpdateSplitStatus,
 )
 from app.api.notifications.service import NotificationService
@@ -14,6 +15,7 @@ from app.core.exceptions import ForbiddenException, NotFoundException
 from app.core.logging import logger
 from app.models.user import User
 from app.utils.splits import compute_splits
+
 
 
 class ExpenseService:
@@ -116,6 +118,22 @@ class ExpenseService:
 
         return ExpenseSplitPublic.model_validate(updated)
 
+    async def update_expense(
+        self, current_user: User, expense_id: str, data: ExpenseUpdate
+    ) -> ExpensePublic:
+        expense = await self.repo.get_by_id(expense_id)
+        if not expense:
+            raise NotFoundException("Expense not found")
+        if expense.paid_by != current_user.id:
+            raise ForbiddenException("Only the payer can edit this expense")
+
+        updates = data.model_dump(exclude_unset=True)
+        if not updates:
+            return ExpensePublic.model_validate(expense)
+
+        updated_expense = await self.repo.update(expense_id, updates)
+        return ExpensePublic.model_validate(updated_expense)
+
     async def delete_expense(self, current_user: User, expense_id: str) -> None:
         expense = await self.repo.get_by_id(expense_id)
         if not expense:
@@ -123,3 +141,4 @@ class ExpenseService:
         if expense.paid_by != current_user.id:
             raise ForbiddenException("Only the payer can delete this expense")
         await self.repo.delete(expense)
+

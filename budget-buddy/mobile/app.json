@@ -2,17 +2,28 @@
   "expo": {
     "name": "Budget Buddy",
     "slug": "budget-buddy",
+    "owner": "safvennnn",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "light",
     "scheme": "budgetbuddy",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.budgetbuddy.app"
+      "bundleIdentifier": "com.budgetbuddy.app",
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": [
+          "upi",
+          "gpay",
+          "phonepe",
+          "paytm"
+        ]
+      }
     },
     "android": {
       "package": "com.budgetbuddy.app",
+      "versionCode": 2,
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#0A0A0F",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -25,11 +36,23 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "@react-native-google-signin/google-signin"
+      "@react-native-google-signin/google-signin",
+      "@react-native-community/datetimepicker",
+      "expo-notifications",
+      "expo-status-bar",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#f8f9fa",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200
+        }
+      ]
     ],
     "extra": {
       "eas": {
-        "projectId": "97519dda-e31d-4509-8f8c-baf5b03dac8b"
+        "projectId": "74cd3351-40dd-4e1f-a6f1-2ff4f61a88ac"
       }
     }
   }

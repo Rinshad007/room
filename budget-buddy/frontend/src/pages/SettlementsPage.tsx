@@ -4,6 +4,7 @@ import { settlementsAPI } from '../api/services';
 import { useRealtimeStore } from '../hooks/useRealtimeStore';
 import { useAuthStore } from '../store/auth';
 import toast from 'react-hot-toast';
+import { getUpiQrCodeUrl, launchUpiPayment } from '../utils/upi';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface ActiveSettlement {
@@ -93,17 +94,6 @@ export default function SettlementsPage() {
     }
   };
 
-  // ── UPI helpers ───────────────────────────────────────────────────────────
-  const getUpiLink = (a: ActiveSettlement) => {
-    if (!a.upiId) return '';
-    const isIOS = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(window.navigator.userAgent);
-    const params = `?pa=${encodeURIComponent(a.upiId)}&pn=${encodeURIComponent(a.name)}&am=${a.amount}&cu=INR&tn=BudgetBuddy%20Settlement`;
-    return isIOS ? `gpay://upi/pay${params}` : `upi://pay${params}`;
-  };
-  const getQrUrl = (a: ActiveSettlement) => {
-    const link = getUpiLink(a);
-    return link ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(link)}` : '';
-  };
 
   // ── Loading skeleton ──────────────────────────────────────────────────────
   if (!ready) {
@@ -120,7 +110,7 @@ export default function SettlementsPage() {
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <Layout title="Settle Up">
+    <Layout title="Settle Up" hideBottomNav={!!activeSettlement}>
       <div className="page-container page-enter pb-24 space-y-6">
 
 
@@ -307,8 +297,6 @@ export default function SettlementsPage() {
           onGpayOpen={() => setGpayOpened(true)}
           onConfirm={method => handleSettleUp(activeSettlement.friendId, activeSettlement.amount, method, 'pending')}
           onClose={() => { setActiveSettlement(null); setGpayOpened(false); setSubmitting(false); }}
-          getUpiLink={getUpiLink}
-          getQrUrl={getQrUrl}
         />
       )}
     </Layout>
@@ -323,13 +311,9 @@ interface ModalProps {
   onGpayOpen: () => void;
   onConfirm: (method: string) => void;
   onClose: () => void;
-  getUpiLink: (a: ActiveSettlement) => string;
-  getQrUrl: (a: ActiveSettlement) => string;
 }
 
-function SettlementModal({ settlement, submitting, gpayOpened, onGpayOpen, onConfirm, onClose, getUpiLink, getQrUrl }: ModalProps) {
-  const upiLink = getUpiLink(settlement);
-  const qrCodeUrl = getQrUrl(settlement);
+function SettlementModal({ settlement, submitting, gpayOpened, onGpayOpen, onConfirm, onClose }: ModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -356,22 +340,76 @@ function SettlementModal({ settlement, submitting, gpayOpened, onGpayOpen, onCon
 
         {settlement.upiId ? (
           <div className="space-y-4">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-on-surface-variant/60 uppercase tracking-wide">Step 1 — Pay via GPay</p>
-              <a
-                href={upiLink}
-                onClick={onGpayOpen}
-                className="btn-primary w-full h-12 flex items-center justify-center gap-2 shadow-none rounded-xl"
-                style={{ textDecoration: 'none' }}
+            <div className="space-y-1.5">
+              <p className="text-xs font-semibold text-on-surface-variant/60 uppercase tracking-wide">UPI ID Information</p>
+              <div className="flex items-center justify-between p-3 bg-surface-container-low border border-outline-variant/20 rounded-xl">
+                <span className="text-sm font-semibold text-primary truncate mr-2 select-all">{settlement.upiId}</span>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(settlement.upiId || '');
+                    toast.success('UPI ID copied!');
+                  }}
+                  className="shrink-0 flex items-center gap-1 bg-primary/10 hover:bg-primary/15 text-primary text-xs font-bold px-3 py-1.5 rounded-lg active:scale-95 transition-all"
+                >
+                  <span className="material-symbols-outlined text-[14px]">content_copy</span>
+                  Copy
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-on-surface-variant/60 uppercase tracking-wide">Step 1 — Pay via UPI App</p>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onGpayOpen();
+                    launchUpiPayment({ upiId: settlement.upiId!, name: settlement.name, amount: settlement.amount }, 'gpay');
+                  }}
+                  className="h-11 rounded-xl bg-primary text-on-primary font-semibold text-xs flex items-center justify-center gap-1 active:scale-95 transition-transform"
+                >
+                  GPay
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onGpayOpen();
+                    launchUpiPayment({ upiId: settlement.upiId!, name: settlement.name, amount: settlement.amount }, 'phonepe');
+                  }}
+                  className="h-11 rounded-xl bg-purple-700 text-white font-semibold text-xs flex items-center justify-center gap-1 active:scale-95 transition-transform"
+                >
+                  PhonePe
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onGpayOpen();
+                    launchUpiPayment({ upiId: settlement.upiId!, name: settlement.name, amount: settlement.amount }, 'bhim');
+                  }}
+                  className="h-11 rounded-xl bg-orange-600 text-white font-semibold text-xs flex items-center justify-center gap-1 active:scale-95 transition-transform"
+                >
+                  BHIM
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  onGpayOpen();
+                  launchUpiPayment({ upiId: settlement.upiId!, name: settlement.name, amount: settlement.amount }, 'generic');
+                }}
+                className="w-full h-10 rounded-xl border border-outline-variant/30 text-xs font-semibold text-primary hover:bg-primary/5 transition-colors"
               >
-                <span className="material-symbols-outlined">qr_code_scanner</span>
-                Open Google Pay / UPI App
-              </a>
+                Other UPI App
+              </button>
             </div>
 
             <div className="flex flex-col items-center p-3 bg-white rounded-2xl border border-outline-variant/10 shadow-inner">
-              <img src={qrCodeUrl} alt="UPI QR Code" className="w-36 h-36" />
-              <p className="text-[10px] text-zinc-500 font-semibold mt-1">Scan with GPay · PhonePe · Paytm</p>
+              <img
+                src={getUpiQrCodeUrl({ upiId: settlement.upiId, name: settlement.name, amount: settlement.amount })}
+                alt="UPI QR Code"
+                className="w-36 h-36"
+              />
+              <p className="text-[10px] text-zinc-500 font-semibold mt-1">Scan with any UPI App</p>
             </div>
 
             <div className="space-y-1">
@@ -390,7 +428,7 @@ function SettlementModal({ settlement, submitting, gpayOpened, onGpayOpen, onCon
                 </button>
               ) : (
                 <p className="text-xs text-center text-on-surface-variant/50 italic py-2">
-                  Tap "Open Google Pay" first, then confirm here.
+                  Tap "Pay via UPI App" first, then confirm here.
                 </p>
               )}
             </div>
@@ -415,7 +453,7 @@ function SettlementModal({ settlement, submitting, gpayOpened, onGpayOpen, onCon
               {submitting ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Recording…</> : 'Record as Cash Payment'}
             </button>
             <button onClick={() => onConfirm('GPay')} disabled={submitting} className="btn-secondary w-full h-10 text-xs text-primary border-primary/20 disabled:opacity-50">
-              Record pending GPay request
+              Record pending UPI request
             </button>
           </div>
         )}

@@ -6,14 +6,19 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyDH9vPPyuogloZkKvfmvPtQphKV6sB54I8',
-  authDomain: 'buddybuddy-23085.firebaseapp.com',
-  databaseURL: 'https://buddybuddy-23085-default-rtdb.firebaseio.com',
-  projectId: 'buddybuddy-23085',
-  storageBucket: 'buddybuddy-23085.firebasestorage.app',
-  messagingSenderId: '115570661972',
-  appId: '1:115570661972:web:caf93395e3b72d300dabc1',
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  databaseURL: process.env.EXPO_PUBLIC_FIREBASE_DATABASE_URL,
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
+
+// Validate config keys before initializing
+if (!firebaseConfig.apiKey) {
+  console.warn("⚠️ Firebase Config Warning: EXPO_PUBLIC_FIREBASE_API_KEY is undefined. Check your .env file or build settings!");
+}
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
@@ -31,7 +36,7 @@ export const db = getDatabase(app);
 
 // Configure Google Sign-In
 GoogleSignin.configure({
-  webClientId: '420901561899-edot1hm4db0pp3v7rgm8u87qnv3leurl.apps.googleusercontent.com',
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
 });
 
 export default app;

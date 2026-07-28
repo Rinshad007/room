@@ -5,7 +5,7 @@ export interface User {
   name: string;
   email: string;
   avatar_url?: string;
-  upi_id?: string;
+  upi_id?: string | null;
   created_at: string;
 }
 
@@ -28,6 +28,9 @@ export interface FriendWithRequest {
   friend: User;
   status: string;
   created_at: string;
+  sender_id?: string;
+  receiver_id?: string;
+  id?: string;
 }
 
 export interface Group {

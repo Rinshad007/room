@@ -1,18 +1,19 @@
 export const matchCategoryIcon = (name: string): string => {
   const n = name.trim().toLowerCase();
-  if (/food|dine|restaurant|cafe|eat|lunch|dinner|breakfast|snack|cookie|burger|pizza|sandwich|tea|coffee|starbucks|juice/i.test(n)) return '🍔';
-  if (/travel|flight|train|bus|cab|taxi|uber|ola|auto|ride|fare|fuel|petrol|diesel|gas|ticket/i.test(n)) return '✈️';
-  if (/shop|mall|clothes|dress|shoe|shift|pant|grocery|groceries|supermarket|market|milk|buy/i.test(n)) return '🛍️';
-  if (/rent|home|flat|house|room|pg|apartment|stay|hotel|hostel/i.test(n)) return '🏠';
-  if (/entertainment|movie|show|netflix|prime|spotify|cinema|theatre|music|song|game|play|subscription/i.test(n)) return '🎬';
-  if (/gym|workout|health|fitness|sport|run|exercise|meditation/i.test(n)) return '🏋️';
-  if (/bill|electricity|water|utility|power|wifi|internet|mobile|recharge|phone/i.test(n)) return '⚡';
-  if (/salary|income|bonus|cashback|refund|interest|job/i.test(n)) return '💰';
-  if (/doctor|hospital|clinic|medicine|medical|health|pill|dentist|eye|physio/i.test(n)) return '🏥';
-  if (/gift|present|birthday|anniversary|celebration/i.test(n)) return '🎁';
-  if (/book|education|school|college|course|fee|fees|study|stationary/i.test(n)) return '📚';
-  if (/pet|dog|cat|vet|animal/i.test(n)) return '🐶';
-  if (/loan|debt|bank|emi|credit/i.test(n)) return '🏦';
+  if (/food|dine|eat|lunch|dinner|breakfast|brunch|snack|cookie|burger|pizza|sandwich|pasta|noodle|curry|biryani|chai|tea|coffee|starbucks|juice|swiggy|zomato|restaurant|cafe|canteen|mess|hotel|dhaba|bakery/i.test(n)) return '🍔';
+  if (/flight|air|fly|airline|airport|plane|aviation/i.test(n)) return '✈️';
+  if (/bus|cab|taxi|uber|ola|auto|rickshaw|metro|train|railway|ride|fare|fuel|petrol|diesel|gas|ticket|transport|commute|travel|trip|journey|tour/i.test(n)) return '🚌';
+  if (/shop|mall|clothes|dress|shoe|footwear|pant|shirt|grocery|groceries|supermarket|market|milk|vegetable|fruit|dairy|buy|purchase|kirana|amazon|flipkart|myntra|meesho/i.test(n)) return '🛍️';
+  if (/rent|home|flat|house|room|pg|apartment|stay|hostel|lodge|maintenance|society/i.test(n)) return '🏠';
+  if (/entertainment|movie|show|netflix|prime|spotify|hotstar|zee5|cinema|theatre|music|song|concert|game|gaming|play|subscription|ott|streaming/i.test(n)) return '🎬';
+  if (/gym|workout|fitness|sport|run|yoga|exercise|meditation|swimming|cycling|cricket|football|badminton/i.test(n)) return '🏋️';
+  if (/bill|electricity|water|utility|power|wifi|internet|mobile|recharge|phone|broadband|gas bill|maintenance/i.test(n)) return '⚡';
+  if (/salary|income|bonus|cashback|refund|interest|job|earning|freelance|payment received/i.test(n)) return '💰';
+  if (/doctor|hospital|clinic|medicine|medical|health|pill|tablet|dentist|eye|physio|pharmacy|chemist|apollo|diagnostic/i.test(n)) return '🏥';
+  if (/gift|present|birthday|anniversary|celebration|wedding|party|festival/i.test(n)) return '🎁';
+  if (/book|education|school|college|course|fee|fees|study|stationery|pen|notebook|tuition|coaching|exam/i.test(n)) return '📚';
+  if (/pet|dog|cat|vet|animal|fish|bird/i.test(n)) return '🐶';
+  if (/loan|debt|bank|emi|credit|borrow|lend/i.test(n)) return '🏦';
   return '🏷️';
 };
 

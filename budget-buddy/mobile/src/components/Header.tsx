@@ -19,7 +19,7 @@ export default function Header({ title, subtitle, onBack, rightElement }: Header
       <View style={styles.row}>
         {onBack && (
           <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-            <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+            <Ionicons name="chevron-back" size={24} color={colors.onSurface} />
           </TouchableOpacity>
         )}
         <View style={styles.titles}>
@@ -38,12 +38,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.outlineVariant,
   },
   row: { flexDirection: 'row', alignItems: 'center' },
   backBtn: { marginRight: spacing.sm, padding: spacing.xs },
   titles: { flex: 1 },
-  title: { fontSize: fontSizes.xl, fontWeight: fontWeights.bold, color: colors.textPrimary },
-  subtitle: { fontSize: fontSizes.sm, color: colors.textSecondary, marginTop: 2 },
+  title: { fontSize: fontSizes.xl, fontWeight: fontWeights.bold, color: colors.onSurface },
+  subtitle: { fontSize: fontSizes.sm, color: colors.onSurfaceVariant, marginTop: 2 },
   right: { marginLeft: spacing.sm },
 });

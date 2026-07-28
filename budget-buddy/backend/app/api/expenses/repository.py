@@ -70,6 +70,20 @@ class ExpenseRepository:
         await self.db.commit()
         return split
 
+    async def update(self, expense_id: str, updates: dict) -> Optional[Expense]:
+        expense = await self.get_by_id(expense_id)
+        if not expense:
+            return None
+        for key, value in updates.items():
+            if value is not None and hasattr(expense, key):
+                setattr(expense, key, value)
+        expense.updated_at = datetime.now(timezone.utc)
+        self.db.add(expense)
+        await self.db.commit()
+        await self.db.refresh(expense)
+        return expense
+
     async def delete(self, expense: Expense) -> None:
         await self.db.delete(expense)
         await self.db.commit()
+

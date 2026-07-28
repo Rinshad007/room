@@ -54,11 +54,11 @@ const styles = StyleSheet.create({
   primary: { backgroundColor: colors.primary },
   secondary: { backgroundColor: colors.secondary },
   outline: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.primary },
-  danger: { backgroundColor: colors.danger },
+  danger: { backgroundColor: colors.error },
   ghost: { backgroundColor: 'transparent' },
   disabled: { opacity: 0.5 },
   label: { color: '#fff', fontSize: fontSizes.md, fontWeight: fontWeights.semibold },
   labelOutline: { color: colors.primary },
-  labelGhost: { color: colors.textSecondary },
+  labelGhost: { color: colors.onSurfaceVariant },
   labelDanger: { color: '#fff' },
 });

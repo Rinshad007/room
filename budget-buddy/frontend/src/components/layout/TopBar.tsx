@@ -4,22 +4,39 @@ import { useState, useEffect } from 'react';
 import { notificationsAPI } from '../../api/services';
 import type { Notification } from '../../types';
 
+const NOTIF_TTL_MS = 2 * 60 * 1000;
+let notifCache: Notification[] | null = null;
+let lastFetchTime = 0;
+
 interface TopBarProps {
   title?: string;
   showBack?: boolean;
   showNotifications?: boolean;
   right?: React.ReactNode;
+  onBack?: () => void;
 }
 
-export default function TopBar({ title = 'Budget Buddy', showBack, showNotifications = true, right }: TopBarProps) {
+export default function TopBar({ title = 'Budget Buddy', showBack, showNotifications = true, right, onBack }: TopBarProps) {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>(notifCache || []);
   const [showPanel, setShowPanel] = useState(false);
 
   useEffect(() => {
     if (showNotifications) {
-      notificationsAPI.list().then(r => setNotifications(r.data.notifications)).catch(() => {});
+      const now = Date.now();
+      if (notifCache && now - lastFetchTime < NOTIF_TTL_MS) {
+        setNotifications(notifCache);
+      } else {
+        notificationsAPI
+          .list()
+          .then((r) => {
+            notifCache = r.data.notifications;
+            lastFetchTime = Date.now();
+            setNotifications(r.data.notifications);
+          })
+          .catch(() => {});
+      }
     }
   }, [showNotifications]);
 
@@ -27,7 +44,11 @@ export default function TopBar({ title = 'Budget Buddy', showBack, showNotificat
 
   const handleMarkAll = () => {
     notificationsAPI.readAll().then(() => {
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      setNotifications(prev => {
+        const updated = prev.map(n => ({ ...n, is_read: true }));
+        notifCache = updated;
+        return updated;
+      });
     });
   };
 
@@ -35,12 +56,16 @@ export default function TopBar({ title = 'Budget Buddy', showBack, showNotificat
 
   return (
     <>
-      <header className="fixed top-0 w-full z-50 border-b border-outline-variant/30 shadow-sm bg-surface/80 backdrop-blur-md h-14">
-        <div className="flex items-center justify-between px-container-padding h-full w-full max-w-lg mx-auto">
+      <header
+        className="fixed top-0 w-full z-50 border-b border-outline-variant/30 shadow-sm bg-surface/80 backdrop-blur-md"
+        /* pt accounts for iPhone Dynamic Island / notch */
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      >
+        <div className="flex items-center justify-between px-container-padding h-14 w-full max-w-lg mx-auto">
           <div className="flex items-center gap-3">
             {showBack ? (
               <button
-                onClick={() => navigate(-1)}
+                onClick={onBack || (() => navigate(-1))}
                 className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high/50 transition-colors active:scale-95"
               >
                 <span className="material-symbols-outlined text-on-surface-variant">arrow_back</span>
@@ -84,7 +109,10 @@ export default function TopBar({ title = 'Budget Buddy', showBack, showNotificat
 
       {/* Notification dropdown panel */}
       {showPanel && (
-        <div className="fixed top-14 right-4 z-50 w-80 glass-panel rounded-2xl overflow-hidden shadow-float max-h-96 overflow-y-auto hide-scrollbar page-enter">
+        <div
+          className="fixed right-4 z-50 w-80 glass-panel rounded-2xl overflow-hidden shadow-float max-h-96 overflow-y-auto hide-scrollbar page-enter"
+          style={{ top: 'calc(env(safe-area-inset-top, 0px) + 3.75rem)' }}
+        >
           <div className="flex items-center justify-between p-4 border-b border-outline-variant/30">
             <span className="font-monetary-md text-monetary-md text-primary">Notifications</span>
             {unread > 0 && (
