@@ -2,16 +2,12 @@
   "expo": {
     "name": "Budget Buddy",
     "slug": "budget-buddy",
+    "owner": "safvennnn",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "scheme": "budgetbuddy",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#f8f9fa"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.budgetbuddy.app",
@@ -26,7 +22,7 @@
     },
     "android": {
       "package": "com.budgetbuddy.app",
-      "versionCode": 1,
+      "versionCode": 2,
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#0A0A0F",
@@ -34,12 +30,7 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false,
-      "queries": {
-        "schemes": [
-          "upi"
-        ]
-      }
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -47,11 +38,21 @@
     "plugins": [
       "@react-native-google-signin/google-signin",
       "@react-native-community/datetimepicker",
-      "expo-notifications"
+      "expo-notifications",
+      "expo-status-bar",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#f8f9fa",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200
+        }
+      ]
     ],
     "extra": {
       "eas": {
-        "projectId": "97519dda-e31d-4509-8f8c-baf5b03dac8b"
+        "projectId": "74cd3351-40dd-4e1f-a6f1-2ff4f61a88ac"
       }
     }
   }

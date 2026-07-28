@@ -2,7 +2,7 @@ import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
-const PROJECT_ID = '97519dda-e31d-4509-8f8c-baf5b03dac8b';
+const PROJECT_ID = '74cd3351-40dd-4e1f-a6f1-2ff4f61a88ac';
 
 // Configure how incoming notifications should behave when the app is foregrounded
 Notifications.setNotificationHandler({
