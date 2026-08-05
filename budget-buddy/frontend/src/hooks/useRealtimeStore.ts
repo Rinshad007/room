@@ -111,7 +111,7 @@ function computeBalances(userId: string, state: StoreState): {
       }
     } else {
       const mySplit = (exp.splits || []).find(s => s.user_id === userId);
-      if (mySplit && mySplit.status === 'accepted') {
+      if (mySplit) {
         net[exp.paid_by] = (net[exp.paid_by] || 0) - mySplit.share_amount;
       }
     }
