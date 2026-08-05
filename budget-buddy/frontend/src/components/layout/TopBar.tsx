@@ -19,12 +19,14 @@ export default function TopBar({ title = 'Budget Buddy', showBack, showNotificat
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showPanel, setShowPanel] = useState(false);
 
-  // Real-time Firebase listener for notifications
+  const [pendingSettlementsCount, setPendingSettlementsCount] = useState(0);
+
+  // Real-time Firebase listener for notifications & pending settlements
   useEffect(() => {
     if (!showNotifications || !user?.id) return;
 
     const notifRef = ref(db, 'notifications');
-    const unsubscribe = onValue(notifRef, (snapshot) => {
+    const unsubNotifs = onValue(notifRef, (snapshot) => {
       if (!snapshot.exists()) {
         setNotifications([]);
         return;
@@ -40,10 +42,30 @@ export default function TopBar({ title = 'Budget Buddy', showBack, showNotificat
       setNotifications(userNotifs);
     });
 
-    return () => unsubscribe();
+    const settleRef = ref(db, 'settlements');
+    const unsubSettles = onValue(settleRef, (snapshot) => {
+      if (!snapshot.exists()) {
+        setPendingSettlementsCount(0);
+        return;
+      }
+      const all = snapshot.val();
+      let pendingCount = 0;
+      Object.values(all).forEach((s: any) => {
+        if (s.receiver_id === user.id && s.status === 'pending') {
+          pendingCount++;
+        }
+      });
+      setPendingSettlementsCount(pendingCount);
+    });
+
+    return () => {
+      unsubNotifs();
+      unsubSettles();
+    };
   }, [showNotifications, user?.id]);
 
-  const unread = notifications.filter(n => !n.is_read).length;
+  const unreadNotifs = notifications.filter(n => !n.is_read).length;
+  const unread = unreadNotifs + pendingSettlementsCount;
 
   const handleMarkAll = async () => {
     if (!user?.id) return;
