@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import { useRealtimeStore } from '../hooks/useRealtimeStore';
 import { useAuthStore } from '../store/auth';
 import { matchCategoryIcon } from '../utils/categoryHelpers';
+import { budgetsAPI } from '../api/services';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -12,14 +13,39 @@ export default function DashboardPage() {
   // ── Real-time data from Firebase ──────────────────────────────────────────
   const { ready, summary, myExpenses } = useRealtimeStore(user?.id);
 
-  // ── Derived values (memoized) ─────────────────────────────────────────────
-  const totalSpent = useMemo(() => {
+  // ── Budget for current month ───────────────────────────────────────────────
+  const [monthBudget, setMonthBudget] = useState(0);
+  useEffect(() => {
+    const now = new Date();
+    budgetsAPI.summary(now.getMonth() + 1, now.getFullYear())
+      .then(r => setMonthBudget(r.data?.total_budget ?? 0))
+      .catch(() => {});
+  }, []);
+
+  // ── Today's spend ─────────────────────────────────────────────────────────
+  const todaySpent = useMemo(() => {
     if (!user?.id) return 0;
-    return myExpenses.reduce((sum, exp) => {
-      const mySplit = (exp.splits || []).find((s: any) => s.user_id === user.id);
-      return sum + (mySplit ? mySplit.share_amount : 0);
-    }, 0);
+    const today = new Date().toISOString().split('T')[0];
+    return myExpenses
+      .filter(exp => exp.expense_date.startsWith(today))
+      .reduce((sum, exp) => {
+        const mySplit = (exp.splits || []).find((s: any) => s.user_id === user.id);
+        return sum + (mySplit ? mySplit.share_amount : exp.amount);
+      }, 0);
   }, [myExpenses, user?.id]);
+
+  // ── This month's total spent (for budget bar) ─────────────────────────────
+  const monthSpent = useMemo(() => {
+    if (!user?.id) return 0;
+    const now = new Date();
+    const prefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    return myExpenses
+      .filter(exp => exp.expense_date.startsWith(prefix) && exp.paid_by === user.id)
+      .reduce((sum, exp) => sum + exp.amount, 0);
+  }, [myExpenses, user?.id]);
+
+  const budgetPct = monthBudget > 0 ? Math.min(100, Math.round((monthSpent / monthBudget) * 100)) : 0;
+  const budgetColor = budgetPct >= 90 ? '#EF4444' : budgetPct >= 70 ? '#F97316' : '#22c55e';
 
   const netBalance  = summary?.net_balance     ?? 0;
   const youOwe      = summary?.total_payable   ?? 0;
@@ -58,14 +84,34 @@ export default function DashboardPage() {
 
           <div className="flex justify-between items-start flex-wrap gap-2">
             <div className="flex flex-col">
-              <span className="text-body-md text-on-surface-variant font-medium">Total Expense</span>
+              <span className="text-body-md text-on-surface-variant font-medium">Today's Expense</span>
               <span className="font-display-currency text-display-currency text-primary">
-                ₹{totalSpent.toLocaleString('en-IN')}
+                ₹{todaySpent.toLocaleString('en-IN')}
               </span>
+            </div>
+            <div className="flex flex-col items-end">
+              <span className="text-[10px] text-on-surface-variant/60 font-medium">This month</span>
+              <span className="text-sm font-bold text-on-surface">₹{monthSpent.toLocaleString('en-IN')}</span>
             </div>
           </div>
 
-          <div className="w-full h-px bg-outline-variant/30 my-1" />
+          {/* Budget usage bar */}
+          {monthBudget > 0 && (
+            <div className="flex flex-col gap-1">
+              <div className="flex justify-between text-[11px] font-semibold">
+                <span className="text-on-surface-variant/70">Budget used</span>
+                <span style={{ color: budgetColor }}>{budgetPct}% of ₹{monthBudget.toLocaleString('en-IN')}</span>
+              </div>
+              <div className="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{ width: `${budgetPct}%`, backgroundColor: budgetColor }}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="w-full h-px bg-outline-variant/30" />
 
           {/* You owe / owed / net — responsive 3-col on all sizes */}
           <div className="grid grid-cols-3 gap-2 text-center">

@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import Layout from '../components/layout/Layout';
 import { analyticsAPI } from '../api/services';
+import { useRealtimeStore } from '../hooks/useRealtimeStore';
+import { useAuthStore } from '../store/auth';
 import {
   AreaChart,
   Area,
@@ -172,11 +174,28 @@ export default function AnalyticsPage() {
   const [year, setYear] = useState(now.getFullYear());
   const [loading, setLoading] = useState(true);
 
+  const { user } = useAuthStore();
+  const { myExpenses } = useRealtimeStore(user?.id);
+
   const [categoriesData, setCategoriesData] = useState<CategoryData[]>([]);
   const [monthlyData, setMonthlyData] = useState<MonthlyPoint[]>([]);
   const [trendData, setTrendData] = useState<TrendPoint[]>([]);
-  const [totalExpenses, setTotalExpenses] = useState(0);
-  const [totalPaidByMe, setTotalPaidByMe] = useState(0);
+  const [insightMode, setInsightMode] = useState<'month' | 'year'>('month');
+
+  // ── Weekday spending (from realtime store) ───────────────────────────────
+  const weekdayData = useMemo(() => {
+    const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const totals = [0, 0, 0, 0, 0, 0, 0];
+    const prefix = `${year}-${String(month).padStart(2, '0')}`;
+    myExpenses.forEach(exp => {
+      if (!exp.expense_date.startsWith(prefix)) return;
+      const d = new Date(exp.expense_date);
+      if (isNaN(d.getTime())) return;
+      const mySplit = (exp.splits || []).find((s: any) => s.user_id === user?.id);
+      totals[d.getDay()] += mySplit ? mySplit.share_amount : (exp.paid_by === user?.id ? exp.amount : 0);
+    });
+    return DAYS.map((day, i) => ({ day, amount: Math.round(totals[i] * 100) / 100 }));
+  }, [myExpenses, month, year, user?.id]);
 
   // ── Fetch data whenever month/year changes ───────────────────────────────
   useEffect(() => {
@@ -184,11 +203,10 @@ export default function AnalyticsPage() {
     async function load() {
       setLoading(true);
       try {
-        const [catRes, monthlyRes, trendRes, dashRes] = await Promise.allSettled([
+        const [catRes, monthlyRes, trendRes] = await Promise.allSettled([
           analyticsAPI.categories(month, year),
           analyticsAPI.monthly(year),
           analyticsAPI.trends(6),
-          analyticsAPI.dashboard(),
         ]);
 
         if (!alive) return;
@@ -235,13 +253,6 @@ export default function AnalyticsPage() {
             });
           }
           setTrendData(arr);
-        }
-
-        // Dashboard totals
-        if (dashRes.status === 'fulfilled') {
-          const d = dashRes.value.data;
-          setTotalExpenses(d?.total_expenses ?? 0);
-          setTotalPaidByMe(d?.total_spent ?? 0);
         }
       } catch (err) {
         console.error(err);
@@ -303,7 +314,7 @@ export default function AnalyticsPage() {
           <h1 className="text-headline-lg font-bold text-on-surface">Analytics</h1>
           <div className="flex items-center gap-1.5 bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-full text-xs font-bold">
             <span className="material-symbols-outlined text-[14px]">bar_chart_4_bars</span>
-            Insights
+            {MONTH_NAMES[month - 1]} {year}
           </div>
         </div>
 
@@ -312,20 +323,20 @@ export default function AnalyticsPage() {
           <MonthNavigator month={month} year={year} onChange={(m, y) => { setMonth(m); setYear(y); }} />
         </div>
 
-        {/* Stat Cards */}
+        {/* Stat Cards — monthly only */}
         <div className="grid grid-cols-2 gap-3">
           <StatCard
             icon="receipt_long"
-            label="Total Expenses"
-            value={String(totalExpenses)}
-            sub="all time"
+            label="This Month"
+            value={fmt(totalSpent)}
+            sub={`${categoriesData.length} categories`}
             accent="#6366f1"
           />
           <StatCard
             icon="payments"
-            label="Total Spent"
-            value={fmt(totalPaidByMe)}
-            sub="all time"
+            label="Daily Average"
+            value={fmt(totalSpent / new Date().getDate())}
+            sub={`${MONTH_NAMES[month - 1]} avg`}
             accent="#F97316"
           />
           <StatCard
@@ -543,15 +554,61 @@ export default function AnalyticsPage() {
           </section>
         )}
 
+        {/* Weekday Trend Bar Chart */}
+        <section className="glass-panel rounded-2xl p-5 flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-on-surface">Weekday Trend</h2>
+            <span className="text-xs text-on-surface-variant/60 font-medium">By Day of Week ({MONTH_NAMES[month - 1]})</span>
+          </div>
+
+          <div className="h-44 w-full min-w-0">
+            <ResponsiveContainer width="100%" height={176}>
+              <BarChart data={weekdayData} margin={{ top: 4, right: 4, left: -24, bottom: 0 }} barSize={20}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
+                <XAxis dataKey="day" fontSize={10} tickLine={false} axisLine={false} tick={{ fill: '#6b7280', fontWeight: 600 }} />
+                <YAxis fontSize={10} tickLine={false} axisLine={false} tick={{ fill: '#9ca3af' }} tickFormatter={(v) => fmt(v)} />
+                <Tooltip content={<CustomBarTooltip />} cursor={{ fill: 'rgba(99,102,241,0.06)', radius: 4 }} />
+                <Bar dataKey="amount" radius={[6, 6, 0, 0]} animationDuration={700}>
+                  {weekdayData.map((entry, i) => {
+                    const maxAmt = Math.max(...weekdayData.map(d => d.amount));
+                    const isPeak = maxAmt > 0 && entry.amount === maxAmt;
+                    return (
+                      <Cell key={i} fill={isPeak ? '#F97316' : '#6366f1'} />
+                    );
+                  })}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+
         {/* Spending Insights */}
         {categoriesData.length > 0 && (
           <section className="glass-panel rounded-2xl p-5 flex flex-col gap-3">
-            <h2 className="text-base font-bold text-on-surface">Spending Insights</h2>
+            {/* Header with month/year toggle */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-bold text-on-surface">Spending Insights</h2>
+              <div className="flex rounded-xl overflow-hidden border border-outline-variant/20">
+                {(['month', 'year'] as const).map(m => (
+                  <button
+                    key={m}
+                    onClick={() => setInsightMode(m)}
+                    className={`px-3 py-1 text-xs font-bold capitalize transition-colors ${
+                      insightMode === m
+                        ? 'bg-primary text-on-primary'
+                        : 'text-on-surface-variant hover:bg-surface-container'
+                    }`}
+                  >
+                    {m === 'month' ? MONTH_NAMES[month - 1] : String(year)}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             <div className="flex flex-col gap-2.5">
-              {/* Insight 1: Largest category */}
+              {/* Insight 1: Biggest Category */}
               <div className="flex items-center gap-3 bg-orange-50 rounded-xl px-3 py-3">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: topCategory?.color + '22' }}>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: (topCategory?.color ?? '#F97316') + '22' }}>
                   <span className="material-symbols-outlined text-[18px]" style={{ color: topCategory?.color }}>
                     emoji_food_beverage
                   </span>
@@ -567,7 +624,43 @@ export default function AnalyticsPage() {
                 </div>
               </div>
 
-              {/* Insight 2: Savings vs prev */}
+              {/* Insight 2: Top Spend Day */}
+              {(() => {
+                if (insightMode === 'month') {
+                  const peakDay = [...weekdayData].sort((a, b) => b.amount - a.amount)[0];
+                  if (!peakDay || peakDay.amount === 0) return null;
+                  const dayFullNames: Record<string, string> = {
+                    Sun: 'Sunday', Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday'
+                  };
+                  return (
+                    <div className="flex items-center gap-3 bg-purple-50 rounded-xl px-3 py-3">
+                      <div className="w-9 h-9 rounded-xl bg-purple-100 flex items-center justify-center">
+                        <span className="material-symbols-outlined text-[18px] text-purple-600">calendar_today</span>
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-xs font-semibold text-on-surface-variant">Top Spend Day ({MONTH_NAMES[month - 1]})</div>
+                        <div className="text-sm font-bold text-purple-700">{dayFullNames[peakDay.day] || peakDay.day} · {fmt(peakDay.amount)}</div>
+                      </div>
+                    </div>
+                  );
+                } else {
+                  const peakMonth = [...monthlyData].sort((a, b) => b.amount - a.amount)[0];
+                  if (!peakMonth || peakMonth.amount === 0) return null;
+                  return (
+                    <div className="flex items-center gap-3 bg-purple-50 rounded-xl px-3 py-3">
+                      <div className="w-9 h-9 rounded-xl bg-purple-100 flex items-center justify-center">
+                        <span className="material-symbols-outlined text-[18px] text-purple-600">calendar_month</span>
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-xs font-semibold text-on-surface-variant">Peak Month ({year})</div>
+                        <div className="text-sm font-bold text-purple-700">{peakMonth.name} · {fmt(peakMonth.amount)}</div>
+                      </div>
+                    </div>
+                  );
+                }
+              })()}
+
+              {/* Insight 3: Savings vs prev */}
               <div className={`flex items-center gap-3 rounded-xl px-3 py-3 ${vsLastMonth >= 0 ? 'bg-red-50' : 'bg-green-50'}`}>
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${vsLastMonth >= 0 ? 'bg-red-100' : 'bg-green-100'}`}>
                   <span className={`material-symbols-outlined text-[18px] ${vsLastMonth >= 0 ? 'text-red-500' : 'text-green-600'}`}>
@@ -584,7 +677,7 @@ export default function AnalyticsPage() {
                 </div>
               </div>
 
-              {/* Insight 3: Category count */}
+              {/* Insight 4: Category count */}
               <div className="flex items-center gap-3 bg-indigo-50 rounded-xl px-3 py-3">
                 <div className="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center">
                   <span className="material-symbols-outlined text-[18px] text-indigo-600">pie_chart</span>
