@@ -191,6 +191,25 @@ export default function AddExpensePage() {
     <Layout title="Add Expense" showBack onBack={() => navigate('/dashboard')} hideBottomNav={showAddCatModal}>
       {/* Extra padding-bottom to clear fixed save button + bottom nav */}
       <div className="page-container page-enter" style={{ paddingBottom: 'calc(9rem + env(safe-area-inset-bottom, 0px))' }}>
+
+        {/* Import CSV shortcut */}
+        <button
+          type="button"
+          onClick={() => navigate('/import-expense')}
+          className="w-full flex items-center justify-between px-4 py-3 glass-panel rounded-2xl border border-primary/20 hover:bg-primary/5 active:scale-[0.98] transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <span className="material-symbols-outlined text-primary text-[18px]">upload_file</span>
+            </div>
+            <div className="text-left">
+              <p className="font-semibold text-sm text-primary">Import from CSV</p>
+              <p className="text-xs text-on-surface-variant/60">Bulk add expenses from a file</p>
+            </div>
+          </div>
+          <span className="material-symbols-outlined text-on-surface-variant/30 text-[18px]">chevron_right</span>
+        </button>
+
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
 
           {/* ── Amount input ─────────────────────────────────────────────── */}

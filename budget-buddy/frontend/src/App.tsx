@@ -22,6 +22,7 @@ import BudgetPage from './pages/BudgetPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import ProfilePage from './pages/ProfilePage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ImportExpensePage from './pages/ImportExpensePage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -209,6 +210,15 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/import-expense"
+              element={
+                <ProtectedRoute>
+                  <ImportExpensePage />
                 </ProtectedRoute>
               }
             />
