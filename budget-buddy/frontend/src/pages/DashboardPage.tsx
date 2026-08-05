@@ -29,7 +29,7 @@ export default function DashboardPage() {
     () =>
       [...myExpenses]
         .sort((a, b) => new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime())
-        .slice(0, 3),
+        .slice(0, 6),
     [myExpenses]
   );
 
@@ -162,25 +162,7 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* ── Analytics Banner ──────────────────────────────────────────── */}
-        <button
-          onClick={() => navigate('/analytics')}
-          className="glass-panel rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:bg-white transition-colors active:scale-95 group"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
-              <span className="material-symbols-outlined text-indigo-600">bar_chart_4_bars</span>
-            </div>
-            <div className="flex flex-col items-start">
-              <span className="text-sm font-bold text-on-surface">Monthly Analytics</span>
-              <span className="text-xs text-on-surface-variant/70">Charts · Trends · Insights</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-1 text-indigo-600 font-semibold text-sm group-hover:translate-x-0.5 transition-transform">
-            View
-            <span className="material-symbols-outlined text-[18px]">chevron_right</span>
-          </div>
-        </button>
+
 
       </div>
     </Layout>

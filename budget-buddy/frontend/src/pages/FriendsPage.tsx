@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Layout from '../components/layout/Layout';
 import { friendsAPI, usersAPI } from '../api/services';
 import type { User, FriendWithRequest } from '../types';
@@ -12,8 +12,10 @@ export default function FriendsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const [searching, setSearching] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Debounce timer ref for auto-search
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchFriends = async () => {
     try {
@@ -35,35 +37,71 @@ export default function FriendsPage() {
     fetchFriends();
   }, []);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
+  // Debounced auto-search (Instagram-style) — fires 300ms after user stops typing
+  const performSearch = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setSearching(false);
+      return;
+    }
     try {
       setSearching(true);
-      setHasSearched(true);
-      const res = await usersAPI.search(searchQuery);
-      setSearchResults(res.data.users || []);
+      const res = await usersAPI.search(query);
+      const allUsers: User[] = res.data.users || [];
+
+      // Filter out users already in friends list or with pending/sent requests
+      const friendIds = new Set(friends.map(f => f.friend.id));
+      const pendingIds = new Set(pendingRequests.map(r => r.friend.id));
+      const sentIds = new Set(sentRequests.map(r => r.friend.id));
+
+      const uniqueResults = allUsers.filter(
+        u => !friendIds.has(u.id) && !pendingIds.has(u.id) && !sentIds.has(u.id)
+      );
+
+      setSearchResults(uniqueResults);
     } catch (err) {
       toast.error('Search failed');
     } finally {
       setSearching(false);
     }
-  };
+  }, [friends, pendingRequests, sentRequests]);
 
   const handleQueryChange = (val: string) => {
     setSearchQuery(val);
+
+    // Clear previous debounce
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
     if (!val.trim()) {
       setSearchResults([]);
-      setHasSearched(false);
+      setSearching(false);
+      return;
     }
+
+    // Show searching state immediately
+    setSearching(true);
+
+    // Debounce 300ms
+    debounceRef.current = setTimeout(() => {
+      performSearch(val);
+    }, 300);
   };
+
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   const sendRequest = async (userId: string) => {
     try {
       await friendsAPI.sendRequest(userId);
       toast.success('Friend request sent!');
-      setSearchQuery('');
-      setSearchResults([]);
+      // Remove from search results immediately
+      setSearchResults(prev => prev.filter(u => u.id !== userId));
       fetchFriends();
     } catch (err: any) {
       toast.error(err.response?.data?.detail || 'Request failed');
@@ -157,25 +195,24 @@ export default function FriendsPage() {
 
         {activeTab === 'friends' ? (
           <>
-             {/* Search / Add Friend Form */}
+             {/* Search / Add Friend — Auto-search (Instagram style) */}
             <section className="flex flex-col gap-3">
               <h2 className="text-headline-lg-mobile text-primary font-bold">Add Friend</h2>
-              <form onSubmit={handleSearch} className="flex gap-2">
+              <div className="relative">
                 <input
                   type="text"
                   placeholder="Search by email or name..."
                   value={searchQuery}
                   onChange={(e) => handleQueryChange(e.target.value)}
-                  className="input-field h-12 text-sm flex-1"
+                  className="input-field h-12 text-sm w-full pr-10"
                 />
-                <button type="submit" className="btn-primary h-12 px-4 shadow-none">
-                  {searching ? (
-                    <span className="material-symbols-outlined animate-spin">refresh</span>
-                  ) : (
-                    'Search'
-                  )}
-                </button>
-              </form>
+                {/* Inline loading spinner */}
+                {searching && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
+              </div>
 
               {/* Search Results */}
               {searchResults.length > 0 && (
@@ -202,7 +239,7 @@ export default function FriendsPage() {
                 </div>
               )}
 
-              {hasSearched && searchResults.length === 0 && !searching && (
+              {searchQuery.trim() && !searching && searchResults.length === 0 && (
                 <div className="p-4 bg-surface-container-low border border-outline-variant/20 rounded-xl text-center">
                   <p className="text-sm text-on-surface-variant italic">No users found matching "{searchQuery}"</p>
                 </div>

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import { expensesAPI } from '../api/services';
 import { useRealtimeStore } from '../hooks/useRealtimeStore';
-import type { Expense, Settlement, Category } from '../types';
+import type { Category } from '../types';
 import { useAuthStore } from '../store/auth';
 import toast from 'react-hot-toast';
 
@@ -125,20 +125,14 @@ export default function HistoryPage() {
   const { user } = useAuthStore();
 
   // ── Real-time data ────────────────────────────────────────────────────────
-  const { ready, myExpenses, mySettlements, resolveName } = useRealtimeStore(user?.id);
+  const { ready, myExpenses } = useRealtimeStore(user?.id);
 
-  // Merge + sort newest-first
+  // Sort expenses newest-first
   const historyItems = useMemo(() => {
-    type HItem =
-      | { type: 'expense'; date: Date; data: Expense }
-      | { type: 'settlement'; date: Date; data: Settlement };
-
-    const merged: HItem[] = [
-      ...myExpenses.map(exp => ({ type: 'expense' as const, date: new Date(exp.expense_date), data: exp })),
-      ...mySettlements.map(s => ({ type: 'settlement' as const, date: new Date(s.created_at), data: s })),
-    ];
-    return merged.sort((a, b) => b.date.getTime() - a.date.getTime());
-  }, [myExpenses, mySettlements]);
+    return myExpenses
+      .map(exp => ({ type: 'expense' as const, date: new Date(exp.expense_date), data: exp }))
+      .sort((a, b) => b.date.getTime() - a.date.getTime());
+  }, [myExpenses]);
 
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth() + 1);
@@ -273,21 +267,12 @@ export default function HistoryPage() {
             ) : (
               <div className="flex flex-col gap-3">
                 {filteredHistoryItems.map((item) => {
-                  if (item.type === 'expense') {
                     const exp = item.data;
                     const myUserId = user?.id;
                     const isPaidUser = exp.paid_by === 'you' || exp.paid_by === myUserId;
                     const mySplit = exp.splits?.find((s: any) => s.user_id === myUserId);
                     const displayAmt = mySplit ? mySplit.share_amount : exp.amount;
                     const isFullExpense = !mySplit || mySplit.share_amount === exp.amount;
-
-                    // Determine if any split is "paid" — i.e. all non-payer splits are
-                    // covered by a completed settlement. In Firebase model, once the
-                    // payer created the expense every split status starts as 'accepted'.
-                    // We consider an expense "settled" if the current user is NOT the
-                    // payer AND their split amount is effectively covered (best effort).
-                    // Simple rule: hide edit/delete for non-payer users (they can't edit).
-                    // For payer: always show edit/delete (they own the expense).
                     const canEditDelete = isPaidUser;
 
                     return (
@@ -351,55 +336,6 @@ export default function HistoryPage() {
                         </div>
                       </SwipeRow>
                     );
-                  } else {
-                    // Settlement row
-                    const s = item.data;
-                    const isPayer = s.payer_id === 'you' || s.payer_id === user?.id;
-                    const otherPartyName = isPayer
-                      ? resolveName(s.receiver_id)
-                      : resolveName(s.payer_id);
-
-                    const isCompleted = s.status === 'completed';
-
-                    return (
-                      // Settlements: no swipe/edit (they represent confirmed payments)
-                      <div
-                        key={s.id}
-                        className="bg-white rounded-xl p-4 border border-outline-variant/20 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex items-center justify-between hover:shadow-md transition-shadow"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center font-bold text-lg ${isCompleted ? 'bg-secondary-container text-secondary' : 'bg-amber-100 text-amber-600'}`}>
-                            ₹
-                          </div>
-                          <div className="min-w-0">
-                            <h3 className="font-semibold text-body-md text-primary truncate max-w-[140px] sm:max-w-[200px]">
-                              {isPayer ? `Settled to ${otherPartyName}` : `Received from ${otherPartyName}`}
-                            </h3>
-                            <p className="text-xs text-on-surface-variant/80 flex items-center gap-1 flex-wrap">
-                              {item.date.toLocaleDateString('en-IN', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                              })}{' '}
-                              • {s.payment_method}
-                              {!isCompleted && (
-                                <span className="text-[10px] text-amber-700 font-semibold bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
-                                  Pending
-                                </span>
-                              )}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="text-right shrink-0 ml-2">
-                          <p className={`font-bold text-monetary-md ${isPayer ? 'text-error' : 'text-secondary'}`}>
-                            {isPayer ? '-' : '+'}₹{s.amount.toLocaleString('en-IN')}
-                          </p>
-                          <p className="text-[10px] text-on-surface-variant/60">Settlement</p>
-                        </div>
-                      </div>
-                    );
-                  }
                 })}
               </div>
             )}

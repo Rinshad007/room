@@ -163,7 +163,13 @@ export default function AddExpensePage() {
       };
       await expensesAPI.create(payload as any);
       toast.success('Expense created successfully!');
-      navigate('/dashboard');
+      // Reset form but preserve date and group
+      setAmount(0);
+      setTitle('');
+      setDescription('');
+      setCategory('Food');
+      setSplitType('equal');
+      setSelectedFriends(groupId ? eligibleParticipants.map(m => m.id) : []);
     } catch (err: any) {
       toast.error(err.response?.data?.detail || 'Failed to create expense');
     }
@@ -182,7 +188,7 @@ export default function AddExpensePage() {
   ];
 
   return (
-    <Layout title="Add Expense" hideBottomNav={showAddCatModal}>
+    <Layout title="Add Expense" showBack onBack={() => navigate('/dashboard')} hideBottomNav={showAddCatModal}>
       {/* Extra padding-bottom to clear fixed save button + bottom nav */}
       <div className="page-container page-enter" style={{ paddingBottom: 'calc(9rem + env(safe-area-inset-bottom, 0px))' }}>
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">

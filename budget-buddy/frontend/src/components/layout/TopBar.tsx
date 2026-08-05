@@ -1,12 +1,9 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth';
 import { useState, useEffect } from 'react';
-import { notificationsAPI } from '../../api/services';
+import { ref, onValue, update } from 'firebase/database';
+import { db } from '../../firebase';
 import type { Notification } from '../../types';
-
-const NOTIF_TTL_MS = 2 * 60 * 1000;
-let notifCache: Notification[] | null = null;
-let lastFetchTime = 0;
 
 interface TopBarProps {
   title?: string;
@@ -19,37 +16,56 @@ interface TopBarProps {
 export default function TopBar({ title = 'Budget Buddy', showBack, showNotifications = true, right, onBack }: TopBarProps) {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const [notifications, setNotifications] = useState<Notification[]>(notifCache || []);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showPanel, setShowPanel] = useState(false);
 
+  // Real-time Firebase listener for notifications
   useEffect(() => {
-    if (showNotifications) {
-      const now = Date.now();
-      if (notifCache && now - lastFetchTime < NOTIF_TTL_MS) {
-        setNotifications(notifCache);
-      } else {
-        notificationsAPI
-          .list()
-          .then((r) => {
-            notifCache = r.data.notifications;
-            lastFetchTime = Date.now();
-            setNotifications(r.data.notifications);
-          })
-          .catch(() => {});
+    if (!showNotifications || !user?.id) return;
+
+    const notifRef = ref(db, 'notifications');
+    const unsubscribe = onValue(notifRef, (snapshot) => {
+      if (!snapshot.exists()) {
+        setNotifications([]);
+        return;
       }
-    }
-  }, [showNotifications]);
+      const all = snapshot.val();
+      const userNotifs: Notification[] = [];
+      Object.values(all).forEach((n: any) => {
+        if (n.user_id === user.id) {
+          userNotifs.push(n as Notification);
+        }
+      });
+      userNotifs.sort((a, b) => b.created_at.localeCompare(a.created_at));
+      setNotifications(userNotifs);
+    });
+
+    return () => unsubscribe();
+  }, [showNotifications, user?.id]);
 
   const unread = notifications.filter(n => !n.is_read).length;
 
-  const handleMarkAll = () => {
-    notificationsAPI.readAll().then(() => {
-      setNotifications(prev => {
-        const updated = prev.map(n => ({ ...n, is_read: true }));
-        notifCache = updated;
-        return updated;
-      });
-    });
+  const handleMarkAll = async () => {
+    if (!user?.id) return;
+    try {
+      // Build updates for all unread notifications belonging to this user
+      const notifRef = ref(db, 'notifications');
+      const { get: fbGet } = await import('firebase/database');
+      const snapshot = await fbGet(notifRef);
+      if (snapshot.exists()) {
+        const updates: Record<string, any> = {};
+        Object.entries(snapshot.val()).forEach(([key, n]: [string, any]) => {
+          if (n.user_id === user.id && !n.is_read) {
+            updates[`notifications/${key}/is_read`] = true;
+          }
+        });
+        if (Object.keys(updates).length > 0) {
+          await update(ref(db), updates);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to mark notifications as read:', err);
+    }
   };
 
   const initials = user?.name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'BB';

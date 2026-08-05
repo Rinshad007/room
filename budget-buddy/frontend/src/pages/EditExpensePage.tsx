@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import { expensesAPI } from '../api/services';
-import type { Expense, Category, PaymentMethod, ExpenseUpdate } from '../types';
+import type { Expense, Category, ExpenseUpdate } from '../types';
 import toast from 'react-hot-toast';
 
 const CATEGORIES: Category[] = ['Food', 'Travel', 'Shopping', 'Rent', 'Entertainment', 'Others'];
-const PAYMENT_METHODS: PaymentMethod[] = ['GPay', 'Cash'];
+
 
 export default function EditExpensePage() {
   const { id } = useParams<{ id: string }>();
@@ -20,7 +20,7 @@ export default function EditExpensePage() {
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState<string>('');
   const [category, setCategory] = useState<Category>('Others');
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Cash');
+
   const [expenseDate, setExpenseDate] = useState('');
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export default function EditExpensePage() {
         setDescription(exp.description || '');
         setAmount(exp.amount.toString());
         setCategory(exp.category as Category);
-        setPaymentMethod((exp.payment_method as PaymentMethod) || 'Cash');
+
         setExpenseDate(exp.expense_date ? exp.expense_date.split('T')[0] : new Date().toISOString().split('T')[0]);
       })
       .catch((err) => {
@@ -68,9 +68,7 @@ export default function EditExpensePage() {
     if (category !== initialExpense.category) {
       updates.category = category;
     }
-    if (paymentMethod !== initialExpense.payment_method) {
-      updates.payment_method = paymentMethod;
-    }
+
     const origDate = initialExpense.expense_date ? initialExpense.expense_date.split('T')[0] : '';
     if (expenseDate !== origDate) {
       updates.expense_date = expenseDate;
@@ -149,38 +147,16 @@ export default function EditExpensePage() {
             />
           </div>
 
-          {/* Date & Payment Method */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-label-caps text-on-surface-variant uppercase ml-1">Date</label>
-              <input
-                type="date"
-                value={expenseDate}
-                onChange={(e) => setExpenseDate(e.target.value)}
-                className="input-field h-12 text-sm bg-surface-container-low"
-                required
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-label-caps text-on-surface-variant uppercase ml-1">Payment Method</label>
-              <div className="grid grid-cols-2 gap-2">
-                {PAYMENT_METHODS.map((pm) => (
-                  <button
-                    key={pm}
-                    type="button"
-                    onClick={() => setPaymentMethod(pm)}
-                    className={`h-12 rounded-xl text-xs font-bold border transition-all ${
-                      paymentMethod === pm
-                        ? 'bg-primary text-on-primary border-primary shadow-sm'
-                        : 'bg-surface-container-low text-on-surface-variant border-outline-variant/30 hover:border-primary/40'
-                    }`}
-                  >
-                    {pm}
-                  </button>
-                ))}
-              </div>
-            </div>
+          {/* Date */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-label-caps text-on-surface-variant uppercase ml-1">Date</label>
+            <input
+              type="date"
+              value={expenseDate}
+              onChange={(e) => setExpenseDate(e.target.value)}
+              className="input-field h-12 text-sm bg-surface-container-low"
+              required
+            />
           </div>
 
           {/* Category */}
