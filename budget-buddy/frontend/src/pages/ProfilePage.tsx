@@ -72,7 +72,17 @@ export default function ProfilePage() {
   if (!user) return <Navigate to="/login" replace />;
 
   return (
-    <Layout showBack title="Profile" hideBottomNav>
+    <Layout
+      showBack
+      title="Profile"
+      onBack={() => {
+        if (window.history.length > 1 && window.history.state?.idx > 0) {
+          navigate(-1);
+        } else {
+          navigate('/add-expense');
+        }
+      }}
+    >
       <div className="page-container page-enter">
         <h1 className="text-headline-lg font-bold text-primary px-1">Profile</h1>
 

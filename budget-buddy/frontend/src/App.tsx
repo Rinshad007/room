@@ -37,8 +37,11 @@ function AppShell() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      authAPI.me().catch(() => {
-        logout();
+      authAPI.me().catch((err) => {
+        console.warn('authAPI.me failed, checking firebase user state:', err);
+        if (!auth.currentUser && !localStorage.getItem('user')) {
+          logout();
+        }
       });
     }
   }, [isAuthenticated, logout]);

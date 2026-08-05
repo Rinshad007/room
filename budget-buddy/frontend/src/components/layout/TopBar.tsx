@@ -103,7 +103,16 @@ export default function TopBar({ title = 'Budget Buddy', showBack, showNotificat
           <div className="flex items-center gap-3">
             {showBack ? (
               <button
-                onClick={onBack || (() => navigate(-1))}
+                onClick={
+                  onBack ||
+                  (() => {
+                    if (window.history.length > 1 && window.history.state?.idx > 0) {
+                      navigate(-1);
+                    } else {
+                      navigate('/add-expense');
+                    }
+                  })
+                }
                 className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high/50 transition-colors active:scale-95"
               >
                 <span className="material-symbols-outlined text-on-surface-variant">arrow_back</span>
