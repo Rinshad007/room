@@ -156,6 +156,14 @@ export default function ProfilePage() {
           </button>
 
           <button
+            onClick={() => navigate('/import-expense')}
+            className="btn-secondary w-full h-12 text-sm text-primary border-primary/20 hover:bg-primary/5 flex items-center justify-center gap-2"
+          >
+            <span className="material-symbols-outlined text-[18px]">upload_file</span>
+            Import Expenses (CSV)
+          </button>
+
+          <button
             onClick={handleLogout}
             className="btn-secondary w-full h-12 text-sm text-error border-error/20 hover:bg-error/5 flex items-center justify-center gap-2"
           >
