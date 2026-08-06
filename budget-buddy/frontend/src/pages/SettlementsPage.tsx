@@ -120,17 +120,26 @@ function UpiModal({ name, amount, upiId, submitting, onConfirm, onClose }: UpiMo
                 type="button"
                 onClick={async () => {
                   const upiUrl = buildRawUpiUrl({ upiId, name, amount });
-                  try {
-                    await navigator.clipboard.writeText(upiUrl);
-                    toast.success('UPI link copied!');
-                  } catch (e) {
-                    toast.error('Failed to copy link');
+                  if (navigator.share) {
+                    try {
+                      await navigator.share({
+                        title: `Pay ₹${amount} to ${name}`,
+                        text: upiUrl,
+                        url: upiUrl,
+                      });
+                    } catch (e: any) {
+                      if (e.name !== 'AbortError') {
+                        toast.error('Sharing failed');
+                      }
+                    }
+                  } else {
+                    toast.error('Sharing is not supported on this browser');
                   }
                 }}
                 className="mt-2.5 flex items-center gap-1.5 bg-secondary/15 hover:bg-secondary/25 text-secondary text-xs font-bold px-4 py-1.5 rounded-full active:scale-95 transition-all"
               >
-                <span className="material-symbols-outlined text-[16px]">content_copy</span>
-                Copy Link
+                <span className="material-symbols-outlined text-[16px]">share</span>
+                Share to Apps
               </button>
             </div>
 
