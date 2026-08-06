@@ -4,7 +4,7 @@ import { settlementsAPI } from '../api/services';
 import { useRealtimeStore } from '../hooks/useRealtimeStore';
 import { useAuthStore } from '../store/auth';
 import toast from 'react-hot-toast';
-import { getUpiQrCodeUrl, launchUpiPayment } from '../utils/upi';
+import { getUpiQrCodeUrl, launchUpiPayment, buildRawUpiUrl } from '../utils/upi';
 import type { Expense, User } from '../types';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -119,41 +119,28 @@ function UpiModal({ name, amount, upiId, submitting, onConfirm, onClose }: UpiMo
               <button
                 type="button"
                 onClick={async () => {
-                  const qrUrl = getUpiQrCodeUrl({ upiId, name, amount }, 400);
+                  const shareText = `Hi! Please pay ₹${amount} to ${name} via UPI ID: ${upiId}\nDirect Pay Link: ${buildRawUpiUrl({ upiId, name, amount })}`;
                   try {
-                    const response = await fetch(qrUrl);
-                    const blob = await response.blob();
-                    const file = new File([blob], `UPI_QR_${name.replace(/\s+/g, '_')}.png`, { type: blob.type });
-
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    if (navigator.share) {
                       await navigator.share({
-                        title: `Pay ${name}`,
-                        text: `Scan QR to pay ₹${amount} to ${name} (${upiId})`,
-                        files: [file],
-                      });
-                    } else if (navigator.share) {
-                      await navigator.share({
-                        title: `Pay ${name}`,
-                        text: `Pay ₹${amount} to ${name} via UPI ID: ${upiId}`,
-                        url: qrUrl,
+                        title: `Pay ₹${amount} to ${name}`,
+                        text: shareText,
                       });
                     } else {
-                      const a = document.createElement('a');
-                      a.href = URL.createObjectURL(blob);
-                      a.download = `UPI_QR_${name.replace(/\s+/g, '_')}.png`;
-                      a.click();
-                      toast.success('QR Code downloaded!');
+                      await navigator.clipboard.writeText(shareText);
+                      toast.success('Payment details & link copied!');
                     }
                   } catch (e: any) {
                     if (e.name !== 'AbortError') {
-                      toast.error('Could not share QR image');
+                      await navigator.clipboard.writeText(shareText);
+                      toast.success('Payment link copied!');
                     }
                   }
                 }}
                 className="mt-2.5 flex items-center gap-1.5 bg-secondary/15 hover:bg-secondary/25 text-secondary text-xs font-bold px-4 py-1.5 rounded-full active:scale-95 transition-all"
               >
                 <span className="material-symbols-outlined text-[16px]">share</span>
-                Share QR Code
+                Share Payment Link
               </button>
             </div>
 
