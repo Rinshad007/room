@@ -22,12 +22,22 @@ import { db } from '../firebase';
 import type { Expense, Settlement, User, FriendWithRequest } from '../types';
 
 // ─── Raw store state ──────────────────────────────────────────────────────────
+interface GroupData {
+  id: string;
+  name: string;
+  description?: string;
+  members: string[];
+  created_by?: string;
+  created_at?: string;
+}
+
 interface StoreState {
   expenses: Expense[];
   settlements: Settlement[];
   users: Record<string, User>;
   friendships: any[];
-  ready: boolean;          // true once all four nodes have fired at least once
+  groups: Record<string, GroupData>;
+  ready: boolean;          // true once all five nodes have fired at least once
 }
 
 // ─── Per-user computed view ───────────────────────────────────────────────────
@@ -53,6 +63,7 @@ const getCachedState = (): StoreState => {
         settlements: parsed.settlements || [],
         users: parsed.users || {},
         friendships: parsed.friendships || [],
+        groups: parsed.groups || {},
         ready: true, // instantly ready from cache!
       };
     }
@@ -64,6 +75,7 @@ const getCachedState = (): StoreState => {
     settlements: [],
     users: {},
     friendships: [],
+    groups: {},
     ready: false,
   };
 };
@@ -75,6 +87,7 @@ const saveCache = (state: StoreState) => {
       settlements: state.settlements,
       users: state.users,
       friendships: state.friendships,
+      groups: state.groups,
     }));
   } catch (e) {
     console.error('Failed to save store cache:', e);
@@ -172,7 +185,7 @@ function startListeners() {
   const loadedNodes = new Set<string>();
   const checkReady = (nodeName: string) => {
     loadedNodes.add(nodeName);
-    if (loadedNodes.size >= 4 && !_state.ready) {
+    if (loadedNodes.size >= 5 && !_state.ready) {
       _state = { ..._state, ready: true };
       notify();
     }
@@ -186,7 +199,8 @@ function startListeners() {
   const settlementsRef = ref(db, 'settlements');
   const usersRef = ref(db, 'users');
   const friendshipsRef = ref(db, 'friendships');
-  _dbRefs.push(expensesRef, settlementsRef, usersRef, friendshipsRef);
+  const groupsRef = ref(db, 'groups');
+  _dbRefs.push(expensesRef, settlementsRef, usersRef, friendshipsRef, groupsRef);
 
   // Expenses
   onValue(expensesRef, snap => {
@@ -225,6 +239,27 @@ function startListeners() {
       friendships: snap.exists() ? Object.values(snap.val()) : [],
     };
     checkReady('friendships');
+    notify();
+  });
+
+  // Groups
+  onValue(groupsRef, snap => {
+    const groupsMap: Record<string, GroupData> = {};
+    if (snap.exists()) {
+      const raw = snap.val() as Record<string, any>;
+      Object.entries(raw).forEach(([key, g]) => {
+        groupsMap[key] = {
+          id: g.id || key,
+          name: g.name || key,
+          description: g.description,
+          members: Array.isArray(g.members) ? g.members : [],
+          created_by: g.created_by,
+          created_at: g.created_at,
+        };
+      });
+    }
+    _state = { ..._state, groups: groupsMap };
+    checkReady('groups');
     notify();
   });
 }
@@ -267,18 +302,40 @@ export function useRealtimeStore(userId?: string) {
     return u?.name || 'Unknown';
   };
 
+  // Pending friend requests (real-time from friendships node)
+  const pendingReceived = userId
+    ? state.friendships.filter(f => f.status === 'pending' && f.receiver_id === userId).map(f => ({
+        friendship_id: f.id,
+        friend: state.users[f.sender_id] ?? { id: f.sender_id, name: 'Unknown', email: '', created_at: '' },
+        status: f.status as string,
+        created_at: f.created_at as string,
+      }))
+    : [];
+
+  const pendingSent = userId
+    ? state.friendships.filter(f => f.status === 'pending' && f.sender_id === userId).map(f => ({
+        friendship_id: f.id,
+        friend: state.users[f.receiver_id] ?? { id: f.receiver_id, name: 'Unknown', email: '', created_at: '' },
+        status: f.status as string,
+        created_at: f.created_at as string,
+      }))
+    : [];
+
   return {
     ready: state.ready,
     rawExpenses: state.expenses,
     rawSettlements: state.settlements,
     users: state.users,
     friendships: state.friendships,
+    groups: state.groups,
     // Computed
     myExpenses,
     mySettlements,
     summary: derived?.summary ?? null,
     perUserBalances: derived?.perUser ?? [],
     friends: derived?.friends ?? [],
+    pendingReceived,
+    pendingSent,
     resolveName,
   };
 }
@@ -302,6 +359,7 @@ export function resetRealtimeStore() {
     settlements: [],
     users: {},
     friendships: [],
+    groups: {},
     ready: false,
   };
   notify();

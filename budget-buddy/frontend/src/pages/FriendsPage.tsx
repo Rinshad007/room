@@ -1,41 +1,23 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import Layout from '../components/layout/Layout';
 import { friendsAPI, usersAPI } from '../api/services';
-import type { User, FriendWithRequest } from '../types';
+import { useRealtimeStore } from '../hooks/useRealtimeStore';
+import { useAuthStore } from '../store/auth';
+import type { User } from '../types';
 import toast from 'react-hot-toast';
 
 export default function FriendsPage() {
-  const [friends, setFriends] = useState<FriendWithRequest[]>([]);
-  const [pendingRequests, setPendingRequests] = useState<FriendWithRequest[]>([]);
-  const [sentRequests, setSentRequests] = useState<FriendWithRequest[]>([]);
+  const { user } = useAuthStore();
+  const { friends, pendingReceived, pendingSent } = useRealtimeStore(user?.id);
+
+  // Local search state only
   const [activeTab, setActiveTab] = useState<'friends' | 'pending'>('friends');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const [searching, setSearching] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   // Debounce timer ref for auto-search
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const fetchFriends = async () => {
-    try {
-      setLoading(true);
-      const friendsRes = await friendsAPI.list();
-      setFriends(friendsRes.data.friends || []);
-
-      const pendingRes = await friendsAPI.pending();
-      setPendingRequests(pendingRes.data.received || []);
-      setSentRequests(pendingRes.data.sent || []);
-    } catch (err) {
-      console.error('Failed to fetch friends data', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchFriends();
-  }, []);
 
   // Debounced auto-search (Instagram-style) — fires 300ms after user stops typing
   const performSearch = useCallback(async (query: string) => {
@@ -51,8 +33,8 @@ export default function FriendsPage() {
 
       // Filter out users already in friends list or with pending/sent requests
       const friendIds = new Set(friends.map(f => f.friend.id));
-      const pendingIds = new Set(pendingRequests.map(r => r.friend.id));
-      const sentIds = new Set(sentRequests.map(r => r.friend.id));
+      const pendingIds = new Set(pendingReceived.map(r => r.friend.id));
+      const sentIds = new Set(pendingSent.map(r => r.friend.id));
 
       const uniqueResults = allUsers.filter(
         u => !friendIds.has(u.id) && !pendingIds.has(u.id) && !sentIds.has(u.id)
@@ -64,7 +46,7 @@ export default function FriendsPage() {
     } finally {
       setSearching(false);
     }
-  }, [friends, pendingRequests, sentRequests]);
+  }, [friends, pendingReceived, pendingSent]);
 
   const handleQueryChange = (val: string) => {
     setSearchQuery(val);
@@ -100,9 +82,8 @@ export default function FriendsPage() {
     try {
       await friendsAPI.sendRequest(userId);
       toast.success('Friend request sent!');
-      // Remove from search results immediately
+      // Remove from search results immediately — store will update automatically
       setSearchResults(prev => prev.filter(u => u.id !== userId));
-      fetchFriends();
     } catch (err: any) {
       toast.error(err.response?.data?.detail || 'Request failed');
     }
@@ -112,7 +93,7 @@ export default function FriendsPage() {
     try {
       await friendsAPI.accept(friendshipId);
       toast.success('Friend request accepted!');
-      fetchFriends();
+      // Store auto-updates via Firebase listener
     } catch (err) {
       toast.error('Accept failed');
     }
@@ -122,7 +103,7 @@ export default function FriendsPage() {
     try {
       await friendsAPI.reject(friendshipId);
       toast.success('Request declined');
-      fetchFriends();
+      // Store auto-updates via Firebase listener
     } catch (err) {
       toast.error('Decline failed');
     }
@@ -132,7 +113,7 @@ export default function FriendsPage() {
     try {
       await friendsAPI.remove(friendshipId);
       toast.success('Friend request cancelled');
-      fetchFriends();
+      // Store auto-updates via Firebase listener
     } catch (err) {
       toast.error('Cancel failed');
     }
@@ -143,23 +124,13 @@ export default function FriendsPage() {
     try {
       await friendsAPI.remove(friendshipId);
       toast.success('Friend removed');
-      fetchFriends();
+      // Store auto-updates via Firebase listener
     } catch (err) {
       toast.error('Removal failed');
     }
   };
 
-  if (loading) {
-    return (
-      <Layout showBack title="Friends" hideBottomNav>
-        <div className="page-container space-y-6">
-          <div className="skeleton h-12 w-full" />
-          <div className="skeleton h-32 w-full" />
-          <div className="skeleton h-48 w-full" />
-        </div>
-      </Layout>
-    );
-  }
+  // No loading state needed — store is instantly ready from cache
 
   return (
     <Layout showBack title="Friends" hideBottomNav>
@@ -185,9 +156,9 @@ export default function FriendsPage() {
             }`}
           >
             Pending Requests
-            {pendingRequests.length > 0 && (
+            {pendingReceived.length > 0 && (
               <span className="bg-error text-on-error px-2 py-0.5 rounded-full text-[10px] font-bold">
-                {pendingRequests.length}
+                {pendingReceived.length}
               </span>
             )}
           </button>
@@ -304,12 +275,12 @@ export default function FriendsPage() {
             <section className="flex flex-col gap-3">
               <h2 className="text-monetary-md text-on-surface-variant font-semibold">Received Requests</h2>
               <div className="flex flex-col gap-2">
-                {pendingRequests.length === 0 ? (
+                {pendingReceived.length === 0 ? (
                   <p className="py-6 text-center text-body-md text-on-surface-variant/60 italic glass-panel rounded-xl">
                     No pending requests received.
                   </p>
                 ) : (
-                  pendingRequests.map((req) => (
+                  pendingReceived.map((req) => (
                     <div key={req.friendship_id} className="glass-panel rounded-xl p-3.5 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center font-bold text-on-surface-variant text-sm">
@@ -346,12 +317,12 @@ export default function FriendsPage() {
             <section className="flex flex-col gap-3 mt-4">
               <h2 className="text-monetary-md text-on-surface-variant font-semibold">Sent Requests</h2>
               <div className="flex flex-col gap-2">
-                {sentRequests.length === 0 ? (
+                {pendingSent.length === 0 ? (
                   <p className="py-6 text-center text-body-md text-on-surface-variant/60 italic glass-panel rounded-xl">
                     No pending requests sent.
                   </p>
                 ) : (
-                  sentRequests.map((req) => (
+                  pendingSent.map((req) => (
                     <div key={req.friendship_id} className="glass-panel rounded-xl p-3.5 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center font-bold text-on-surface-variant text-sm">

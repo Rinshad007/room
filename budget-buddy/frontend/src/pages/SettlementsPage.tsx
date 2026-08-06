@@ -442,6 +442,7 @@ export default function SettlementsPage() {
     resolveName,
     users,
     rawExpenses,
+    groups,
   } = useRealtimeStore(user?.id);
 
   const [view, setView] = useState<View>({ kind: 'list' });
@@ -468,20 +469,22 @@ export default function SettlementsPage() {
   }, [perUserBalances, users, resolveName]);
   // Groups from the store — derive from expenses
   const groupSummaries = useMemo(() => {
-    const groups: Record<string, { id: string; name: string; expenseCount: number; memberIds: Set<string>; lastDate: string }> = {};
+    const grps: Record<string, { id: string; name: string; expenseCount: number; memberIds: Set<string>; lastDate: string }> = {};
     rawExpenses.forEach(e => {
       const gId = e.group_id;
       if (!gId) return;
-      if (!groups[gId]) {
-        groups[gId] = { id: gId, name: gId, expenseCount: 0, memberIds: new Set(), lastDate: e.expense_date };
+      if (!grps[gId]) {
+        // Look up actual group name from the groups node; fall back to ID only if not found
+        const groupName = groups[gId]?.name || gId;
+        grps[gId] = { id: gId, name: groupName, expenseCount: 0, memberIds: new Set(), lastDate: e.expense_date };
       }
-      groups[gId].expenseCount++;
-      groups[gId].memberIds.add(e.paid_by);
-      (e.splits || []).forEach(s => groups[gId].memberIds.add(s.user_id));
-      if (e.expense_date > groups[gId].lastDate) groups[gId].lastDate = e.expense_date;
+      grps[gId].expenseCount++;
+      grps[gId].memberIds.add(e.paid_by);
+      (e.splits || []).forEach(s => grps[gId].memberIds.add(s.user_id));
+      if (e.expense_date > grps[gId].lastDate) grps[gId].lastDate = e.expense_date;
     });
-    return Object.values(groups).filter(g => g.memberIds.has(user?.id || ''));
-  }, [rawExpenses, user?.id]);
+    return Object.values(grps).filter(g => g.memberIds.has(user?.id || ''));
+  }, [rawExpenses, user?.id, groups]);
 
   // Pending confirmations count
   const pendingForMe = pendingSettlements.filter(s => s.receiver_id === user?.id);
