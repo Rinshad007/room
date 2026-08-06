@@ -62,9 +62,25 @@ export function getUpiQrCodeUrl(params: UpiPaymentParams, size = 200): string {
 }
 
 /**
- * Launches the payment URL synchronously on user click to preserve user gesture context.
+ * Returns true when running on an Android device.
  */
-export function launchUpiPayment(params: UpiPaymentParams, app: UpiApp = 'gpay'): void {
-  const url = buildUpiIntentUrl(params, app);
-  window.location.href = url;
+export function isAndroid(): boolean {
+  return /android/i.test(navigator.userAgent);
+}
+
+/**
+ * Launches the UPI payment intent.
+ * On Android: opens the intent:// or upi:// URL via window.open (preserves gesture, avoids share dialog).
+ * On non-Android (desktop / iOS): copies the UPI ID and shows a toast — no deep-link attempt.
+ */
+export function launchUpiPayment(params: UpiPaymentParams, app: UpiApp = 'gpay'): 'launched' | 'copied' {
+  if (isAndroid()) {
+    const url = buildUpiIntentUrl(params, app);
+    // window.open avoids the browser's "share" overlay that window.location.href triggers
+    window.open(url, '_blank');
+    return 'launched';
+  }
+  // Desktop / iOS: deep-links don't work reliably — copy UPI ID instead
+  navigator.clipboard.writeText(params.upiId).catch(() => {});
+  return 'copied';
 }

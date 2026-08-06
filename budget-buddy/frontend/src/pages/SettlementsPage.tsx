@@ -41,6 +41,14 @@ interface UpiModalProps {
 function UpiModal({ name, amount, upiId, submitting, onConfirm, onClose }: UpiModalProps) {
   const [gpayOpened, setGpayOpened] = useState(false);
 
+  const handlePayClick = (app: Parameters<typeof launchUpiPayment>[1]) => {
+    const result = launchUpiPayment({ upiId: upiId!, name, amount }, app);
+    setGpayOpened(true);
+    if (result === 'copied') {
+      toast.success(`UPI ID copied! Paste it in your ${app === 'gpay' ? 'GPay' : app === 'phonepe' ? 'PhonePe' : 'UPI'} app.`, { duration: 5000 });
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
@@ -88,7 +96,7 @@ function UpiModal({ name, amount, upiId, submitting, onConfirm, onClose }: UpiMo
                 <button
                   key={app}
                   type="button"
-                  onClick={() => { setGpayOpened(true); launchUpiPayment({ upiId, name, amount }, app); }}
+                  onClick={() => handlePayClick(app)}
                   className={`h-11 rounded-xl font-semibold text-xs flex items-center justify-center active:scale-95 transition-transform ${cls}`}
                 >
                   {label}
@@ -97,7 +105,7 @@ function UpiModal({ name, amount, upiId, submitting, onConfirm, onClose }: UpiMo
             </div>
             <button
               type="button"
-              onClick={() => { setGpayOpened(true); launchUpiPayment({ upiId, name, amount }, 'generic'); }}
+              onClick={() => handlePayClick('generic')}
               className="w-full h-10 rounded-xl border border-outline-variant/30 text-xs font-semibold text-primary hover:bg-primary/5 transition-colors"
             >
               Other UPI App
@@ -152,6 +160,7 @@ function UpiModal({ name, amount, upiId, submitting, onConfirm, onClose }: UpiMo
     </div>
   );
 }
+
 
 // ─── Friend Conversation View ─────────────────────────────────────────────────
 interface FriendConvProps {
