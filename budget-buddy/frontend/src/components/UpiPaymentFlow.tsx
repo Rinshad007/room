@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
   getPlatform,
-  buildUpiUri,
   generateQrCodeDataUrl,
   triggerUpiPayment,
-  UpiAppChoice,
-  PlatformType,
 } from '../utils/upiUtils';
+import type { UpiAppChoice, PlatformType } from '../utils/upiUtils';
 
 export interface UpiPaymentFlowProps {
   upiId: string;
