@@ -119,28 +119,28 @@ function UpiModal({ name, amount, upiId, submitting, onConfirm, onClose }: UpiMo
               <button
                 type="button"
                 onClick={async () => {
-                  const shareText = `Hi! Please pay ₹${amount} to ${name} via UPI ID: ${upiId}\nDirect Pay Link: ${buildRawUpiUrl({ upiId, name, amount })}`;
+                  const upiUrl = buildRawUpiUrl({ upiId, name, amount });
                   try {
                     if (navigator.share) {
                       await navigator.share({
-                        title: `Pay ₹${amount} to ${name}`,
-                        text: shareText,
+                        url: upiUrl,
+                        text: upiUrl,
                       });
                     } else {
-                      await navigator.clipboard.writeText(shareText);
-                      toast.success('Payment details & link copied!');
+                      await navigator.clipboard.writeText(upiUrl);
+                      toast.success('UPI link copied!');
                     }
                   } catch (e: any) {
                     if (e.name !== 'AbortError') {
-                      await navigator.clipboard.writeText(shareText);
-                      toast.success('Payment link copied!');
+                      await navigator.clipboard.writeText(upiUrl);
+                      toast.success('UPI link copied!');
                     }
                   }
                 }}
                 className="mt-2.5 flex items-center gap-1.5 bg-secondary/15 hover:bg-secondary/25 text-secondary text-xs font-bold px-4 py-1.5 rounded-full active:scale-95 transition-all"
               >
                 <span className="material-symbols-outlined text-[16px]">share</span>
-                Share Payment Link
+                Share Link
               </button>
             </div>
 
