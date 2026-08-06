@@ -21,6 +21,7 @@ import Skeleton from '../components/Skeleton';
 import { useAuthStore } from '../store/auth';
 import { useRealtimeStore } from '../hooks/useRealtimeStore';
 import { settlementsAPI } from '../api/services';
+import { getUpiQrCodeUrl, launchUpiPayment } from '../utils/upi';
 import { colors, fontSizes, fontWeights, radius, spacing, shadows } from '../theme';
 
 interface ActiveSettlement {

@@ -15,6 +15,7 @@ import GroupsScreen from '../screens/GroupsScreen';
 import FriendsScreen from '../screens/FriendsScreen';
 import BudgetScreen from '../screens/BudgetScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import ImportExpenseScreen from '../screens/ImportExpenseScreen';
 
 // ─── Type declarations ────────────────────────────────────────────────────────
 export type RootStackParamList = {
@@ -24,6 +25,7 @@ export type RootStackParamList = {
   Groups: undefined;
   History: undefined;
   Budget: undefined;
+  ImportExpense: undefined;
 };
 
 export type TabParamList = {
@@ -205,6 +207,11 @@ export default function TabNavigator() {
       <Stack.Screen
         name="Budget"
         component={BudgetScreen}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="ImportExpense"
+        component={ImportExpenseScreen}
         options={{ presentation: 'card', animation: 'slide_from_right' }}
       />
     </Stack.Navigator>

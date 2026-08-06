@@ -212,6 +212,16 @@ export default function ProfileScreen() {
             <Text style={styles.linkLabel}>Groups</Text>
             <Ionicons name="chevron-forward" size={18} color={colors.onSurfaceVariant + '60'} />
           </TouchableOpacity>
+
+          <View style={styles.divider} />
+
+          <TouchableOpacity style={styles.linkRow} onPress={() => nav.navigate('ImportExpense')} activeOpacity={0.7}>
+            <View style={styles.linkIcon}>
+              <Ionicons name="document-text-outline" size={20} color={colors.primary} />
+            </View>
+            <Text style={styles.linkLabel}>Import Expenses (CSV)</Text>
+            <Ionicons name="chevron-forward" size={18} color={colors.onSurfaceVariant + '60'} />
+          </TouchableOpacity>
         </Card>
 
         {/* ── Sign Out ──────────────────────────────────────────────── */}

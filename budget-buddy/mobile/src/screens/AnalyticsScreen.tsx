@@ -13,6 +13,7 @@ import Skeleton from '../components/Skeleton';
 import { DonutChart, BarChartSVG, AreaChartSVG } from '../components/ChartComponents';
 import { analyticsAPI, budgetsAPI } from '../api/services';
 import { useRealtimeStore } from '../hooks/useRealtimeStore';
+import { useAuthStore } from '../store/auth';
 import { CATEGORY_COLORS } from '../utils/categoryHelpers';
 import { colors, fontSizes, fontWeights, radius, spacing } from '../theme';
 
@@ -403,9 +404,6 @@ export default function AnalyticsScreen() {
     </View>
   );
 }
-
-// Helper auth store mock import (resolves auth store dynamically)
-import { useAuthStore } from '../store/auth';
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
