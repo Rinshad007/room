@@ -113,8 +113,48 @@ function UpiModal({ name, amount, upiId, submitting, onConfirm, onClose }: UpiMo
 
             {/* QR */}
             <div className="flex flex-col items-center p-3 bg-white rounded-2xl border border-outline-variant/10 shadow-inner">
-              <img src={getUpiQrCodeUrl({ upiId, name, amount })} alt="UPI QR" className="w-32 h-32" />
+              <img id="upi-qr-img" src={getUpiQrCodeUrl({ upiId, name, amount })} alt="UPI QR" className="w-32 h-32" />
               <p className="text-[10px] text-zinc-500 font-semibold mt-1">Scan with any UPI App</p>
+              
+              <button
+                type="button"
+                onClick={async () => {
+                  const qrUrl = getUpiQrCodeUrl({ upiId, name, amount }, 400);
+                  try {
+                    const response = await fetch(qrUrl);
+                    const blob = await response.blob();
+                    const file = new File([blob], `UPI_QR_${name.replace(/\s+/g, '_')}.png`, { type: blob.type });
+
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                      await navigator.share({
+                        title: `Pay ${name}`,
+                        text: `Scan QR to pay ₹${amount} to ${name} (${upiId})`,
+                        files: [file],
+                      });
+                    } else if (navigator.share) {
+                      await navigator.share({
+                        title: `Pay ${name}`,
+                        text: `Pay ₹${amount} to ${name} via UPI ID: ${upiId}`,
+                        url: qrUrl,
+                      });
+                    } else {
+                      const a = document.createElement('a');
+                      a.href = URL.createObjectURL(blob);
+                      a.download = `UPI_QR_${name.replace(/\s+/g, '_')}.png`;
+                      a.click();
+                      toast.success('QR Code downloaded!');
+                    }
+                  } catch (e: any) {
+                    if (e.name !== 'AbortError') {
+                      toast.error('Could not share QR image');
+                    }
+                  }
+                }}
+                className="mt-2.5 flex items-center gap-1.5 bg-secondary/15 hover:bg-secondary/25 text-secondary text-xs font-bold px-4 py-1.5 rounded-full active:scale-95 transition-all"
+              >
+                <span className="material-symbols-outlined text-[16px]">share</span>
+                Share QR Code
+              </button>
             </div>
 
             {/* Confirm */}
