@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Layout from '../components/layout/Layout';
 import { friendsAPI, usersAPI } from '../api/services';
 import { useRealtimeStore } from '../hooks/useRealtimeStore';
