@@ -35,6 +35,24 @@ function getCurrentUserId(): string {
   throw new Error('User not authenticated');
 }
 
+// Helper to normalize group member IDs from both arrays and objects (realtime db formats)
+function normalizeMemberIds(members: any): string[] {
+  if (!members) return [];
+  if (Array.isArray(members)) {
+    return members.map(m => {
+      if (typeof m === 'string') return m;
+      if (m && typeof m === 'object') {
+        return m.id || m.user_id || m.user?.id;
+      }
+      return null;
+    }).filter(Boolean) as string[];
+  }
+  if (typeof members === 'object') {
+    return Object.keys(members);
+  }
+  return [];
+}
+
 // ─── Auth ──────────────────────────────────────────────────────────────
 export const authAPI = {
   register: async (data: { name: string; email: string; password: string }) => {
@@ -359,7 +377,7 @@ export const groupsAPI = {
     if (snapshot.exists()) {
       const allGroups = Object.values(snapshot.val());
       for (const groupData of allGroups as any[]) {
-        const membersList = groupData.members || [];
+        const membersList = normalizeMemberIds(groupData.members);
         if (membersList.includes(uid)) {
           const memberDetails: GroupMember[] = [];
           for (const memberId of membersList) {
@@ -402,7 +420,7 @@ export const groupsAPI = {
       description: data.description || '',
       created_by: uid,
       created_at: new Date().toISOString(),
-      members: [uid]
+      members: { [uid]: true }
     };
     
     await set(groupRef, groupData);
@@ -427,8 +445,9 @@ export const groupsAPI = {
     if (!groupSnap.exists()) throw new Error('Group not found');
     const groupData = groupSnap.val() as any;
     
+    const membersList = normalizeMemberIds(groupData.members);
     const memberDetails: GroupMember[] = [];
-    for (const memberId of groupData.members || []) {
+    for (const memberId of membersList) {
       const userSnap = await get(ref(db, `users/${memberId}`));
       if (userSnap.exists()) {
         memberDetails.push({
@@ -464,11 +483,10 @@ export const groupsAPI = {
     const groupSnap = await get(groupRef);
     if (!groupSnap.exists()) throw new Error('Group not found');
     const groupData = groupSnap.val();
-    const members = groupData.members || [];
-    if (!members.includes(user_id)) {
-      members.push(user_id);
-      await update(groupRef, { members });
-    }
+    
+    const membersMap = typeof groupData.members === 'object' && groupData.members ? { ...groupData.members } : {};
+    membersMap[user_id] = true;
+    await update(groupRef, { members: membersMap });
     return wrapResponse({ success: true });
   },
 
@@ -477,8 +495,10 @@ export const groupsAPI = {
     const groupSnap = await get(groupRef);
     if (!groupSnap.exists()) throw new Error('Group not found');
     const groupData = groupSnap.val();
-    const members = (groupData.members || []).filter((m: string) => m !== user_id);
-    await update(groupRef, { members });
+    
+    const membersMap = typeof groupData.members === 'object' && groupData.members ? { ...groupData.members } : {};
+    delete membersMap[user_id];
+    await update(groupRef, { members: membersMap });
     return wrapResponse({ success: true });
   }
 };

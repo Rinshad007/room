@@ -38,6 +38,24 @@ async function getCurrentUserId(): Promise<string> {
   throw new Error('User not authenticated');
 }
 
+// Helper to normalize group member IDs from both arrays and objects (realtime db formats)
+function normalizeMemberIds(members: any): string[] {
+  if (!members) return [];
+  if (Array.isArray(members)) {
+    return members.map(m => {
+      if (typeof m === 'string') return m;
+      if (m && typeof m === 'object') {
+        return m.id || m.user_id || m.user?.id;
+      }
+      return null;
+    }).filter(Boolean) as string[];
+  }
+  if (typeof members === 'object') {
+    return Object.keys(members);
+  }
+  return [];
+}
+
 /**
  * Ownership guard — throws if currentUser doesn't match expected owner.
  * Centralised here so every delete/mutate operation uses identical logic.
@@ -420,7 +438,7 @@ export const groupsAPI = {
     const groups: Group[] = [];
     if (snapshot.exists()) {
       for (const groupData of Object.values(snapshot.val()) as any[]) {
-        const membersList = safeArray<string>(groupData.members);
+        const membersList = normalizeMemberIds(groupData.members);
         if (membersList.includes(uid)) {
           const memberDetails: GroupMember[] = [];
           for (const memberId of membersList) {
@@ -440,7 +458,7 @@ export const groupsAPI = {
     const uid = await getCurrentUserId();
     const groupRef = push(ref(db, 'groups'));
     const groupId = groupRef.key!;
-    const groupData = { id: groupId, name: data.name, description: data.description || '', created_by: uid, created_at: new Date().toISOString(), members: [uid] };
+    const groupData = { id: groupId, name: data.name, description: data.description || '', created_by: uid, created_at: new Date().toISOString(), members: { [uid]: true } };
     await set(groupRef, groupData);
     const userSnap = await get(ref(db, `users/${uid}`));
     const creatorUser = userSnap.exists() ? userSnap.val() : { id: uid, name: 'User', email: '', created_at: '' };
@@ -452,7 +470,7 @@ export const groupsAPI = {
     if (!groupSnap.exists()) throw new Error('Group not found');
     const groupData = groupSnap.val();
     const memberDetails: GroupMember[] = [];
-    const membersList = safeArray<string>(groupData.members);
+    const membersList = normalizeMemberIds(groupData.members);
     for (const memberId of membersList) {
       const userSnap = await get(ref(db, `users/${memberId}`));
       if (userSnap.exists()) memberDetails.push({ id: `${id}_${memberId}`, user: userSnap.val(), joined_at: groupData.created_at });
@@ -467,17 +485,12 @@ export const groupsAPI = {
     if (!groupSnap.exists()) throw new Error('Group not found');
     const groupData = groupSnap.val();
     if (groupData.created_by !== uid) throw new Error('Unauthorized: only the group creator can add members');
-    const members = safeArray<string>(groupData.members);
-    if (!members.includes(user_id)) {
-      members.push(user_id);
-      await update(groupRef, { members });
-    }
+    const membersMap = typeof groupData.members === 'object' && groupData.members ? { ...groupData.members } : {};
+    membersMap[user_id] = true;
+    await update(groupRef, { members: membersMap });
     return wrapResponse({ success: true });
   },
 
-  /**
-   * Creator can remove any member. Members can remove themselves (leave group).
-   */
   removeMember: async (id: string, user_id: string) => {
     const uid = await getCurrentUserId();
     const groupRef = ref(db, `groups/${id}`);
@@ -487,15 +500,12 @@ export const groupsAPI = {
     if (groupData.created_by !== uid && uid !== user_id) {
       throw new Error('Unauthorized: only the group creator can remove other members');
     }
-    const members = safeArray<string>(groupData.members).filter((m: string) => m !== user_id);
-    await update(groupRef, { members });
+    const membersMap = typeof groupData.members === 'object' && groupData.members ? { ...groupData.members } : {};
+    delete membersMap[user_id];
+    await update(groupRef, { members: membersMap });
     return wrapResponse({ success: true });
   },
 
-  /**
-   * SECURITY FIX (BUG-005): Only the group creator can delete a group.
-   * Previously any authenticated user could delete any group by knowing its ID.
-   */
   delete: async (id: string) => {
     const uid = await getCurrentUserId();
     const groupSnap = await get(ref(db, `groups/${id}`));

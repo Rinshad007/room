@@ -2,7 +2,6 @@
   "expo": {
     "name": "Budget Buddy",
     "slug": "budget-buddy",
-    "owner": "safvennnn",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -52,8 +51,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "74cd3351-40dd-4e1f-a6f1-2ff4f61a88ac"
+        "projectId": "5250ac4c-da32-47b5-b82d-6c2d22ee630a"
       }
-    }
+    },
+    "owner": "rinshad222020"
   }
 }
