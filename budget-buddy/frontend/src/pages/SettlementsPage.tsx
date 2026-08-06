@@ -121,26 +121,16 @@ function UpiModal({ name, amount, upiId, submitting, onConfirm, onClose }: UpiMo
                 onClick={async () => {
                   const upiUrl = buildRawUpiUrl({ upiId, name, amount });
                   try {
-                    if (navigator.share) {
-                      await navigator.share({
-                        url: upiUrl,
-                        text: upiUrl,
-                      });
-                    } else {
-                      await navigator.clipboard.writeText(upiUrl);
-                      toast.success('UPI link copied!');
-                    }
-                  } catch (e: any) {
-                    if (e.name !== 'AbortError') {
-                      await navigator.clipboard.writeText(upiUrl);
-                      toast.success('UPI link copied!');
-                    }
+                    await navigator.clipboard.writeText(upiUrl);
+                    toast.success('UPI link copied!');
+                  } catch (e) {
+                    toast.error('Failed to copy link');
                   }
                 }}
                 className="mt-2.5 flex items-center gap-1.5 bg-secondary/15 hover:bg-secondary/25 text-secondary text-xs font-bold px-4 py-1.5 rounded-full active:scale-95 transition-all"
               >
-                <span className="material-symbols-outlined text-[16px]">share</span>
-                Share Link
+                <span className="material-symbols-outlined text-[16px]">content_copy</span>
+                Copy Link
               </button>
             </div>
 
