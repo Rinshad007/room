@@ -115,8 +115,12 @@ export function triggerUpiPayment(
 
   if (platform === 'android' || platform === 'ios') {
     const url = buildUpiUri(params, app, platform);
-    window.open(url, '_blank');
-    return 'launched';
+    try {
+      window.location.href = url;
+      return 'launched';
+    } catch {
+      // fallback to clipboard copy
+    }
   }
 
   if (navigator.clipboard) {

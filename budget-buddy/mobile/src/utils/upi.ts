@@ -66,20 +66,22 @@ export async function launchUpiPayment(
   params: UpiPaymentParams,
   app: UpiApp = 'gpay'
 ): Promise<'launched' | 'copied'> {
-  const url = buildUpiIntentUrl(params, app);
-  const canOpen = await Linking.canOpenURL(url);
-  if (canOpen) {
-    await Linking.openURL(url);
-    return 'launched';
-  }
-  // Fallback: raw upi:// scheme
   const rawUrl = buildRawUpiUrl(params);
-  const canOpenRaw = await Linking.canOpenURL(rawUrl);
-  if (canOpenRaw) {
-    await Linking.openURL(rawUrl);
+  const intentUrl = buildUpiIntentUrl(params, app);
+
+  // Try intent URL first
+  try {
+    await Linking.openURL(intentUrl);
     return 'launched';
+  } catch {
+    // Try raw upi:// scheme
+    try {
+      await Linking.openURL(rawUrl);
+      return 'launched';
+    } catch {
+      // Final fallback: copy UPI ID to clipboard
+      Clipboard.setString(params.upiId);
+      return 'copied';
+    }
   }
-  // Final fallback: copy UPI ID to clipboard
-  Clipboard.setString(params.upiId);
-  return 'copied';
 }
