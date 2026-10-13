@@ -23,6 +23,7 @@ import AnalyticsPage from './pages/AnalyticsPage';
 import ProfilePage from './pages/ProfilePage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ImportExpensePage from './pages/ImportExpensePage';
+import McpConsentPage from './pages/McpConsentPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -106,6 +107,7 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route element={<AppShell />}>
+            <Route path="/mcp/consent" element={<McpConsentPage />} />
             {/* Public Auth Routes */}
             <Route
               path="/login"

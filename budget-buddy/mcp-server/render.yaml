@@ -1,0 +1,39 @@
+# Separate Blueprint: choose this file, not the repository's legacy render.yaml.
+services:
+  - type: web
+    name: budgetbuddy-mcp
+    runtime: docker
+    plan: free
+    region: singapore
+    rootDir: budget-buddy/mcp-server
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeployTrigger: off
+    envVars:
+      - key: MCP_PUBLIC_URL
+        sync: false
+      - key: OAUTH_ISSUER_URL
+        sync: false
+      - key: BUDGETBUDDY_APP_URL
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_DATABASE_URL
+        sync: false
+      - key: GOOGLE_APPLICATION_CREDENTIALS
+        value: /etc/secrets/firebase-service-account.json
+      - key: OAUTH_CLIENT_ID
+        value: budgetbuddy-chatgpt
+      - key: OAUTH_CLIENT_SECRET
+        generateValue: true
+      - key: OAUTH_REDIRECT_URIS
+        sync: false
+      - key: OAUTH_SECURE_COOKIES
+        value: "true"
+      - key: TRUST_PROXY_HOPS
+        value: "1"
+      - key: DEFAULT_CURRENCY
+        value: INR
+      - key: DEFAULT_TIMEZONE
+        value: Asia/Kolkata

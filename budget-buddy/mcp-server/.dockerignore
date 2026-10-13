@@ -1,0 +1,8 @@
+node_modules
+dist
+coverage
+.runtime
+.env
+.env.*
+*.log
+service-account*.json

@@ -1,0 +1,10 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+*-debug.log
+service-account*.json
+.firebase/
+.runtime/

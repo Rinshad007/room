@@ -41,6 +41,10 @@
         ".read": "auth != null && data.child('user_id').val() === auth.uid",
         ".write": "auth != null && newData.child('user_id').val() === auth.uid"
       }
+    },
+    "mcp_private": {
+      ".read": false,
+      ".write": false
     }
   }
 }

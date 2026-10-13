@@ -1,0 +1,32 @@
+name: BudgetBuddy MCP
+on:
+  pull_request:
+    paths: ['budget-buddy/mcp-server/**', 'budget-buddy/frontend/src/**', 'budget-buddy/frontend/tests/**', '.github/workflows/mcp.yml']
+  push:
+    branches: [main, 'codex/**']
+    paths: ['budget-buddy/mcp-server/**', 'budget-buddy/frontend/src/**', 'budget-buddy/frontend/tests/**', '.github/workflows/mcp.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: budget-buddy/mcp-server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: budget-buddy/mcp-server/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - run: npm run test:coverage
+      - run: npx firebase emulators:exec --project demo-budgetbuddy --only database "npm run test:emulator"
+      - run: npm audit --omit=dev --audit-level=high
+      - run: node --test ../frontend/tests/mcpConsent.test.mjs

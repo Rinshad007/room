@@ -66,6 +66,9 @@
 - ✅ **Multi-Currency Support** — Default currency configurable (INR by default)
 - ✅ **Expense History** — Full paginated log of personal and group expenses
 - ✅ **Real-time Sync** — Data updates instantly across all sessions via **Firebase Realtime Database**
+- ✅ **ChatGPT / MCP Integration** — 43 authenticated tools for expenses, analytics, budgets, groups, friends, settlements, and notifications
+
+See the [complete MCP setup and ChatGPT connection guide](docs/MCP_SETUP.md) to configure Firebase credentials, deploy the server, and link your BudgetBuddy account.
 
 ---
 
