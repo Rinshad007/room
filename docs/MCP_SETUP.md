@@ -1,6 +1,6 @@
 # BudgetBuddy MCP setup and ChatGPT connection
 
-The server in `budget-buddy/mcp-server` provides **43 authenticated tools** over Streamable HTTP. It uses the existing Firebase data and the new `/mcp/consent` frontend page. **Implementation and local verification are complete; live deployment and ChatGPT account linking remain to be performed.**
+The server in `budget-buddy/mcp-server` provides **43 authenticated tools** over Streamable HTTP. It uses the existing Firebase data and the new `/mcp/consent` frontend page.
 
 No OpenAI API key is needed to expose these tools. ChatGPT interprets your messages; the server validates and executes structured operations.
 
@@ -27,7 +27,7 @@ Prefer sibling domains such as `app.example.com` and `mcp.example.com`. Consent 
 2. Copy its project ID and exact Realtime Database URL, including its region if present.
 3. Confirm email/password or Google sign-in is enabled and the frontend domain is authorized for the chosen provider.
 4. Obtain a dedicated service-account JSON from Project Settings → Service accounts, or configure Application Default Credentials. Keep the JSON outside tracked source.
-5. Set `GOOGLE_APPLICATION_CREDENTIALS` to its absolute path. On Render, use a mounted secret file.
+5. Set `GOOGLE_APPLICATION_CREDENTIALS` to its absolute path. On hosts without secret files, base64-encode the complete JSON and set `FIREBASE_SERVICE_ACCOUNT_JSON_BASE64` instead.
 
 `VITE_FIREBASE_*` values identify the project; they are not Admin credentials. Never expose service-account keys or OAuth secrets through a `VITE_` variable.
 
@@ -61,6 +61,7 @@ Place the generated value in `OAUTH_CLIENT_SECRET` privately. Configure:
 | `FIREBASE_PROJECT_ID` | Existing Firebase project ID. |
 | `FIREBASE_DATABASE_URL` | Exact database URL from Firebase Console. |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Absolute server credential file path; omit only with working Application Default Credentials. |
+| `FIREBASE_SERVICE_ACCOUNT_JSON_BASE64` | Alternative for hosted deployments: base64-encoded service-account JSON. Takes precedence over the file path and must match `FIREBASE_PROJECT_ID`. |
 | `DEFAULT_CURRENCY` | Initially `INR`; labels amounts, does not convert currencies. |
 | `DEFAULT_TIMEZONE` | Initially `Asia/Kolkata`. |
 | `OAUTH_CLIENT_ID` | For example `budgetbuddy-chatgpt`. |
@@ -158,7 +159,7 @@ Use **`budget-buddy/mcp-server/render.yaml`**, not the root Blueprint for the le
 2. Create a Render Blueprint from the repository and select the new Blueprint path. Alternatively create a Docker web service with root `budget-buddy/mcp-server`, Dockerfile `./Dockerfile`, context `.`, health `/health`.
 3. The template selects a free service with automatic deploys disabled. Choose a plan for your availability needs; cold starts can delay connections.
 4. Set the environment variables above using the final HTTPS origin and frontend origin.
-5. Add a secret file named **`firebase-service-account.json`** containing the server credential. The template expects `/etc/secrets/firebase-service-account.json`; verify the mount path.
+5. Add a secret file named **`firebase-service-account.json`** containing the server credential. The template expects `/etc/secrets/firebase-service-account.json`; verify the mount path. If secret files are unavailable, set `FIREBASE_SERVICE_ACCOUNT_JSON_BASE64` to the base64-encoded complete JSON instead.
 6. Render generates `OAUTH_CLIENT_SECRET`. Copy it privately into the client's OAuth configuration. Keep client credentials stable across deploys.
 7. Configure the client's exact callback(s), `OAUTH_SECURE_COOKIES=true`, and proxy hops.
 8. Deploy the frontend with its MCP origin and configure sibling domains for reliable consent cookies.

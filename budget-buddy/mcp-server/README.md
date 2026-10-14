@@ -27,4 +27,6 @@ The tool catalog is maintained in `src/catalog.ts`. Each tool returns `{ data: .
 
 The package is independent of the legacy FastAPI/PostgreSQL backend. Telegram account linking is reported as unavailable until the external bot's authenticated API is integrated. This server records settlements but never moves money.
 
+For Firebase Admin authentication, set either `GOOGLE_APPLICATION_CREDENTIALS` to a server-only JSON file or set `FIREBASE_SERVICE_ACCOUNT_JSON_BASE64` to the base64-encoded contents of that file. The base64 variable takes precedence and is validated against `FIREBASE_PROJECT_ID` during startup.
+
 Operational boundary: domain mutations use root Firebase transactions to atomically preserve splits, notifications, idempotency, and concurrent browser writes. This is suitable for a small app, not a high-throughput database. At 50,000 application records the server refuses scans instead of returning incomplete analytics. Migrate to indexed, account-partitioned storage before that limit. Private OAuth state is persisted under `mcp_private`; never grant clients access to that namespace.

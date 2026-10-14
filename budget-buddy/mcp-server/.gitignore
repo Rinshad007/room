@@ -5,6 +5,6 @@ coverage/
 .env.*
 !.env.example
 *-debug.log
-service-account*.json
+*service-account*.json
 .firebase/
 .runtime/

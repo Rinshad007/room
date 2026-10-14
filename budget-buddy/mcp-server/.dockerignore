@@ -5,4 +5,4 @@ coverage
 .env
 .env.*
 *.log
-service-account*.json
+*service-account*.json

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { loadConfig } from '../src/config.js';
+import { loadConfig, parseServiceAccount } from '../src/config.js';
 const env = () => ({ MCP_PUBLIC_URL: 'https://mcp.example.com/mcp', OAUTH_ISSUER_URL: 'https://mcp.example.com', BUDGETBUDDY_APP_URL: 'https://app.example.com', FIREBASE_PROJECT_ID: 'budgetbuddy', FIREBASE_DATABASE_URL: 'https://budgetbuddy-default-rtdb.firebaseio.com', OAUTH_CLIENT_ID: 'chatgpt', OAUTH_CLIENT_SECRET: 'x'.repeat(32), OAUTH_REDIRECT_URIS: 'https://chatgpt.com/connector/oauth/example' });
 describe('deployment configuration boundaries', () => {
   it('fails closed without credentials, with invalid timezone or an unrelated database host', () => {
@@ -14,5 +14,11 @@ describe('deployment configuration boundaries', () => {
     expect(config.TRUST_PROXY_HOPS).toBe(1);
     expect(config.auth.client.redirectUris).toEqual(['https://client.example/callback', 'https://client.example/callback2']);
     expect(config.auth.secureCookies).toBe(true);
+  });
+  it('accepts only a matching base64-encoded Firebase service account', () => {
+    const encoded = Buffer.from(JSON.stringify({ project_id: 'budgetbuddy', client_email: 'firebase@example.iam.gserviceaccount.com', private_key: 'private-key' })).toString('base64');
+    expect(parseServiceAccount(encoded, 'budgetbuddy')).toEqual({ projectId: 'budgetbuddy', clientEmail: 'firebase@example.iam.gserviceaccount.com', privateKey: 'private-key' });
+    expect(() => parseServiceAccount(encoded, 'another-project')).toThrow(/project/i);
+    expect(() => parseServiceAccount('not-base64', 'budgetbuddy')).toThrow(/credential/i);
   });
 });
