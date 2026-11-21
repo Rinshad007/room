@@ -34,13 +34,16 @@ async def chat_stream(
     db: Session = Depends(get_db),
 ):
     """Server-Sent Events (SSE) streaming endpoint for <400ms TTFT."""
-    chat_repo(content={"content": prompt}, role="user", user_id=str(user_id), db=db)
-
     async def event_generator():
         config = {"configurable": {"thread_id": str(user_id), "user_id": str(user_id)}}
         accumulated_text = []
 
         try:
+            # Safely log user message
+            try:
+                chat_repo(content={"content": prompt}, role="user", user_id=str(user_id), db=db)
+            except Exception as err:
+                print("Warning: Failed to log user prompt to audit history:", err)
             async for chunk in agent.astream(
                 {"messages": [HumanMessage(content=prompt)]},
                 config=config,

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from langchain.tools import tool
 from langchain_core.runnables import RunnableConfig
@@ -52,8 +52,8 @@ def expense_insight(config: Optional[RunnableConfig] = None) -> str:
         highest_expense = max(expenses, key=lambda x: x.amount or 0.0)
 
         # Month-over-month calculation
-        now = datetime.now()
-        first_of_this_month = datetime(now.year, now.month, 1)
+        now = datetime.now(timezone.utc)
+        first_of_this_month = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
         first_of_prev_month = (first_of_this_month - timedelta(days=1)).replace(day=1)
 
         this_month_total = db.exec(

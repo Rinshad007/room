@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from sqlmodel import SQLModel, Field, Column
 from sqlalchemy import JSON
@@ -11,4 +11,4 @@ class MessageModel(SQLModel, table=True):
     user_id: str = Field(nullable=False, index=True)
     role: str = Field(nullable=False)
     content: dict = Field(sa_column=Column(JSON), default={})
-    timestamp: Optional[datetime] = Field(default_factory=datetime.now)
+    timestamp: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))

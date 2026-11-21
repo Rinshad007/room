@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from langchain.tools import tool
 from langchain_core.runnables import RunnableConfig
@@ -44,7 +44,7 @@ def add_expense(
             title=title.strip(),
             amount=round(float(amount), 2),
             category=normalized_category,
-            date=datetime.now(),
+            date=datetime.now(timezone.utc),
         )
         db.add(item)
         db.commit()
