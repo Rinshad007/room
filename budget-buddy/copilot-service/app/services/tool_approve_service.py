@@ -4,12 +4,12 @@ from app.reposetory.chat_repo import chat_repo
 from app.schemas.chat_schemas import ApprovalRequest
 
 
-def handle_interrupt(agent, user_id: int, request: ApprovalRequest, db: Session):
+def handle_interrupt(agent, user_id: str, request: ApprovalRequest, db: Session):
     """Resume a paused agent after HITL approval/rejection."""
     config = {
         "configurable": {
             "thread_id": str(user_id),
-            "user_id": user_id,
+            "user_id": str(user_id),
         }
     }
 

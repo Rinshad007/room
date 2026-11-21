@@ -23,11 +23,10 @@ def edit_expense(
         category: The updated category.
     """
     configurable = config.get("configurable", {}) if config else {}
-    user_id = configurable.get("user_id")
-    if user_id is None and str(configurable.get("thread_id", "")).isdigit():
-        user_id = int(configurable["thread_id"])
-    if user_id is None:
+    user_id = configurable.get("user_id") or configurable.get("thread_id")
+    if not user_id:
         return "Error: User is not authenticated."
+    user_id = str(user_id)
 
     with Session(engine) as db:
         expense = db.exec(

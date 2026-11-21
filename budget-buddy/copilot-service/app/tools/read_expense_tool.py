@@ -10,11 +10,10 @@ from app.models.expenses_model import ExpenseModel
 def fetch_expenses(limit: int = 10, offset: int = 0, config: Optional[RunnableConfig] = None) -> str:
     """Fetch the authenticated user's recorded expenses with pagination."""
     configurable = config.get("configurable", {}) if config else {}
-    user_id = configurable.get("user_id")
-    if user_id is None and str(configurable.get("thread_id", "")).isdigit():
-        user_id = int(configurable["thread_id"])
-    if user_id is None:
+    user_id = configurable.get("user_id") or configurable.get("thread_id")
+    if not user_id:
         return "Error: User is not authenticated. Please log in to view expenses."
+    user_id = str(user_id)
 
     with Session(engine) as db:
         expenses = db.exec(

@@ -3,10 +3,10 @@ from sqlmodel import Session
 from app.models.messages_model import MessageModel
 
 
-def chat_repo(content: dict, role: str, user_id: int, db: Session):
+def chat_repo(content: dict, role: str, user_id: str, db: Session):
     """Log a chat message to the audit trail."""
     message = MessageModel(
-        user_id=user_id,
+        user_id=str(user_id),
         role=role,
         content=content,
         timestamp=datetime.now(),

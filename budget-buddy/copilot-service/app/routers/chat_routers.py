@@ -20,7 +20,7 @@ def chat(
     prompt: str = Query(..., description="User prompt"),
     db: Session = Depends(get_db),
     agent=Depends(load_agent),
-    user_id: int = Depends(current_user),
+    user_id: str = Depends(current_user),
 ):
     """Standard non-streaming chat endpoint."""
     return chat_services(user_prompt=prompt, thread_id=str(user_id), agent=agent, db=db)
@@ -30,14 +30,14 @@ def chat(
 async def chat_stream(
     prompt: str = Query(..., description="User prompt"),
     agent=Depends(load_agent),
-    user_id: int = Depends(current_user),
+    user_id: str = Depends(current_user),
     db: Session = Depends(get_db),
 ):
     """Server-Sent Events (SSE) streaming endpoint for <400ms TTFT."""
-    chat_repo(content={"content": prompt}, role="user", user_id=user_id, db=db)
+    chat_repo(content={"content": prompt}, role="user", user_id=str(user_id), db=db)
 
     async def event_generator():
-        config = {"configurable": {"thread_id": str(user_id), "user_id": user_id}}
+        config = {"configurable": {"thread_id": str(user_id), "user_id": str(user_id)}}
         accumulated_text = []
 
         try:
@@ -79,7 +79,7 @@ async def chat_stream(
             # Log final response to DB audit trail
             final_content = "".join(accumulated_text)
             if final_content:
-                chat_repo(content={"content": final_content}, role="assistant", user_id=user_id, db=db)
+                chat_repo(content={"content": final_content}, role="assistant", user_id=str(user_id), db=db)
             yield f"event: done\ndata: {json.dumps({'status': 'complete'})}\n\n"
 
         except Exception as exc:
@@ -93,7 +93,7 @@ def microphone(
     audio: UploadFile = File(...),
     db: Session = Depends(get_db),
     agent=Depends(load_agent),
-    user_id: int = Depends(current_user),
+    user_id: str = Depends(current_user),
 ):
     """Voice input via speech-to-text then agent invocation."""
     user_prompt = spech_to_text_service(audio)
@@ -104,8 +104,8 @@ def microphone(
 def interrupt_approve(
     request: ApprovalRequest,
     agent=Depends(load_agent),
-    user_id: int = Depends(current_user),
+    user_id: str = Depends(current_user),
     db: Session = Depends(get_db),
 ):
     """Approve or reject a HITL-interrupted action."""
-    return handle_interrupt(agent=agent, user_id=user_id, request=request, db=db)
+    return handle_interrupt(agent=agent, user_id=str(user_id), request=request, db=db)

@@ -7,12 +7,12 @@ from app.reposetory.chat_repo import chat_repo
 def chat_services(user_prompt: str, thread_id: str, agent, db: Session):
     """Synchronous agent invocation (non-streaming)."""
     # Log user message
-    chat_repo(content={"content": user_prompt}, role="user", user_id=int(thread_id) if thread_id.isdigit() else thread_id, db=db)
+    chat_repo(content={"content": user_prompt}, role="user", user_id=str(thread_id), db=db)
 
     config = {
         "configurable": {
-            "thread_id": thread_id,
-            "user_id": int(thread_id) if thread_id.isdigit() else thread_id,
+            "thread_id": str(thread_id),
+            "user_id": str(thread_id),
         }
     }
 
@@ -25,7 +25,7 @@ def chat_services(user_prompt: str, thread_id: str, agent, db: Session):
     ai_message = response["messages"][-1].content if response.get("messages") else "I couldn't process your request."
 
     # Log assistant response
-    chat_repo(content={"content": ai_message}, role="assistant", user_id=int(thread_id) if thread_id.isdigit() else thread_id, db=db)
+    chat_repo(content={"content": ai_message}, role="assistant", user_id=str(thread_id), db=db)
 
     return {"content": ai_message, "role": "assistant"}
 

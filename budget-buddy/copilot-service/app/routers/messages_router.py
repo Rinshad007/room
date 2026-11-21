@@ -10,7 +10,7 @@ router = APIRouter(prefix="/api/messages", tags=["Messages"])
 
 @router.get("")
 def get_messages(
-    user_id: int = Depends(current_user),
+    user_id: str = Depends(current_user),
     db: Session = Depends(get_db),
     limit: int = 50,
     offset: int = 0,

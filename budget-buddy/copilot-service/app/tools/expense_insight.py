@@ -13,11 +13,10 @@ def expense_insight(config: Optional[RunnableConfig] = None) -> str:
     Use this tool whenever the user asks for insights, summaries, analytics, or spending advice.
     """
     configurable = config.get("configurable", {}) if config else {}
-    user_id = configurable.get("user_id")
-    if user_id is None and str(configurable.get("thread_id", "")).isdigit():
-        user_id = int(configurable["thread_id"])
-    if user_id is None:
+    user_id = configurable.get("user_id") or configurable.get("thread_id")
+    if not user_id:
         return "Error: User is not authenticated. Please log in to view expense insights."
+    user_id = str(user_id)
 
     with Session(engine) as db:
         expenses = db.exec(
