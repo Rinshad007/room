@@ -24,6 +24,7 @@ import ProfilePage from './pages/ProfilePage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ImportExpensePage from './pages/ImportExpensePage';
 import McpConsentPage from './pages/McpConsentPage';
+import CopilotPage from './pages/CopilotPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -225,6 +226,14 @@ export default function App() {
               }
             />
 
+            <Route
+              path="/copilot"
+              element={
+                <ProtectedRoute>
+                  <CopilotPage />
+                </ProtectedRoute>
+              }
+            />
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/add-expense" replace />} />
           </Route>

@@ -1,0 +1,22 @@
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Environment secrets
+.env
+.env.local
+
+# Bytecode & caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Local databases
+*.db
+*.db*
+*.sqlite
+*.sqlite3
+copilot.db*
+copilot_checkpoints.db*

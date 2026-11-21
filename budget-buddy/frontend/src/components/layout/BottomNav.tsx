@@ -1,8 +1,9 @@
 import { NavLink, useLocation } from 'react-router-dom';
 
 const navItems = [
-  { to: '/dashboard',   icon: 'dashboard',       label: 'Home'      },
+  { to: '/dashboard',   icon: 'dashboard',        label: 'Home'      },
   { to: '/add-expense', icon: 'add_circle',       label: 'Expense'   },
+  { to: '/copilot',     icon: 'auto_awesome',     label: 'Copilot'   },
   { to: '/settlements', icon: 'payments',         label: 'Settle Up' },
   { to: '/analytics',   icon: 'bar_chart_4_bars', label: 'Analytics' },
 ];
@@ -18,7 +19,7 @@ export default function BottomNav() {
     >
       {/* iOS 27–style floating pill */}
       <nav
-        className="pointer-events-auto flex items-center gap-1 px-3 py-2 rounded-[28px]"
+        className="pointer-events-auto flex items-center gap-0.5 px-2 py-1.5 rounded-[28px] max-w-[95vw]"
         style={{
           background: 'rgba(255, 255, 255, 0.72)',
           backdropFilter: 'blur(28px) saturate(1.8)',
@@ -37,8 +38,8 @@ export default function BottomNav() {
               to={to}
               className="relative flex flex-col items-center justify-center rounded-[22px] transition-all duration-300 select-none"
               style={{
-                minWidth: active ? 80 : 60,
-                height: 52,
+                minWidth: active ? 72 : 54,
+                height: 50,
                 WebkitTapHighlightColor: 'transparent',
               }}
             >

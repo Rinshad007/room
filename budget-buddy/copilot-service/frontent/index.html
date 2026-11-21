@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Copilot</title>
+    <style>
+        :root {
+            --bg: #0f0f0f;
+            --surface: #1a1a1a;
+            --surface-2: #252525;
+            --border: #333;
+            --text: #e0e0e0;
+            --text-muted: #888;
+            --accent: #6c63ff;
+            --accent-hover: #7c74ff;
+            --green: #4caf50;
+            --red: #ef5350;
+            --yellow: #ffb300;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Header ── */
+        .app-header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .app-header h1 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--accent);
+        }
+        .status-indicator {
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: var(--surface-2);
+            color: var(--green);
+            border: 1px solid var(--green);
+        }
+
+        /* ── Auth Bar ── */
+        .auth-bar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 8px 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .auth-bar input {
+            flex: 1;
+            padding: 6px 12px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 0.85rem;
+        }
+        .auth-bar button {
+            padding: 6px 16px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .auth-bar button:hover { background: var(--accent-hover); }
+        .auth-status {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-left: auto;
+        }
+
+        /* ── Conversation ── */
+        .conversation-feed {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .message {
+            max-width: 75%;
+            padding: 10px 16px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .message.user {
+            align-self: flex-end;
+            background: var(--accent);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        .message.assistant {
+            align-self: flex-start;
+            background: var(--surface-2);
+            color: var(--text);
+            border-bottom-left-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        /* ── Approval Card ── */
+        .approval-card {
+            align-self: flex-start;
+            background: var(--surface);
+            border: 1px solid var(--yellow);
+            border-radius: 12px;
+            padding: 16px;
+            max-width: 420px;
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .card-warning {
+            font-size: 0.8rem;
+            color: var(--yellow);
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .approval-card h4 {
+            font-size: 0.95rem;
+            margin-bottom: 6px;
+            color: var(--text);
+        }
+        .approval-card p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+        .args-preview {
+            background: var(--surface-2);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            margin-bottom: 12px;
+            color: var(--text);
+        }
+        .args-preview div { margin-bottom: 2px; }
+        .action-buttons { display: flex; gap: 8px; }
+        .btn-approve {
+            padding: 6px 20px;
+            background: var(--green);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .btn-reject {
+            padding: 6px 20px;
+            background: var(--red);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .btn-approve:hover { opacity: 0.9; }
+        .btn-reject:hover { opacity: 0.9; }
+
+        /* ── Chat Composer ── */
+        .chat-composer {
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .chat-composer input {
+            flex: 1;
+            padding: 10px 16px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 0.9rem;
+            outline: none;
+        }
+        .chat-composer input:focus {
+            border-color: var(--accent);
+        }
+        .chat-composer input::placeholder { color: var(--text-muted); }
+        .chat-composer button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        #mic-btn {
+            background: var(--surface-2);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 10px 12px;
+        }
+        #mic-btn:hover { background: var(--border); }
+        #send-btn {
+            background: var(--accent);
+            color: white;
+            font-weight: 600;
+        }
+        #send-btn:hover { background: var(--accent-hover); }
+        #send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* ── Empty State ── */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            color: var(--text-muted);
+            gap: 8px;
+        }
+        .empty-state .emoji { font-size: 2.5rem; }
+        .empty-state p { font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="app-header">
+        <h1>💰 Expense Copilot</h1>
+        <span class="status-indicator" id="status-indicator">● Ready</span>
+    </header>
+
+    <!-- Auth Bar -->
+    <div class="auth-bar" id="auth-bar">
+        <input type="text" id="token-input" placeholder="Paste your JWT token here..." />
+        <button onclick="setToken()">Connect</button>
+        <span class="auth-status" id="auth-status">Not connected</span>
+    </div>
+
+    <!-- Conversation Feed -->
+    <div id="conversation" class="conversation-feed">
+        <div class="empty-state" id="empty-state">
+            <span class="emoji">💬</span>
+            <p>Say something like "Spent 240 on lunch" or "Show my expenses"</p>
+        </div>
+    </div>
+
+    <!-- Chat Composer -->
+    <form id="chat-form" class="chat-composer" onsubmit="handleSubmit(event)">
+        <input type="text" id="prompt-input" placeholder="e.g. Spent 250 on lunch, or Show this month's food spend..." autocomplete="off" />
+        <button type="button" id="mic-btn" title="Voice Input" onclick="handleMic()">🎙️</button>
+        <button type="submit" id="send-btn" disabled>Send</button>
+    </form>
+
+    <script src="response.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

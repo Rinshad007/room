@@ -419,7 +419,7 @@ export default function SettlementsScreen() {
                       <Text style={styles.stepLabel}>
                         {/^\d{10}$/.test(effectiveUpiId) ? 'Mobile Number' : 'UPI ID'}
                       </Text>
-                      
+
                       {/* Copy UPI Option */}
                       <View style={styles.copyUpiRow}>
                         <Text style={styles.upiIdText} numberOfLines={1}>
@@ -449,7 +449,7 @@ export default function SettlementsScreen() {
                           <Ionicons name="logo-google" size={18} color="#1a73e8" />
                           <Text style={[styles.appBtnText, { color: '#1a73e8' }]}>GPay</Text>
                         </TouchableOpacity>
-                        
+
                         {/* PhonePe */}
                         <TouchableOpacity
                           style={[styles.appBtn, { borderColor: '#5f259f30', backgroundColor: '#5f259f08' }]}
@@ -482,7 +482,7 @@ export default function SettlementsScreen() {
                       </TouchableOpacity>
 
                       {/* QR Code */}
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={styles.qrBox}
                         onPress={() => launchUpiApp(activeSettlement, 'generic', effectiveUpiId)}
                         activeOpacity={0.9}
@@ -648,7 +648,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   secondaryBtnText: { fontSize: fontSizes.xs, color: colors.primary, fontWeight: fontWeights.semibold },
-  
+
   copyUpiRow: {
     flexDirection: 'row',
     alignItems: 'center',
