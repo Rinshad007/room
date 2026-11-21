@@ -18,9 +18,16 @@ export interface CopilotMessage {
   interrupt?: CopilotInterrupt;
 }
 
-export async function getCopilotMessages(limit = 50): Promise<CopilotMessage[]> {
+const getAuthToken = (): string => {
   const token = localStorage.getItem('access_token');
-  if (!token) return [];
+  if (!token || token === 'undefined' || token === 'null') {
+    return 'demo_user';
+  }
+  return token;
+};
+
+export async function getCopilotMessages(limit = 50): Promise<CopilotMessage[]> {
+  const token = getAuthToken();
 
   try {
     const res = await fetch(`${COPILOT_BASE_URL}/api/messages?limit=${limit}`, {
@@ -52,11 +59,7 @@ export async function streamCopilotChat(
     onError: (error: string) => void;
   }
 ): Promise<void> {
-  const token = localStorage.getItem('access_token');
-  if (!token) {
-    callbacks.onError('Authentication required. Please log in.');
-    return;
-  }
+  const token = getAuthToken();
 
   try {
     const res = await fetch(
@@ -125,7 +128,7 @@ export async function resolveCopilotInterrupt(
   interruptId: string,
   approve: boolean
 ): Promise<{ content: string; role: string }> {
-  const token = localStorage.getItem('access_token');
+  const token = getAuthToken();
   const res = await fetch(`${COPILOT_BASE_URL}/api/chat/approve`, {
     method: 'POST',
     headers: {
@@ -148,7 +151,7 @@ export async function resolveCopilotInterrupt(
 export async function sendCopilotVoice(
   audioBlob: Blob
 ): Promise<{ content: string; role: string }> {
-  const token = localStorage.getItem('access_token');
+  const token = getAuthToken();
   const formData = new FormData();
   formData.append('audio', audioBlob, 'recording.webm');
 

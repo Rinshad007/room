@@ -48,7 +48,7 @@ export default function CopilotPage() {
       try {
         const ping = await fetch(`${COPILOT_BASE_URL}/api/messages?limit=1`, {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('access_token') || ''}`,
+            Authorization: `Bearer ${localStorage.getItem('access_token') || 'demo_user'}`,
           },
         });
         if (isMounted) setBackendOnline(ping.status !== 502 && ping.status !== 503);

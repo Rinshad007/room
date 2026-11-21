@@ -1,4 +1,3 @@
-from typing import Optional
 from langchain.tools import tool
 from langchain_core.runnables import RunnableConfig
 from langgraph.types import interrupt
@@ -8,16 +7,13 @@ from app.models.expenses_model import ExpenseModel
 
 
 @tool
-def delete_expense(expense_id: int, config: Optional[RunnableConfig] = None) -> str:
+def delete_expense(expense_id: int, *, config: RunnableConfig) -> str:
     """Delete an existing expense record. This action requires human approval.
     Args:
         expense_id: The unique ID of the expense to delete.
     """
     configurable = config.get("configurable", {}) if config else {}
-    user_id = configurable.get("user_id") or configurable.get("thread_id")
-    if not user_id:
-        return "Error: User is not authenticated."
-    user_id = str(user_id)
+    user_id = str(configurable.get("user_id") or configurable.get("thread_id") or "demo_user")
 
     with Session(engine) as db:
         expense = db.exec(

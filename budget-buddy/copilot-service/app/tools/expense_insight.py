@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta, timezone
-from typing import Optional
 from langchain.tools import tool
 from langchain_core.runnables import RunnableConfig
 from sqlmodel import Session, func, select
@@ -8,15 +7,12 @@ from app.models.expenses_model import ExpenseModel
 
 
 @tool
-def expense_insight(config: Optional[RunnableConfig] = None) -> str:
+def expense_insight(*, config: RunnableConfig) -> str:
     """Analyze the user's spending trends, category breakdowns, averages, and monthly changes.
     Use this tool whenever the user asks for insights, summaries, analytics, or spending advice.
     """
     configurable = config.get("configurable", {}) if config else {}
-    user_id = configurable.get("user_id") or configurable.get("thread_id")
-    if not user_id:
-        return "Error: User is not authenticated. Please log in to view expense insights."
-    user_id = str(user_id)
+    user_id = str(configurable.get("user_id") or configurable.get("thread_id") or "demo_user")
 
     with Session(engine) as db:
         expenses = db.exec(
@@ -74,9 +70,9 @@ def expense_insight(config: Optional[RunnableConfig] = None) -> str:
         diff = round(this_month_total - prev_month_total, 2)
         if prev_month_total > 0:
             pct_change = round((diff / prev_month_total) * 100, 1)
-            diff_msg = f"Change from last month: {'+'if diff >= 0 else '-'}₹{abs(diff)} ({'+' if pct_change >= 0 else ''}{pct_change}%)"
+            diff_msg = f"Change from last month: {'+' if diff >= 0 else '-'}₹{abs(diff)} ({'+' if pct_change >= 0 else ''}{pct_change}%)"
         else:
-            diff_msg = f"This month's spending: ₹{this_month_total} (no previous month data to compare)"
+            diff_msg = f"This month's spending: ₹{this_month_total:.2f} (no previous month data to compare)"
 
         return (
             f"Financial Overview for User #{user_id}:\n"
