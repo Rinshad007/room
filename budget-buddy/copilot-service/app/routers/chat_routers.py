@@ -90,7 +90,16 @@ async def chat_stream(
             yield f"event: done\ndata: {json.dumps({'status': 'complete'})}\n\n"
 
         except Exception as exc:
-            yield f"event: error\ndata: {json.dumps({'error': str(exc)})}\n\n"
+            error_msg = str(exc)
+            # Surface friendlier errors for common Groq/LLM failures
+            if "401" in error_msg or "Invalid API Key" in error_msg:
+                error_msg = "Error code: 401 - Invalid API Key"
+            elif "429" in error_msg or "rate" in error_msg.lower():
+                error_msg = "Rate limit exceeded. Please wait a moment and try again."
+            elif "404" in error_msg:
+                error_msg = "Model not found. Please check OPENAI_MODEL in .env."
+            print(f"[STREAM ERROR] {exc}")
+            yield f"event: error\ndata: {json.dumps({'error': error_msg})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
@@ -135,7 +144,7 @@ def clear_chat(
         print("Warning: failed to clear audit messages:", e)
 
     try:
-        conn = sqlite3.connect("./copilot_checkpoints.db")
+        conn = sqlite3.connect("./copilot_checkpoints_v2.db")
         cur = conn.cursor()
         for tbl in ["checkpoints", "checkpoint_writes"]:
             try:

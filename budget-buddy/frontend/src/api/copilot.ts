@@ -73,7 +73,8 @@ export async function streamCopilotChat(
     );
 
     if (!res.ok) {
-      callbacks.onError(`HTTP Error ${res.status}: ${res.statusText}`);
+      const body = await res.text().catch(() => '');
+      callbacks.onError(`Error code: ${res.status} - ${body || res.statusText}`);
       return;
     }
 
@@ -120,7 +121,12 @@ export async function streamCopilotChat(
 
     callbacks.onDone();
   } catch (err: any) {
-    callbacks.onError(err.message || 'Network connection failed.');
+    const msg = err.message || 'Network connection failed.';
+    callbacks.onError(
+      msg === 'Failed to fetch'
+        ? 'Copilot service is not reachable. Is it running on port 8001?'
+        : msg
+    );
   }
 }
 

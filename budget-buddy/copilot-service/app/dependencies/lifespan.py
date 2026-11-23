@@ -26,14 +26,9 @@ def _get_checkpointer_context(db_url: str):
         from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
         return AsyncPostgresSaver.from_conn_string(db_url)
     else:
-        # SQLite / local dev fallback
+        # SQLite / local dev fallback — use v2 to avoid stale poisoned history
         from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
-        sqlite_path = db_url.replace("sqlite:///", "")
-        if not sqlite_path or sqlite_path == ".":
-            sqlite_path = "./copilot_checkpoints.db"
-        else:
-            sqlite_path = sqlite_path.rsplit(".", 1)[0] + "_checkpoints.db"
-        return AsyncSqliteSaver.from_conn_string(sqlite_path)
+        return AsyncSqliteSaver.from_conn_string("./copilot_checkpoints_v2.db")
 
 
 @asynccontextmanager
