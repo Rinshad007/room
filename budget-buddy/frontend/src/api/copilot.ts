@@ -1,5 +1,5 @@
 const rawCopilotUrl = import.meta.env.VITE_COPILOT_URL || 'http://localhost:8001';
-export const COPILOT_BASE_URL = rawCopilotUrl.replace(/\/+$/, '');
+export let COPILOT_BASE_URL = rawCopilotUrl.replace(/\/+$/, '');
 
 export interface CopilotInterrupt {
   type: 'interrupt';
@@ -26,11 +26,42 @@ const getAuthToken = (): string => {
   return token;
 };
 
+// Resilient fetch with automatic localhost -> 127.0.0.1 fallback for Windows
+async function copilotFetch(path: string, init?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(`${COPILOT_BASE_URL}${path}`, init);
+  } catch (err) {
+    if (COPILOT_BASE_URL.includes('localhost')) {
+      const fallbackUrl = COPILOT_BASE_URL.replace('localhost', '127.0.0.1');
+      try {
+        const res = await fetch(`${fallbackUrl}${path}`, init);
+        COPILOT_BASE_URL = fallbackUrl;
+        return res;
+      } catch {
+        // rethrow original
+      }
+    }
+    throw err;
+  }
+}
+
+export async function checkCopilotHealth(): Promise<boolean> {
+  const token = getAuthToken();
+  try {
+    const res = await copilotFetch('/api/messages?limit=1', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.status !== 502 && res.status !== 503;
+  } catch {
+    return false;
+  }
+}
+
 export async function getCopilotMessages(limit = 50): Promise<CopilotMessage[]> {
   const token = getAuthToken();
 
   try {
-    const res = await fetch(`${COPILOT_BASE_URL}/api/messages?limit=${limit}`, {
+    const res = await copilotFetch(`/api/messages?limit=${limit}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -62,8 +93,8 @@ export async function streamCopilotChat(
   const token = getAuthToken();
 
   try {
-    const res = await fetch(
-      `${COPILOT_BASE_URL}/api/chat/stream?prompt=${encodeURIComponent(prompt)}`,
+    const res = await copilotFetch(
+      `/api/chat/stream?prompt=${encodeURIComponent(prompt)}`,
       {
         method: 'POST',
         headers: {
@@ -135,7 +166,7 @@ export async function resolveCopilotInterrupt(
   approve: boolean
 ): Promise<{ content: string; role: string }> {
   const token = getAuthToken();
-  const res = await fetch(`${COPILOT_BASE_URL}/api/chat/approve`, {
+  const res = await copilotFetch('/api/chat/approve', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -161,7 +192,7 @@ export async function sendCopilotVoice(
   const formData = new FormData();
   formData.append('audio', audioBlob, 'recording.webm');
 
-  const res = await fetch(`${COPILOT_BASE_URL}/api/chat/microphone`, {
+  const res = await copilotFetch('/api/chat/microphone', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -179,7 +210,7 @@ export async function sendCopilotVoice(
 export async function clearCopilotHistory(): Promise<void> {
   const token = getAuthToken();
   try {
-    await fetch(`${COPILOT_BASE_URL}/api/chat/clear`, {
+    await copilotFetch('/api/chat/clear', {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${token}`,

@@ -6,6 +6,7 @@ import {
   sendCopilotVoice,
   getCopilotMessages,
   clearCopilotHistory,
+  checkCopilotHealth,
   COPILOT_BASE_URL,
 } from '../api/copilot';
 import type { CopilotMessage, CopilotInterrupt } from '../api/copilot';
@@ -45,28 +46,29 @@ export default function CopilotPage() {
     let isMounted = true;
 
     async function init() {
-      // Check health
-      try {
-        const ping = await fetch(`${COPILOT_BASE_URL}/api/messages?limit=1`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('access_token') || 'demo_user'}`,
-          },
-        });
-        if (isMounted) setBackendOnline(ping.status !== 502 && ping.status !== 503);
-      } catch {
-        if (isMounted) setBackendOnline(false);
-      }
+      const isOnline = await checkCopilotHealth();
+      if (isMounted) setBackendOnline(isOnline);
 
-      // Fetch history
       const history = await getCopilotMessages(30);
-      if (isMounted && history.length > 0) {
-        setMessages(history);
+      if (isMounted) {
+        if (history.length > 0) {
+          setMessages(history);
+          setBackendOnline(true);
+        }
       }
     }
 
     init();
+
+    // Periodic heartbeat every 15s to keep status accurate
+    const interval = setInterval(async () => {
+      const isOnline = await checkCopilotHealth();
+      if (isMounted) setBackendOnline(isOnline);
+    }, 15000);
+
     return () => {
       isMounted = false;
+      clearInterval(interval);
     };
   }, []);
 
@@ -110,6 +112,7 @@ export default function CopilotPage() {
     await streamCopilotChat(prompt, {
       onToken: (delta) => {
         accumulatedContent += delta;
+        setBackendOnline(true);
         setMessages((prev) => {
           const updated = [...prev];
           const lastIdx = updated.length - 1;
@@ -245,12 +248,27 @@ export default function CopilotPage() {
       <div className="max-w-3xl mx-auto px-4 py-3 flex flex-col h-[calc(100dvh-7.5rem)]">
         {/* Status notice if offline */}
         {backendOnline === false && (
-          <div className="mb-2 p-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center justify-between">
+          <div
+            className="mb-3 p-3 rounded-2xl text-xs flex items-center justify-between shadow-xs transition-all animate-in fade-in"
+            style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a', color: '#92400e' }}
+          >
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-sm">wifi_off</span>
-              <span>Copilot backend service is not running on {COPILOT_BASE_URL}</span>
+              <span className="material-symbols-outlined text-base" style={{ color: '#d97706' }}>wifi_off</span>
+              <span className="font-medium">Connecting to Copilot service on {COPILOT_BASE_URL}...</span>
             </div>
-            <span className="text-[10px] font-mono opacity-80">Start uvicorn on port 8001</span>
+            <button
+              type="button"
+              onClick={async () => {
+                const ok = await checkCopilotHealth();
+                setBackendOnline(ok);
+                if (ok) toast.success('Copilot service connected!');
+                else toast.error('Service still unreachable on port 8001');
+              }}
+              className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all active:scale-95"
+              style={{ backgroundColor: '#fef3c7', color: '#78350f', border: '1px solid #fcd34d' }}
+            >
+              Retry Connection
+            </button>
           </div>
         )}
 
