@@ -30,6 +30,31 @@ services:
       - key: ALLOWED_ORIGINS
         value: please-update-in-dashboard
 
+  - type: web
+    name: budget-buddy-copilot
+    plan: free
+    region: singapore
+    rootDir: budget-buddy/copilot-service
+    dockerfile: ./Dockerfile
+    healthCheckPath: /api/messages?limit=1
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: openai/gpt-oss-120b
+      - key: OPENAI_BASE_URL
+        value: https://api.groq.com/openai/v1
+      - key: GROQ_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        value: sqlite:///./copilot.db
+      - key: SECRET_KEY
+        value: dev-secret-key-change-in-production-minimum-32-chars-long
+      - key: ALGORITHM
+        value: HS256
+      - key: PORT
+        value: "8001"
+
 databases:
   - name: budget-buddy-db
     plan: free

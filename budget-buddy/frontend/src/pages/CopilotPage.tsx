@@ -249,12 +249,24 @@ export default function CopilotPage() {
         {/* Status notice if offline */}
         {backendOnline === false && (
           <div
-            className="mb-3 p-3 rounded-2xl text-xs flex items-center justify-between shadow-xs transition-all animate-in fade-in"
+            className="mb-3 p-3 rounded-2xl text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-xs transition-all animate-in fade-in"
             style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a', color: '#92400e' }}
           >
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-base" style={{ color: '#d97706' }}>wifi_off</span>
-              <span className="font-medium">Connecting to Copilot service on {COPILOT_BASE_URL}...</span>
+            <div className="flex items-start sm:items-center gap-2">
+              <span className="material-symbols-outlined text-base shrink-0 mt-0.5 sm:mt-0" style={{ color: '#d97706' }}>wifi_off</span>
+              <div>
+                {typeof window !== 'undefined' && window.location.protocol === 'https:' && COPILOT_BASE_URL.startsWith('http://') ? (
+                  <span>
+                    <strong>Mixed Content:</strong> This live site is on HTTPS, but Copilot is pointing to local HTTP (<code className="text-[11px] bg-amber-100 px-1 py-0.5 rounded">{COPILOT_BASE_URL}</code>). For local testing, open{' '}
+                    <a href="http://localhost:5173/copilot" className="underline font-semibold hover:text-amber-950">
+                      http://localhost:5173/copilot
+                    </a>
+                    . For cloud use, deploy <code className="text-[11px] bg-amber-100 px-1 py-0.5 rounded">copilot-service</code> to Render and set <code className="text-[11px] bg-amber-100 px-1 py-0.5 rounded">VITE_COPILOT_URL</code> in Vercel.
+                  </span>
+                ) : (
+                  <span className="font-medium">Connecting to Copilot service on {COPILOT_BASE_URL}...</span>
+                )}
+              </div>
             </div>
             <button
               type="button"
@@ -262,9 +274,9 @@ export default function CopilotPage() {
                 const ok = await checkCopilotHealth();
                 setBackendOnline(ok);
                 if (ok) toast.success('Copilot service connected!');
-                else toast.error('Service still unreachable on port 8001');
+                else toast.error(`Service unreachable on ${COPILOT_BASE_URL}`);
               }}
-              className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all active:scale-95"
+              className="self-end sm:self-auto px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all active:scale-95 shrink-0"
               style={{ backgroundColor: '#fef3c7', color: '#78350f', border: '1px solid #fcd34d' }}
             >
               Retry Connection
