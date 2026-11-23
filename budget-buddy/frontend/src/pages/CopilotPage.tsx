@@ -5,6 +5,7 @@ import {
   resolveCopilotInterrupt,
   sendCopilotVoice,
   getCopilotMessages,
+  clearCopilotHistory,
   COPILOT_BASE_URL,
 } from '../api/copilot';
 import type { CopilotMessage, CopilotInterrupt } from '../api/copilot';
@@ -68,6 +69,17 @@ export default function CopilotPage() {
       isMounted = false;
     };
   }, []);
+
+  const handleClear = async () => {
+    try {
+      await clearCopilotHistory();
+      setMessages([]);
+      setActiveInterrupt(null);
+      toast.success('Chat history cleared');
+    } catch {
+      toast.error('Failed to clear chat');
+    }
+  };
 
   const handleSendPrompt = async (textToSend?: string) => {
     const prompt = (textToSend || inputPrompt).trim();
@@ -238,7 +250,21 @@ export default function CopilotPage() {
               <span className="material-symbols-outlined text-sm">wifi_off</span>
               <span>Copilot backend service is not running on {COPILOT_BASE_URL}</span>
             </div>
-            <span className="text-[10px] font-mono opacity-80">Start uvicorn on port 8000</span>
+            <span className="text-[10px] font-mono opacity-80">Start uvicorn on port 8001</span>
+          </div>
+        )}
+
+        {/* Chat Actions Bar */}
+        {messages.length > 0 && (
+          <div className="flex justify-end pb-2">
+            <button
+              onClick={handleClear}
+              type="button"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium text-foreground/60 hover:text-foreground bg-surface-variant hover:bg-surface-variant/80 transition-colors"
+            >
+              <span className="material-symbols-outlined text-sm">delete_sweep</span>
+              Clear Chat
+            </button>
           </div>
         )}
 

@@ -112,3 +112,36 @@ def interrupt_approve(
 ):
     """Approve or reject a HITL-interrupted action."""
     return handle_interrupt(agent=agent, user_id=str(user_id), request=request, db=db)
+
+
+@router.delete("/clear")
+def clear_chat(
+    user_id: str = Depends(current_user),
+    db: Session = Depends(get_db),
+):
+    """Clear chat history and checkpoints for the current user."""
+    from sqlmodel import delete
+    from app.models.messages_model import MessageModel
+    import sqlite3
+
+    try:
+        db.exec(delete(MessageModel).where(MessageModel.user_id == str(user_id)))
+        db.commit()
+    except Exception as e:
+        print("Warning: failed to clear audit messages:", e)
+
+    try:
+        conn = sqlite3.connect("./copilot_checkpoints.db")
+        cur = conn.cursor()
+        for tbl in ["checkpoints", "checkpoint_writes"]:
+            try:
+                cur.execute(f"DELETE FROM {tbl} WHERE thread_id = ?", (str(user_id),))
+            except Exception:
+                pass
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print("Warning: failed to clear checkpoints:", e)
+
+    return {"status": "cleared", "user_id": str(user_id)}
+

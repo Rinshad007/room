@@ -170,3 +170,18 @@ export async function sendCopilotVoice(
   return res.json();
 }
 
+export async function clearCopilotHistory(): Promise<void> {
+  const token = getAuthToken();
+  try {
+    await fetch(`${COPILOT_BASE_URL}/api/chat/clear`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  } catch (err) {
+    console.warn('Failed to clear copilot history:', err);
+  }
+}
+
+
