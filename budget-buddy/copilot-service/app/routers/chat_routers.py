@@ -71,13 +71,17 @@ async def chat_stream(
                                 yield f"event: interrupt\ndata: {json.dumps(interrupt_event)}\n\n"
                                 return
 
-                # 2. Stream tokens in real time
+                # 2. Stream tokens in real time (only for AI assistant responses, ignore internal tool outputs)
                 if mode == "messages":
                     message_chunk, metadata = payload
+                    node = metadata.get("langgraph_node") if isinstance(metadata, dict) else None
+                    if node == "tools":
+                        continue
                     if getattr(message_chunk, "content", None) and isinstance(message_chunk.content, str):
                         delta = message_chunk.content
-                        accumulated_text.append(delta)
-                        yield f"event: token\ndata: {json.dumps({'delta': delta})}\n\n"
+                        if delta:
+                            accumulated_text.append(delta)
+                            yield f"event: token\ndata: {json.dumps({'delta': delta})}\n\n"
 
             # Log final response to DB audit trail
             final_content = "".join(accumulated_text)
