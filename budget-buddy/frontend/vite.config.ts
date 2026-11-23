@@ -10,13 +10,21 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('react-router-dom') || id.includes('react-dom') || id.includes('react/')) {
+            const normalized = id.replace(/\\/g, '/');
+            if (
+              normalized.includes('/react/') ||
+              normalized.includes('/react-dom/') ||
+              normalized.includes('/react-router/') ||
+              normalized.includes('/react-router-dom/') ||
+              normalized.includes('/scheduler/') ||
+              normalized.includes('/use-sync-external-store/')
+            ) {
               return 'vendor-react';
             }
-            if (id.includes('@tanstack')) {
+            if (normalized.includes('/@tanstack/')) {
               return 'vendor-query';
             }
-            if (id.includes('recharts') || id.includes('d3')) {
+            if (normalized.includes('/recharts/') || normalized.includes('/d3-')) {
               return 'vendor-charts';
             }
             return 'vendor-utils';

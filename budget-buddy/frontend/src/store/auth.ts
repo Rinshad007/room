@@ -1,4 +1,4 @@
-import { useSyncExternalStore, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 import { resetRealtimeStore } from '../hooks/useRealtimeStore';
@@ -49,13 +49,14 @@ export function getAuth() {
   };
 }
 
-function getSnapshot() {
-  const token = localStorage.getItem('access_token');
-  return `${token || ''}_${_user ? _user.id : ''}_${_user ? _user.name : ''}_${_user ? _user.email : ''}`;
-}
-
 export const useAuthStore = () => {
-  useSyncExternalStore(subscribeToAuth, getSnapshot, getSnapshot);
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    return subscribeToAuth(() => {
+      setTick((t) => t + 1);
+    });
+  }, []);
 
   const token = localStorage.getItem('access_token');
 
