@@ -1,0 +1,29 @@
+# Separate Blueprint for Copilot Service: choose this file in Render Dashboard
+services:
+  - type: web
+    name: budgetbuddy-copilot
+    runtime: docker
+    plan: free
+    region: singapore
+    rootDir: budget-buddy/copilot-service
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/messages?limit=1
+    autoDeployTrigger: on
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: openai/gpt-oss-120b
+      - key: OPENAI_BASE_URL
+        value: https://api.groq.com/openai/v1
+      - key: GROQ_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        value: sqlite:///./copilot.db
+      - key: SECRET_KEY
+        value: dev-secret-key-change-in-production-minimum-32-chars-long
+      - key: ALGORITHM
+        value: HS256
+      - key: PORT
+        value: "8001"

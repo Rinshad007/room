@@ -32,11 +32,14 @@ services:
 
   - type: web
     name: budget-buddy-copilot
+    runtime: docker
     plan: free
     region: singapore
     rootDir: budget-buddy/copilot-service
-    dockerfile: ./Dockerfile
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     healthCheckPath: /api/messages?limit=1
+    autoDeployTrigger: on
     envVars:
       - key: OPENAI_API_KEY
         sync: false

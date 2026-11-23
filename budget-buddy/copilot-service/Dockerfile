@@ -6,8 +6,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf 
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
-COPY pyproject.toml .
-RUN uv pip install --system -r pyproject.toml
+COPY requirements.txt pyproject.toml ./
+RUN uv pip install --system -r requirements.txt
 
 COPY . .
 
