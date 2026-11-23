@@ -32,9 +32,9 @@ if is_testing:
     if "sqlite" in raw_url:
         if "budget_buddy.db" in raw_url:
             raw_url = raw_url.replace("budget_buddy.db", "test_budget_buddy.db")
-        else:
+        elif not raw_url.endswith("_test"):
             raw_url = raw_url + "_test"
-    else:
+    elif not raw_url.endswith("_test"):
         raw_url = raw_url + "_test"
 
 DATABASE_URL = get_async_db_url(raw_url)
