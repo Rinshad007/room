@@ -33,7 +33,9 @@ def _get_checkpointer_context(db_url: str):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 1. Initialize SQLModel tables
+    # 1. Initialize Firebase & SQLModel tables
+    from app.dependencies.firebase import init_firebase
+    init_firebase()
     SQLModel.metadata.create_all(engine)
 
     # 2. Async checkpointer for LangGraph state persistence

@@ -20,6 +20,8 @@ anyio==4.16.0
     #   watchfiles
 bcrypt==5.0.0
     # via passlib
+cachecontrol==0.15.0
+    # via firebase-admin
 certifi==2026.11.20
     # via
     #   httpcore
@@ -34,7 +36,11 @@ charset-normalizer==3.5.3
 click==8.5.1
     # via uvicorn
 cryptography==50.0.2
-    # via python-jose
+    # via
+    #   firebase-admin
+    #   google-auth
+    #   pyjwt
+    #   python-jose
 distro==1.9.0
     # via
     #   groq
@@ -43,13 +49,56 @@ ecdsa==0.19.2
     # via python-jose
 fastapi==0.165.0
     # via expense-copilot (pyproject.toml)
+firebase-admin==7.8.0
+    # via expense-copilot (pyproject.toml)
+google-api-core==2.44.0
+    # via
+    #   firebase-admin
+    #   google-cloud-core
+    #   google-cloud-firestore
+    #   google-cloud-storage
+google-auth==2.63.1
+    # via
+    #   google-api-core
+    #   google-cloud-core
+    #   google-cloud-firestore
+    #   google-cloud-storage
+google-cloud-core==2.8.0
+    # via
+    #   google-cloud-firestore
+    #   google-cloud-storage
+google-cloud-firestore==2.34.1
+    # via firebase-admin
+google-cloud-storage==3.17.2
+    # via firebase-admin
+google-crc32c==1.9.0
+    # via
+    #   google-cloud-storage
+    #   google-resumable-media
+google-resumable-media==2.11.0
+    # via google-cloud-storage
+googleapis-common-protos==1.76.0
+    # via
+    #   google-api-core
+    #   grpcio-status
 groq==1.7.0
     # via expense-copilot (pyproject.toml)
+grpcio==1.85.4
+    # via
+    #   google-api-core
+    #   google-cloud-firestore
+    #   grpcio-status
+grpcio-status==1.85.4
+    # via google-api-core
 h11==0.16.0
     # via
     #   httpcore
     #   httpcore2
     #   uvicorn
+h2==4.4.1
+    # via httpx
+hpack==4.2.0
+    # via h2
 httpcore==1.0.9
     # via httpx
 httpcore2==2.16.2
@@ -59,6 +108,7 @@ httptools==0.9.0
 httpx==0.28.1
     # via
     #   expense-copilot (pyproject.toml)
+    #   firebase-admin
     #   groq
     #   langchain-core
     #   langgraph-sdk
@@ -66,6 +116,8 @@ httpx2==2.16.2
     # via
     #   langsmith
     #   openai
+hyperframe==6.1.0
+    # via h2
 idna==3.20
     # via
     #   anyio
@@ -114,10 +166,14 @@ langgraph-sdk==0.4.14
     # via langgraph
 langsmith==0.16.0
     # via langchain-core
+msgpack==1.2.4
+    # via cachecontrol
 openai==3.57.0
     # via langchain-openai
 opentelemetry-api==1.45.2
-    # via fastapi
+    # via
+    #   fastapi
+    #   google-api-core
 orjson==3.13.0
     # via
     #   langgraph-checkpoint-postgres
@@ -131,6 +187,17 @@ packaging==26.3
     #   langsmith
 passlib==1.9.5
     # via expense-copilot (pyproject.toml)
+proto-plus==1.29.0
+    # via
+    #   google-api-core
+    #   google-cloud-firestore
+protobuf==7.36.2
+    # via
+    #   google-api-core
+    #   google-cloud-firestore
+    #   googleapis-common-protos
+    #   grpcio-status
+    #   proto-plus
 psycopg==3.3.9
     # via
     #   expense-copilot (pyproject.toml)
@@ -141,8 +208,11 @@ psycopg-pool==3.3.3
     # via langgraph-checkpoint-postgres
 pyasn1==0.6.5
     # via
+    #   pyasn1-modules
     #   python-jose
     #   rsa
+pyasn1-modules==0.4.2
+    # via google-auth
 pycparser==3.12
     # via cffi
 pydantic==2.14.4
@@ -157,6 +227,8 @@ pydantic==2.14.4
     #   sqlmodel
 pydantic-core==2.50.5
     # via pydantic
+pyjwt==2.15.1
+    # via firebase-admin
 python-dotenv==1.2.4
     # via
     #   expense-copilot (pyproject.toml)
@@ -173,6 +245,9 @@ regex==2026.11.19
     # via tiktoken
 requests==2.34.2
     # via
+    #   cachecontrol
+    #   google-api-core
+    #   google-cloud-storage
     #   langsmith
     #   requests-toolbelt
     #   tiktoken
@@ -208,6 +283,7 @@ typing-extensions==4.16.0
     #   anyio
     #   fastapi
     #   groq
+    #   grpcio
     #   httpx2
     #   langchain-core
     #   langchain-protocol

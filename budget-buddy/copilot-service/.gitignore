@@ -6,6 +6,8 @@ env/
 # Environment secrets
 .env
 .env.local
+firebase-service-account.json
+*firebase*.json
 
 # Bytecode & caches
 __pycache__/

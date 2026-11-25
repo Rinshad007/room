@@ -51,6 +51,10 @@ services:
         sync: false
       - key: DATABASE_URL
         value: sqlite:///./copilot.db
+      - key: FIREBASE_DATABASE_URL
+        value: https://buddybuddy-23085-default-rtdb.firebaseio.com
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false
       - key: SECRET_KEY
         value: dev-secret-key-change-in-production-minimum-32-chars-long
       - key: ALGORITHM

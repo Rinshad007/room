@@ -1,3 +1,5 @@
+import { auth } from '../firebase';
+
 const rawCopilotUrl = import.meta.env.VITE_COPILOT_URL || 'http://localhost:8001';
 export let COPILOT_BASE_URL = rawCopilotUrl.replace(/\/+$/, '');
 
@@ -18,12 +20,27 @@ export interface CopilotMessage {
   interrupt?: CopilotInterrupt;
 }
 
-const getAuthToken = (): string => {
-  const token = localStorage.getItem('access_token');
-  if (!token || token === 'undefined' || token === 'null') {
-    return 'demo_user';
+const getAuthHeaders = (): Record<string, string> => {
+  const token = localStorage.getItem('access_token') || 'demo_user';
+  let userId = '';
+  try {
+    const raw = localStorage.getItem('user');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed?.id) userId = parsed.id;
+    }
+  } catch {}
+  if (!userId && auth.currentUser) {
+    userId = auth.currentUser.uid;
   }
-  return token;
+
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${token}`,
+  };
+  if (userId) {
+    headers['X-User-Id'] = userId;
+  }
+  return headers;
 };
 
 // Resilient fetch with automatic localhost -> 127.0.0.1 fallback for Windows
@@ -46,10 +63,10 @@ async function copilotFetch(path: string, init?: RequestInit): Promise<Response>
 }
 
 export async function checkCopilotHealth(): Promise<boolean> {
-  const token = getAuthToken();
+  const headers = getAuthHeaders();
   try {
     const res = await copilotFetch('/api/messages?limit=1', {
-      headers: { Authorization: `Bearer ${token}` },
+      headers,
     });
     return res.status !== 502 && res.status !== 503;
   } catch {
@@ -58,13 +75,11 @@ export async function checkCopilotHealth(): Promise<boolean> {
 }
 
 export async function getCopilotMessages(limit = 50): Promise<CopilotMessage[]> {
-  const token = getAuthToken();
+  const headers = getAuthHeaders();
 
   try {
     const res = await copilotFetch(`/api/messages?limit=${limit}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
     });
 
     if (!res.ok) return [];
@@ -90,16 +105,14 @@ export async function streamCopilotChat(
     onError: (error: string) => void;
   }
 ): Promise<void> {
-  const token = getAuthToken();
+  const headers = getAuthHeaders();
 
   try {
     const res = await copilotFetch(
       `/api/chat/stream?prompt=${encodeURIComponent(prompt)}`,
       {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers,
       }
     );
 
@@ -165,12 +178,12 @@ export async function resolveCopilotInterrupt(
   interruptId: string,
   approve: boolean
 ): Promise<{ content: string; role: string }> {
-  const token = getAuthToken();
+  const headers = getAuthHeaders();
   const res = await copilotFetch('/api/chat/approve', {
     method: 'POST',
     headers: {
+      ...headers,
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({
       interrupt_id: interruptId,
@@ -188,15 +201,13 @@ export async function resolveCopilotInterrupt(
 export async function sendCopilotVoice(
   audioBlob: Blob
 ): Promise<{ content: string; role: string }> {
-  const token = getAuthToken();
+  const headers = getAuthHeaders();
   const formData = new FormData();
   formData.append('audio', audioBlob, 'recording.webm');
 
   const res = await copilotFetch('/api/chat/microphone', {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers,
     body: formData,
   });
 
@@ -208,13 +219,11 @@ export async function sendCopilotVoice(
 }
 
 export async function clearCopilotHistory(): Promise<void> {
-  const token = getAuthToken();
+  const headers = getAuthHeaders();
   try {
     await copilotFetch('/api/chat/clear', {
       method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
     });
   } catch (err) {
     console.warn('Failed to clear copilot history:', err);

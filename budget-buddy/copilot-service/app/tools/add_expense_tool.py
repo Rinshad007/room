@@ -1,9 +1,6 @@
-from datetime import datetime, timezone
 from langchain.tools import tool
 from langchain_core.runnables import RunnableConfig
-from sqlmodel import Session
-from app.dependencies.db import engine
-from app.models.expenses_model import ExpenseModel
+from app.dependencies.firebase import create_user_expense
 
 VALID_CATEGORIES = {
     "Food", "Transport", "Shopping", "Bills",
@@ -19,7 +16,7 @@ def add_expense(
     *,
     config: RunnableConfig,
 ) -> str:
-    """Record a new expense.
+    """Record a new expense into Budget Buddy Firebase database.
     Args:
         title: Short name of the expense (e.g. Biriyani, Petrol, Electricity Bill).
         amount: Numerical amount spent (must be positive, e.g. 230, 500.5).
@@ -36,15 +33,10 @@ def add_expense(
         matched = next((c for c in VALID_CATEGORIES if c.lower() == category.strip().lower()), "Other")
         normalized_category = matched
 
-    with Session(engine) as db:
-        item = ExpenseModel(
-            user_id=user_id,
-            title=title.strip(),
-            amount=round(float(amount), 2),
-            category=normalized_category,
-            date=datetime.now(timezone.utc),
-        )
-        db.add(item)
-        db.commit()
-        db.refresh(item)
-        return f"Added ₹{item.amount:.2f} for '{item.title}' under {item.category} (ID: {item.id})."
+    item = create_user_expense(
+        user_id=user_id,
+        title=title.strip(),
+        amount=amount,
+        category=normalized_category,
+    )
+    return f"Added ₹{item['amount']:.2f} for '{item['title']}' under {item['category']} (ID: {item['id']})."

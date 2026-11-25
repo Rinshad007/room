@@ -133,15 +133,13 @@ def clear_chat(
     db: Session = Depends(get_db),
 ):
     """Clear chat history and checkpoints for the current user."""
-    from sqlmodel import delete
-    from app.models.messages_model import MessageModel
+    from app.dependencies.firebase import clear_chat_messages
     import sqlite3
 
     try:
-        db.exec(delete(MessageModel).where(MessageModel.user_id == str(user_id)))
-        db.commit()
+        clear_chat_messages(str(user_id))
     except Exception as e:
-        print("Warning: failed to clear audit messages:", e)
+        print("Warning: failed to clear Firebase messages:", e)
 
     try:
         conn = sqlite3.connect("./copilot_checkpoints_v2.db")
